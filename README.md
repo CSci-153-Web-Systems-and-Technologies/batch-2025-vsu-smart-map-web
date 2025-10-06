@@ -1,0 +1,1 @@
+# vsu-smart-map-web
