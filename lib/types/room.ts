@@ -9,5 +9,4 @@ export interface Room extends AuditFields {
   readonly floor?: number;
 }
 
-export interface RoomSummary
-  extends Pick<Room, "id" | "roomCode" | "name" | "buildingId"> {}
+export type RoomSummary = Pick<Room, "id" | "roomCode" | "name" | "buildingId">;

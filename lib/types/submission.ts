@@ -14,5 +14,7 @@ export interface Submission extends AuditFields {
   readonly buildingId?: string;
 }
 
-export interface SubmissionSummary
-  extends Pick<Submission, "id" | "buildingName" | "status" | "createdAt"> {}
+export type SubmissionSummary = Pick<
+  Submission,
+  "id" | "buildingName" | "status" | "createdAt"
+>;
