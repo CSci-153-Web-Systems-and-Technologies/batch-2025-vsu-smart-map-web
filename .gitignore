@@ -44,3 +44,4 @@ next-env.d.ts
 # mentor
 .mentor-guide.md
 /.vscode
+/.mentor-guide
