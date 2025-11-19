@@ -1,4 +1,5 @@
 import type { AuditFields, ContactInfo, ImageAsset, LatLng } from "./common";
+import type { Room } from "./room";
 
 export type BuildingCategory =
   | "ACADEMIC"
@@ -35,3 +36,11 @@ export type BuildingSummary = Pick<
   Building,
   "id" | "code" | "name" | "category" | "slug"
 >;
+
+export interface BuildingWithRooms extends Building {
+  readonly rooms: readonly Room[];
+}
+
+export interface BuildingDetailsPayload extends BuildingWithRooms {
+  readonly nearby?: readonly MapMarkerPayload[];
+}
