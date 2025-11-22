@@ -1,5 +1,6 @@
 import type { AuditFields, ContactInfo, ImageAsset, LatLng } from "./common";
 import type { Room } from "./room";
+import type { BuildingCategory } from "@/lib/constants/buildings";
 
 export type BuildingCategory =
   | "ACADEMIC"
