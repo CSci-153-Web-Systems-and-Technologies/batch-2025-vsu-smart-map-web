@@ -1,8 +1,6 @@
 import type { AuditFields } from "./common";
 import type { SubmissionStatus } from "@/lib/constants/status";
 
-export type SubmissionStatus = "PENDING" | "APPROVED" | "REJECTED";
-
 export interface Submission extends AuditFields {
   readonly id: string;
   readonly buildingName: string;
