@@ -1,0 +1,11 @@
+import type { LatLng } from "@/lib/types";
+
+export const MAP_DEFAULT_CENTER: LatLng = { lat: 10.74450, lng: 124.79194 }; // Approx VSU campus; adjust if you have exact coords
+export const MAP_DEFAULT_ZOOM = 16;
+export const MAP_MIN_ZOOM = 15;
+export const MAP_MAX_ZOOM = 19;
+
+export const MAP_TILES = {
+  url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+  attribution: "© OpenStreetMap contributors",
+};
