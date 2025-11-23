@@ -11,8 +11,8 @@ export const BUILDING_CATEGORIES = [
 
 export type BuildingCategory = (typeof BUILDING_CATEGORIES)[number];
 
-export const BUILDING_CATEGORY_META: Record< 
-  BuildingCategory, 
+export const BUILDING_CATEGORY_META: Record<
+  BuildingCategory,
   { label: string; color: string; accent: string }
 > = {
   ACADEMIC: { label: "Academic", color: COLORS.map.pinAcademic, accent: COLORS.primary.DEFAULT },
