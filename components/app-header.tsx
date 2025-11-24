@@ -3,6 +3,7 @@ import { Menu, MapPinned } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { cn } from "@/lib/utils";
+import type { ReactNode } from "react";
 
 const navItems = [
   { label: "Map", href: "#map" },
@@ -10,7 +11,11 @@ const navItems = [
   { label: "Chat", href: "#chat" },
 ];
 
-export function AppHeader() {
+type AppHeaderProps = {
+  tabsSlot?: ReactNode;
+};
+
+export function AppHeader({ tabsSlot }: AppHeaderProps) {
   return (
     <header className="sticky top-0 z-20 border-b border-border/80 bg-card/95 shadow-card backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 md:px-6">
@@ -28,20 +33,26 @@ export function AppHeader() {
           </div>
         </Link>
 
-        <nav className="hidden items-center gap-1 md:flex" aria-label="Primary">
-          {navItems.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              className={cn(
-                "rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition",
-                "hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              )}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        {tabsSlot ? (
+          <div className="hidden flex-1 justify-center md:flex" aria-label="Primary">
+            {tabsSlot}
+          </div>
+        ) : (
+          <nav className="hidden items-center gap-1 md:flex" aria-label="Primary">
+            {navItems.map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                className={cn(
+                  "rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition",
+                  "hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                )}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        )}
 
         <div className="flex items-center gap-2">
           <ThemeSwitcher />
