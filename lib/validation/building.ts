@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BUILDING_CATEGORIES, VALIDATION_LIMITS, MAP_TILES } from "@/lib/constants";
+import { BUILDING_CATEGORIES, VALIDATION_LIMITS } from "@/lib/constants";
 import { MAP_DEFAULT_CENTER } from "@/lib/constants/map";
 
 const coordsSchema = z.object({
