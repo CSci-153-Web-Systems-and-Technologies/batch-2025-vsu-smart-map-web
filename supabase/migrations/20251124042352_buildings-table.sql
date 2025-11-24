@@ -1,3 +1,7 @@
+-- Migration: buildings-table
+-- Creates buildings table with basic RLS (public read, authenticated write)
+
+-- Enum for building categories (matches lib/constants/buildings.ts)
 do $$
 begin
   if not exists (select 1 from pg_type where typname = 'building_category') then
@@ -63,7 +67,7 @@ create policy "Public read buildings"
   for select
   using (true);
 
--- Authenticated write
+-- Authenticated write (tighten to admin claim later)
 drop policy if exists "Authenticated write buildings" on public.buildings;
 create policy "Authenticated write buildings"
   on public.buildings
