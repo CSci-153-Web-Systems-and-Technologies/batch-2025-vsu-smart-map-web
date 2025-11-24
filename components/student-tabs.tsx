@@ -5,6 +5,7 @@ import { ListOrdered, MapPinned, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type TabId = "map" | "directory" | "chat";
+type Placement = "inline" | "bottom";
 
 interface StudentTab {
   id: TabId;
@@ -17,6 +18,7 @@ interface StudentTabsProps {
   activeTab: TabId;
   onTabChange: (id: TabId) => void;
   className?: string;
+  placement?: Placement;
 }
 
 const defaultTabs: StudentTab[] = [
@@ -30,6 +32,7 @@ export function StudentTabs({
   activeTab,
   onTabChange,
   className,
+  placement = "inline",
 }: StudentTabsProps) {
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
@@ -49,16 +52,21 @@ export function StudentTabs({
     [tabs, onTabChange],
   );
 
+  const isInline = placement === "inline";
+  const wrapperClasses = isInline
+    ? "hidden md:block border-b border-border/80 bg-card/90 backdrop-blur"
+    : "md:hidden fixed inset-x-0 bottom-0 border-t border-border/80 bg-card/95 backdrop-blur pb-[calc(16px+env(safe-area-inset-bottom,0px))] pt-2";
+  const innerClasses = isInline
+    ? "mx-auto flex max-w-6xl items-stretch justify-center gap-2 px-4 py-2 md:px-6"
+    : "flex items-center justify-around px-4";
+
   return (
     <nav
       role="tablist"
       aria-label="Student navigation"
-      className={cn(
-        "sticky top-16 z-10 border-b border-border/80 bg-card/90 backdrop-blur",
-        className,
-      )}
+      className={cn(wrapperClasses, className)}
     >
-      <div className="mx-auto flex max-w-6xl items-stretch justify-center gap-2 px-4 py-2 md:px-6">
+      <div className={innerClasses}>
         {tabs.map((tab, index) => {
           const Icon = tab.icon;
           const isActive = tab.id === activeTab;
