@@ -10,6 +10,6 @@ export const STORAGE_PATHS = {
 } as const;
 
 export const STORAGE_LIMITS = {
-  imageMaxMB: 5,
+  imageMaxMB: 3,
   acceptedTypes: ["image/png", "image/jpeg", "image/webp"] as const,
 } as const;

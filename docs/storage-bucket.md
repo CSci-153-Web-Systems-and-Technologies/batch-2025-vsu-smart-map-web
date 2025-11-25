@@ -11,7 +11,7 @@
 
 ## File rules
 - Allowed types: image/png, image/jpeg, image/webp
-- Max size: 5 MB
+- Max size: 3 MB
 - Folder convention:
   - `building-images/{buildingId}/hero/<filename>`
   - `building-images/{buildingId}/rooms/{roomId}/<filename>`
