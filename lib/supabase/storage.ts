@@ -1,4 +1,5 @@
-import type { PostgrestError, StorageError } from "@supabase/supabase-js";
+import type { PostgrestError } from "@supabase/supabase-js";
+import { StorageError } from "@supabase/storage-js";
 import { STORAGE_BUCKETS, STORAGE_LIMITS, STORAGE_PATHS } from "@/lib/constants/storage";
 import {
   getSupabaseServerClient,
@@ -12,7 +13,7 @@ type StorageResult<T> = {
 
 const BUCKET = STORAGE_BUCKETS.buildingImages;
 const MAX_BYTES = STORAGE_LIMITS.imageMaxMB * 1024 * 1024;
-const ACCEPTED = new Set(STORAGE_LIMITS.acceptedTypes);
+const ACCEPTED = new Set<string>(STORAGE_LIMITS.acceptedTypes);
 
 const stripBucket = (path: string) =>
   path.replace(new RegExp(`^${BUCKET}/?`), "");
@@ -22,12 +23,7 @@ const makePath = (prefix: string, filename: string) => {
   return `${prefix}/${Date.now()}-${safeName}`;
 };
 
-const normalizeError = (message: string): StorageError => ({
-  name: "StorageError",
-  message,
-  statusCode: 400,
-  error: "Invalid storage request",
-});
+const normalizeError = (message: string): StorageError => new StorageError(message);
 
 const validateFile = (file: File | Blob) => {
   const type = (file as File).type || "";
