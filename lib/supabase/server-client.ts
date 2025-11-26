@@ -19,18 +19,30 @@ const assertServiceEnv = () => {
   }
 };
 
-export const getSupabaseServerClient = () => {
+export const getSupabaseServerClient = async () => {
   assertEnv();
-  const cookieStore = cookies();
+  const cookieStoreMaybePromise = cookies();
+
+  const cookieStore =
+    cookieStoreMaybePromise instanceof Promise
+      ? await cookieStoreMaybePromise
+      : cookieStoreMaybePromise;
+
   return createServerClient(url!, anonKey!, {
     cookies: {
       getAll() {
         return cookieStore.getAll();
       },
       setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value, options }) =>
-          cookieStore.set(name, value, options),
-        );
+        try {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            // In server components, cookies() returns a read-only store; ignore if setting is unsupported.
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (cookieStore as any).set?.(name, value, options);
+          });
+        } catch {
+          // swallow errors in read-only contexts
+        }
       },
     },
   });
