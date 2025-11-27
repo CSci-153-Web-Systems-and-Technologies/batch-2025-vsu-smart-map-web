@@ -1,11 +1,7 @@
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { BUILDING_CATEGORIES } from "@/lib/constants";
 import { buildingSchema } from "@/lib/validation";
-import {
-  getSupabaseBrowserClient,
-  getSupabaseServerClient,
-  getSupabaseServiceRoleClient,
-} from "../index";
+import { getSupabaseBrowserClient } from "../browser-client";
 
 type BuildingCategory = (typeof BUILDING_CATEGORIES)[number];
 
@@ -71,6 +67,12 @@ const normalizeError = (error: PostgrestError | null) =>
 
 const resolveClient = async (client?: MaybeClient) =>
   Promise.resolve(client ?? getSupabaseBrowserClient());
+
+const loadServerClient = async () =>
+  (await import("../server-client")).getSupabaseServerClient();
+
+const loadServiceRoleClient = async () =>
+  (await import("../server-client")).getSupabaseServiceRoleClient();
 
 const mapToDbPayload = (payload: unknown) => {
   const parsed = buildingSchema.parse(payload);
@@ -192,7 +194,7 @@ export async function createBuilding(
   client?: MaybeClient,
 ): Promise<BaseResult<BuildingRow>> {
   try {
-    const supabase = await resolveClient(client ?? getSupabaseServerClient());
+    const supabase = await resolveClient(client ?? loadServerClient());
     const insertPayload = mapToDbPayload(payload);
 
     const { data, error } = await supabase
@@ -219,7 +221,7 @@ export async function updateBuilding(
   const { id, ...rest } = payload;
 
   try {
-    const supabase = await resolveClient(client ?? getSupabaseServerClient());
+    const supabase = await resolveClient(client ?? loadServerClient());
     const updatePayload = mapToDbUpdatePayload(rest);
 
     const { data, error } = await supabase
@@ -245,8 +247,8 @@ export async function deleteBuilding(
   useServiceRole = false,
 ): Promise<BaseResult<BuildingRow>> {
   const supabase = useServiceRole
-    ? await resolveClient(getSupabaseServiceRoleClient())
-    : await resolveClient(getSupabaseServerClient());
+    ? await resolveClient(loadServiceRoleClient())
+    : await resolveClient(loadServerClient());
 
   const { data, error } = await supabase
     .from("buildings")

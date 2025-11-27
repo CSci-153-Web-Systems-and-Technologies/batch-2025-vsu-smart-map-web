@@ -7,7 +7,7 @@ import { MapContainerClient } from "@/components/map/map-container";
 import { MapSearchPanel } from "@/components/map/map-search-panel";
 import { MapSelectionLayer } from "@/components/map/map-selection-layer";
 import type { MapMarkerPayload } from "@/lib/types/building";
-import { getBuildings } from "@/lib/supabase/queries/buildings";
+import { getBuildingsClient } from "@/lib/supabase/queries/buildings-client";
 
 type TabId = "map" | "directory" | "chat";
 
@@ -75,7 +75,7 @@ function MapTab() {
   useEffect(() => {
     const load = async () => {
       setIsLoading(true);
-      const { data, error: fetchError } = await getBuildings();
+      const { data, error: fetchError } = await getBuildingsClient();
       if (fetchError) {
         setError("Unable to load buildings. Please try again later.");
         setMarkers([]);
