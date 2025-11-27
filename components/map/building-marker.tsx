@@ -30,7 +30,15 @@ export function BuildingMarker({ building, onSelect, isSelected = false }: Build
     <Marker
       position={position}
       icon={icon}
-      eventHandlers={{ click: () => onSelect?.(building) }}
+      eventHandlers={{
+        click: () => onSelect?.(building),
+        keypress: (e) => {
+          const key = e.originalEvent.key;
+          if (key === "Enter" || key === " ") {
+            onSelect?.(building);
+          }
+        },
+      }}
       title={`${building.name} (${building.code})`}
     >
       <Tooltip direction="top" offset={[0, -10]} opacity={1}>
