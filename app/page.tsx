@@ -136,8 +136,8 @@ function MapTab() {
             className="h-[420px] md:h-[560px] rounded-xl border border-border bg-muted animate-pulse"
             aria-label="Loading map"
           />
-        ) : hasResults ? (
-          <div className="h-[420px] md:h-[560px] rounded-xl border border-border overflow-hidden">
+        ) : (
+          <div className="relative h-[420px] md:h-[560px] rounded-xl border border-border overflow-hidden">
             <MapContainerClient className="h-full w-full">
               <MapSelectionLayer
                 markers={filtered}
@@ -145,11 +145,12 @@ function MapTab() {
                 onSelect={(marker) => setSelectedId(marker.id)}
               />
             </MapContainerClient>
-          </div>
-        ) : (
-          <div className="flex h-[200px] flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/40 text-center">
-            <p className="text-sm font-medium text-foreground">No buildings match your search.</p>
-            <p className="mt-1 text-xs text-muted-foreground">Try clearing filters or another term.</p>
+            {!hasResults && !error && (
+              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center bg-muted/30 text-center">
+                <p className="text-sm font-medium text-foreground">No buildings match your search.</p>
+                <p className="mt-1 text-xs text-muted-foreground">Try clearing filters or another term.</p>
+              </div>
+            )}
           </div>
         )}
 
