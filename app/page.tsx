@@ -1,13 +1,18 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import { AppHeader } from "@/components/app-header";
 import { StudentTabs } from "@/components/student-tabs";
 import { MapContainerClient } from "@/components/map/map-container";
 import { MapSearchPanel } from "@/components/map/map-search-panel";
-import { MapSelectionLayer } from "@/components/map/map-selection-layer";
 import type { MapMarkerPayload } from "@/lib/types/building";
 import { getBuildingsClient } from "@/lib/supabase/queries/buildings-client";
+
+const MapSelectionLayer = dynamic(
+  () => import("@/components/map/map-selection-layer").then((m) => m.MapSelectionLayer),
+  { ssr: false },
+);
 
 type TabId = "map" | "directory" | "chat";
 
