@@ -2,16 +2,12 @@ import "leaflet/dist/leaflet.css";
 
 import { useEffect } from "react";
 import { MapContainer, TileLayer } from "react-leaflet";
-import { MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM } from "@/lib/constants/map";
+import { MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM, MAP_TILES } from "@/lib/constants/map";
 
 type MapWrapperProps = {
   children?: React.ReactNode;
   className?: string;
 };
-
-const TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
-const TILE_ATTRIBUTION =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
 export function MapWrapper({ children, className }: MapWrapperProps) {
   useEffect(() => {
@@ -25,7 +21,7 @@ export function MapWrapper({ children, className }: MapWrapperProps) {
       scrollWheelZoom
       className={className ?? "h-full w-full"}
     >
-      <TileLayer attribution={TILE_ATTRIBUTION} url={TILE_URL} />
+      <TileLayer attribution={MAP_TILES.attribution} url={MAP_TILES.url} />
       {children}
     </MapContainer>
   );
