@@ -23,7 +23,12 @@ export function MapWrapper({ children, className }: MapWrapperProps) {
       scrollWheelZoom
       className={className ?? "h-full w-full"}
     >
-      <TileLayer attribution={MAP_TILES.attribution} url={MAP_TILES.url} />
+      <TileLayer
+        attribution={MAP_TILES.attribution}
+        url={MAP_TILES.url}
+        maxZoom={MAP_MAX_ZOOM}
+        maxNativeZoom={MAP_TILES.maxNativeZoom ?? MAP_MAX_ZOOM}
+      />
       {children}
     </MapContainer>
   );
