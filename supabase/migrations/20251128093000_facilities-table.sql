@@ -15,7 +15,7 @@ create table if not exists public.facilities (
   constraint facilities_type_check check (
     type in (
       'admin', 'registrar', 'cashier', 'ict', 'lab', 'library', 'dorm', 'canteen', 'clinic',
-      'cr', 'court', 'gym', 'oval', 'stage', 'printing', 'water', 'gate', 'parking', 'office', 'classroom'
+      'restroom', 'court', 'gym', 'oval', 'stage', 'printing', 'water', 'gate', 'parking', 'office', 'classroom'
     )
   )
 );
