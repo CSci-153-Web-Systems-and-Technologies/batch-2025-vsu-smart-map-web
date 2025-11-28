@@ -16,6 +16,9 @@ begin
   end if;
 end$$;
 
+-- Ensure pg_trgm is available for trigram indexes
+create extension if not exists pg_trgm;
+
 create table if not exists public.buildings (
   id uuid primary key default gen_random_uuid(),
   code text not null unique,
