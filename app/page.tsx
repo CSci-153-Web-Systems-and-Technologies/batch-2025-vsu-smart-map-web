@@ -33,6 +33,7 @@ const TAB_CONTENT: Record<TabId, { title: string; body: string }> = {
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState<TabId>("map");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   return (
     <>
@@ -43,7 +44,15 @@ export default function HomePage() {
       />
       <StudentTabs placement="bottom" activeTab={activeTab} onTabChange={setActiveTab} />
       <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-6 bg-background px-4 py-10 md:px-6">
-        {activeTab === "map" ? <MapTab /> : <PlaceholderTab tab={activeTab} />}
+        {activeTab === "map" ? (
+          <MapTab
+            selectedId={selectedId}
+            onSelect={(id) => setSelectedId(id)}
+            onClearSelection={() => setSelectedId(null)}
+          />
+        ) : (
+          <PlaceholderTab tab={activeTab} />
+        )}
       </main>
     </>
   );
@@ -70,10 +79,17 @@ function PlaceholderTab({ tab }: { tab: Exclude<TabId, "map"> }) {
   );
 }
 
-function MapTab() {
+function MapTab({
+  selectedId,
+  onSelect,
+  onClearSelection,
+}: {
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+  onClearSelection: () => void;
+}) {
   const [markers, setMarkers] = useState<readonly MapMarkerPayload[]>([]);
   const [filtered, setFiltered] = useState<readonly MapMarkerPayload[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -142,7 +158,7 @@ function MapTab() {
               <MapSelectionLayer
                 markers={filtered}
                 selectedId={selectedId}
-                onSelect={(marker) => setSelectedId(marker.id)}
+                onSelect={(marker) => onSelect(marker.id)}
               />
             </MapContainerClient>
             {!hasResults && !error && (
@@ -155,7 +171,7 @@ function MapTab() {
         )}
 
         {selectedId && (
-          <SelectedNotice markers={markers} selectedId={selectedId} onClear={() => setSelectedId(null)} />
+          <SelectedNotice markers={markers} selectedId={selectedId} onClear={onClearSelection} />
         )}
       </div>
     </section>
