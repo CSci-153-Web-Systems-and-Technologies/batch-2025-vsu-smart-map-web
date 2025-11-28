@@ -121,8 +121,6 @@ function MapTab({
     void load();
   }, []);
 
-  const hasResults = filtered.length > 0;
-
   return (
     <section
       id="map-panel"
@@ -138,43 +136,78 @@ function MapTab({
         </div>
       </div>
 
-      <div className="mt-4 space-y-4 md:mt-6">
-        <MapSearchPanel markers={markers} onResultsChange={setFiltered} />
-
-        {error && (
-          <p className="text-sm text-destructive" role="alert">
-            {error}
-          </p>
-        )}
-
-        {isLoading ? (
-          <div
-            className="h-[420px] md:h-[560px] rounded-xl border border-border bg-muted animate-pulse"
-            aria-label="Loading map"
-          />
-        ) : (
-          <div className="relative h-[420px] md:h-[560px] rounded-xl border border-border overflow-hidden">
-            <MapContainerClient className="h-full w-full">
-              <MapSelectionLayer
-                markers={filtered}
-                selectedId={selectedId}
-                onSelect={(marker) => onSelect(marker.id)}
-              />
-            </MapContainerClient>
-            {!hasResults && !error && (
-              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center bg-muted/30 text-center">
-                <p className="text-sm font-medium text-foreground">No buildings match your search.</p>
-                <p className="mt-1 text-xs text-muted-foreground">Try clearing filters or another term.</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {selectedId && (
-          <SelectedNotice markers={markers} selectedId={selectedId} onClear={onClearSelection} />
-        )}
-      </div>
+      <MapView
+        markers={markers}
+        filtered={filtered}
+        isLoading={isLoading}
+        error={error}
+        selectedId={selectedId}
+        onSelect={onSelect}
+        onClearSelection={onClearSelection}
+        onResultsChange={setFiltered}
+      />
     </section>
+  );
+}
+
+function MapView({
+  markers,
+  filtered,
+  isLoading,
+  error,
+  selectedId,
+  onSelect,
+  onClearSelection,
+  onResultsChange,
+}: {
+  markers: readonly MapMarkerPayload[];
+  filtered: readonly MapMarkerPayload[];
+  isLoading: boolean;
+  error: string | null;
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+  onClearSelection: () => void;
+  onResultsChange: (items: MapMarkerPayload[]) => void;
+}) {
+  const hasResults = filtered.length > 0;
+
+  return (
+    <div className="mt-4 space-y-4 md:mt-6">
+      <MapSearchPanel markers={markers} onResultsChange={onResultsChange} />
+
+      {error && (
+        <p className="text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      )}
+
+      {isLoading ? (
+        <div
+          className="h-[420px] md:h-[560px] rounded-xl border border-border bg-muted animate-pulse"
+          aria-label="Loading map"
+        />
+      ) : (
+        <div className="relative h-[420px] md:h-[560px] rounded-xl border border-border overflow-hidden">
+          <MapContainerClient className="h-full w-full">
+            <MapSelectionLayer
+              markers={filtered}
+              selectedId={selectedId}
+              onSelect={(marker) => onSelect(marker.id)}
+            />
+          </MapContainerClient>
+          {!hasResults && !error && (
+            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center bg-muted/30 text-center">
+              <p className="text-sm font-medium text-foreground">No buildings match your search.</p>
+              <p className="mt-1 text-xs text-muted-foreground">Try clearing filters or another term.</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {selectedId && (
+        <SelectedNotice markers={markers} selectedId={selectedId} onClear={onClearSelection} />
+      )}
+    </div>
   );
 }
 
