@@ -7,7 +7,10 @@ export const FACILITY_TYPES = [
 
 export type FacilityType = (typeof FACILITY_TYPES)[number];
 
-export const FACILITY_TYPE_META: Record<FacilityType, { label: string; color: string }> = {
+export const FACILITY_TYPE_META: Record<
+  FacilityType,
+  { label: string; color: string }
+> = {
   admin: { label: "Admin", color: COLORS.status.warning },
   registrar: { label: "Registrar", color: COLORS.status.info },
   cashier: { label: "Cashier", color: COLORS.status.success },
@@ -16,15 +19,15 @@ export const FACILITY_TYPE_META: Record<FacilityType, { label: string; color: st
   library: { label: "Library", color: COLORS.neutral[700] },
   dorm: { label: "Dormitory", color: COLORS.status.warning },
   canteen: { label: "Canteen", color: COLORS.status.warning },
-  clinic: { label: "Clinic", color: COLORS.status.error },
+  clinic: { label: "Clinic", color: COLORS.status.danger },
   restroom: { label: "Restroom", color: COLORS.status.info },
   court: { label: "Court", color: COLORS.status.info },
-  gym: { label: "Gym", color: COLORS.status.error },
+  gym: { label: "Gym", color: COLORS.status.danger },
   oval: { label: "Oval", color: COLORS.status.success },
   stage: { label: "Stage", color: COLORS.primary.DEFAULT },
-  printing: { label: "Printing", color: COLORS.neutral[600] },
+  printing: { label: "Printing", color: COLORS.neutral[500] },
   water: { label: "Water", color: COLORS.status.info },
-  gate: { label: "Gate", color: COLORS.neutral[600] },
+  gate: { label: "Gate", color: COLORS.neutral[500] },
   parking: { label: "Parking", color: COLORS.neutral[700] },
   office: { label: "Office", color: COLORS.neutral[700] },
   classroom: { label: "Classroom", color: COLORS.accent.DEFAULT },

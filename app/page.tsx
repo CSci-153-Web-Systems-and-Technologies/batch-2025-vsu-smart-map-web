@@ -6,8 +6,10 @@ import { AppHeader } from "@/components/app-header";
 import { StudentTabs } from "@/components/student-tabs";
 import { MapContainerClient } from "@/components/map/map-container";
 import { MapSearchPanel } from "@/components/map/map-search-panel";
-import type { MapMarkerPayload } from "@/lib/types/building";
+import type { MapItem } from "@/lib/types/map";
+import type { FacilityType } from "@/lib/constants/facilities";
 import { getBuildingsClient } from "@/lib/supabase/queries/buildings-client";
+import { getFacilities } from "@/lib/supabase/queries/facilities";
 
 const MapSelectionLayer = dynamic(
   () => import("@/components/map/map-selection-layer").then((m) => m.MapSelectionLayer),
@@ -88,33 +90,55 @@ function MapTab({
   onSelect: (id: string) => void;
   onClearSelection: () => void;
 }) {
-  const [markers, setMarkers] = useState<readonly MapMarkerPayload[]>([]);
-  const [filtered, setFiltered] = useState<readonly MapMarkerPayload[]>([]);
+  const [items, setItems] = useState<readonly MapItem[]>([]);
+  const [filtered, setFiltered] = useState<readonly MapItem[]>([]);
+  const [facilityFilters, setFacilityFilters] = useState<FacilityType[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       setIsLoading(true);
-      const { data, error: fetchError } = await getBuildingsClient();
-      if (fetchError) {
-        setError("Unable to load buildings. Please try again later.");
-        setMarkers([]);
+      const [bResp, fResp] = await Promise.all([
+        getBuildingsClient(),
+        getFacilities({ isActive: true }),
+      ]);
+
+      if (bResp.error || fResp.error) {
+        setError("Unable to load map data. Please try again later.");
+        setItems([]);
         setFiltered([]);
-      } else if (data) {
-        const mapped = data
-          .filter((b) => b.lat && b.lng)
-          .map<MapMarkerPayload>((b) => ({
+        setIsLoading(false);
+        return;
+      }
+
+      const buildingItems: MapItem[] =
+        bResp.data
+          ?.filter((b) => b.lat && b.lng)
+          .map((b) => ({
+            kind: "building" as const,
             id: b.id,
-            code: b.code,
             name: b.name,
+            code: b.code,
             category: b.category,
             coordinates: { lat: b.lat, lng: b.lng },
-          }));
-        setMarkers(mapped);
-        setFiltered(mapped);
-        setError(null);
-      }
+          })) ?? [];
+
+      const facilityItems: MapItem[] =
+        fResp.data
+          ?.filter((f) => f.coordinates?.lat && f.coordinates?.lng)
+          .map((f) => ({
+            kind: "facility" as const,
+            id: f.id,
+            name: f.name,
+            facilityType: f.type,
+            coordinates: { lat: f.coordinates.lat, lng: f.coordinates.lng },
+          })) ?? [];
+
+      const merged = [...buildingItems, ...facilityItems];
+      setItems(merged);
+      setFiltered(merged);
+      setError(null);
       setIsLoading(false);
     };
 
@@ -137,7 +161,7 @@ function MapTab({
       </div>
 
       <MapView
-        markers={markers}
+        items={items}
         filtered={filtered}
         isLoading={isLoading}
         error={error}
@@ -145,13 +169,15 @@ function MapTab({
         onSelect={onSelect}
         onClearSelection={onClearSelection}
         onResultsChange={setFiltered}
+        facilityFilters={facilityFilters}
+        onFacilityFiltersChange={setFacilityFilters}
       />
     </section>
   );
 }
 
 function MapView({
-  markers,
+  items,
   filtered,
   isLoading,
   error,
@@ -159,21 +185,30 @@ function MapView({
   onSelect,
   onClearSelection,
   onResultsChange,
+  facilityFilters,
+  onFacilityFiltersChange,
 }: {
-  markers: readonly MapMarkerPayload[];
-  filtered: readonly MapMarkerPayload[];
+  items: readonly MapItem[];
+  filtered: readonly MapItem[];
   isLoading: boolean;
   error: string | null;
   selectedId: string | null;
   onSelect: (id: string) => void;
   onClearSelection: () => void;
-  onResultsChange: (items: MapMarkerPayload[]) => void;
+  onResultsChange: (items: MapItem[]) => void;
+  facilityFilters: FacilityType[];
+  onFacilityFiltersChange: (types: FacilityType[]) => void;
 }) {
   const hasResults = filtered.length > 0;
 
   return (
     <div className="mt-4 space-y-4 md:mt-6">
-      <MapSearchPanel markers={markers} onResultsChange={onResultsChange} />
+      <MapSearchPanel
+        items={items}
+        onResultsChange={onResultsChange}
+        facilityFilters={facilityFilters}
+        onFacilityFiltersChange={onFacilityFiltersChange}
+      />
 
       {error && (
         <p className="text-sm text-destructive" role="alert">
@@ -190,14 +225,14 @@ function MapView({
         <div className="relative h-[420px] md:h-[560px] rounded-xl border border-border overflow-hidden">
           <MapContainerClient className="h-full w-full">
             <MapSelectionLayer
-              markers={filtered}
+              items={filtered}
               selectedId={selectedId}
-              onSelect={(marker) => onSelect(marker.id)}
+              onSelect={(item) => onSelect(item.id)}
             />
           </MapContainerClient>
           {!hasResults && !error && (
             <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center bg-muted/30 text-center">
-              <p className="text-sm font-medium text-foreground">No buildings match your search.</p>
+              <p className="text-sm font-medium text-foreground">No locations match your search.</p>
               <p className="mt-1 text-xs text-muted-foreground">Try clearing filters or another term.</p>
             </div>
           )}
@@ -205,28 +240,29 @@ function MapView({
       )}
 
       {selectedId && (
-        <SelectedNotice markers={markers} selectedId={selectedId} onClear={onClearSelection} />
+        <SelectedNotice items={items} selectedId={selectedId} onClear={onClearSelection} />
       )}
     </div>
   );
 }
 
 function SelectedNotice({
-  markers,
+  items,
   selectedId,
   onClear,
 }: {
-  markers: readonly MapMarkerPayload[];
+  items: readonly MapItem[];
   selectedId: string;
   onClear: () => void;
 }) {
-  const selected = useMemo(() => markers.find((m) => m.id === selectedId), [markers, selectedId]);
+  const selected = useMemo(() => items.find((m) => m.id === selectedId), [items, selectedId]);
   if (!selected) return null;
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm">
       <span className="text-foreground">
-        Selected: <strong>{selected.name}</strong> ({selected.code})
+        Selected: <strong>{selected.name}</strong>
+        {selected.code ? ` (${selected.code})` : null}
       </span>
       <button
         type="button"
