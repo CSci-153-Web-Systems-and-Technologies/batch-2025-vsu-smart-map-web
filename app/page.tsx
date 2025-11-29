@@ -7,6 +7,7 @@ import { StudentTabs } from "@/components/student-tabs";
 import { MapContainerClient } from "@/components/map/map-container";
 import { MapSearchPanel } from "@/components/map/map-search-panel";
 import type { MapItem } from "@/lib/types/map";
+import type { FacilityType } from "@/lib/constants/facilities";
 import { getBuildingsClient } from "@/lib/supabase/queries/buildings-client";
 import { getFacilities } from "@/lib/supabase/queries/facilities";
 
@@ -91,6 +92,7 @@ function MapTab({
 }) {
   const [items, setItems] = useState<readonly MapItem[]>([]);
   const [filtered, setFiltered] = useState<readonly MapItem[]>([]);
+  const [facilityFilters, setFacilityFilters] = useState<FacilityType[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -167,6 +169,8 @@ function MapTab({
         onSelect={onSelect}
         onClearSelection={onClearSelection}
         onResultsChange={setFiltered}
+        facilityFilters={facilityFilters}
+        onFacilityFiltersChange={setFacilityFilters}
       />
     </section>
   );
@@ -181,6 +185,8 @@ function MapView({
   onSelect,
   onClearSelection,
   onResultsChange,
+  facilityFilters,
+  onFacilityFiltersChange,
 }: {
   items: readonly MapItem[];
   filtered: readonly MapItem[];
@@ -190,12 +196,19 @@ function MapView({
   onSelect: (id: string) => void;
   onClearSelection: () => void;
   onResultsChange: (items: MapItem[]) => void;
+  facilityFilters: FacilityType[];
+  onFacilityFiltersChange: (types: FacilityType[]) => void;
 }) {
   const hasResults = filtered.length > 0;
 
   return (
     <div className="mt-4 space-y-4 md:mt-6">
-      <MapSearchPanel items={items} onResultsChange={onResultsChange} />
+      <MapSearchPanel
+        items={items}
+        onResultsChange={onResultsChange}
+        facilityFilters={facilityFilters}
+        onFacilityFiltersChange={onFacilityFiltersChange}
+      />
 
       {error && (
         <p className="text-sm text-destructive" role="alert">
