@@ -4,6 +4,8 @@ import { useMemo } from "react";
 import { Marker, Tooltip } from "react-leaflet";
 import { divIcon, type DivIcon } from "leaflet";
 import { getPinAsset } from "@/lib/map/pins";
+import type { BuildingCategory } from "@/lib/constants/buildings";
+import type { FacilityType } from "@/lib/constants/facilities";
 import type { MapItem } from "@/lib/types/map";
 
 type MapMarkerProps = {
@@ -14,9 +16,11 @@ type MapMarkerProps = {
 
 export function MapMarker({ item, isSelected = false, onSelect }: MapMarkerProps) {
   const icon: DivIcon = useMemo(() => {
-    const pin = getPinAsset(item.kind === "building" ? (item.category as any) : (item.facilityType as any), {
-      selected: isSelected,
-    });
+    const pinKind: BuildingCategory | FacilityType =
+      item.kind === "building"
+        ? item.category ?? "ACADEMIC"
+        : item.facilityType ?? "office";
+    const pin = getPinAsset(pinKind, { selected: isSelected });
     return divIcon({
       html: pin.html,
       className: pin.className,

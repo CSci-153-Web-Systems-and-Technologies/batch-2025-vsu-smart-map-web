@@ -2,18 +2,18 @@
 
 import { useEffect } from "react";
 import { useMap } from "react-leaflet";
-import type { MapMarkerPayload } from "@/lib/types/building";
-import { BuildingMarkers } from "./building-markers";
+import type { MapItem } from "@/lib/types/map";
+import { MapMarkers } from "./map-markers";
 
 type MapSelectionLayerProps = {
-  markers: readonly MapMarkerPayload[];
+  items: readonly MapItem[];
   selectedId: string | null;
-  onSelect: (marker: MapMarkerPayload) => void;
+  onSelect: (item: MapItem) => void;
   flyZoom?: number;
 };
 
 export function MapSelectionLayer({
-  markers,
+  items,
   selectedId,
   onSelect,
   flyZoom = 17,
@@ -22,16 +22,16 @@ export function MapSelectionLayer({
 
   useEffect(() => {
     if (!selectedId) return;
-    const selected = markers.find((m) => m.id === selectedId);
+    const selected = items.find((m) => m.id === selectedId);
     if (!selected) return;
     map.flyTo([selected.coordinates.lat, selected.coordinates.lng], Math.max(map.getZoom(), flyZoom), {
       duration: 0.6,
     });
-  }, [selectedId, markers, map, flyZoom]);
+  }, [selectedId, items, map, flyZoom]);
 
   return (
-    <BuildingMarkers
-      markers={markers}
+    <MapMarkers
+      items={items}
       selectedId={selectedId}
       onSelect={onSelect}
     />

@@ -2,31 +2,34 @@
 
 import { useEffect, useMemo } from "react";
 import type { BuildingCategory } from "@/lib/constants/buildings";
-import type { MapMarkerPayload } from "@/lib/types/building";
-import { filterMarkers } from "@/lib/map/filter-buildings";
+import type { FacilityType } from "@/lib/constants/facilities";
+import type { MapItem } from "@/lib/types/map";
+import { filterMapItems } from "@/lib/map/filter-map-items";
 import { useMapSearch } from "@/hooks/use-map-search";
 import { CategoryFilters } from "./category-filters";
 import { MapSearch } from "./map-search";
 
 type MapSearchPanelProps = {
-  markers: readonly MapMarkerPayload[];
-  onResultsChange?: (markers: MapMarkerPayload[]) => void;
+  items: readonly MapItem[];
+  onResultsChange?: (items: MapItem[]) => void;
   onMatchCountChange?: (count: number) => void;
-  initialCategory?: BuildingCategory | null;
+  initialBuildingCategory?: BuildingCategory | null;
+  facilityFilters?: FacilityType[] | null;
 };
 
 export function MapSearchPanel({
-  markers,
+  items,
   onResultsChange,
   onMatchCountChange,
-  initialCategory = null,
+  initialBuildingCategory = null,
+  facilityFilters = null,
 }: MapSearchPanelProps) {
   const { searchTerm, setSearchTerm, selectedCategory, setSelectedCategory, debouncedTerm } =
-    useMapSearch(initialCategory);
+    useMapSearch(initialBuildingCategory);
 
   const { results, matchCount } = useMemo(
-    () => filterMarkers(markers, debouncedTerm, selectedCategory),
-    [markers, debouncedTerm, selectedCategory],
+    () => filterMapItems(items, debouncedTerm, selectedCategory, facilityFilters),
+    [items, debouncedTerm, selectedCategory, facilityFilters],
   );
 
   useEffect(() => {
