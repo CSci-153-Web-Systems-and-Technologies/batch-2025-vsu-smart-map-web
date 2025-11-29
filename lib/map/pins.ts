@@ -1,5 +1,7 @@
 import { BUILDING_CATEGORY_META, type BuildingCategory } from "@/lib/constants/buildings";
+import { FACILITY_TYPES, type FacilityType } from "@/lib/constants/facilities";
 
+type PinKind = BuildingCategory | FacilityType;
 type PinId =
   | "classroom"
   | "office"
@@ -46,6 +48,29 @@ const DEFAULT_PIN_FOR_CATEGORY: Record<BuildingCategory, PinId> = {
   SERVICE: "office",
   SPORTS: "gym",
   LABORATORY: "lab",
+};
+
+const DEFAULT_PIN_FOR_FACILITY: Record<FacilityType, PinId> = {
+  admin: "admin",
+  registrar: "registrar",
+  cashier: "cashier",
+  ict: "ict",
+  lab: "lab",
+  library: "library",
+  dorm: "dorm",
+  canteen: "canteen",
+  clinic: "clinic",
+  restroom: "restroom",
+  court: "court",
+  gym: "gym",
+  oval: "oval",
+  stage: "stage",
+  printing: "printing",
+  water: "water",
+  gate: "gate",
+  parking: "parking",
+  office: "office",
+  classroom: "classroom",
 };
 
 const PIN_LIBRARY: Record<
@@ -255,11 +280,19 @@ const PIN_LIBRARY: Record<
   },
 };
 
-function buildSvgPin(category: BuildingCategory, options: PinOptions): string {
-  const pinId = options.pinId ?? DEFAULT_PIN_FOR_CATEGORY[category];
+function resolvePinId(kind: PinKind): PinId {
+  // Building categories map via default map; facility types map directly to pin ids by name
+  if ((FACILITY_TYPES as readonly string[]).includes(kind as string)) {
+    return DEFAULT_PIN_FOR_FACILITY[kind as FacilityType];
+  }
+  return DEFAULT_PIN_FOR_CATEGORY[kind as BuildingCategory];
+}
+
+function buildSvgPin(kind: PinKind, options: PinOptions): string {
+  const pinId = options.pinId ?? resolvePinId(kind);
   const libraryPin = PIN_LIBRARY[pinId];
-  const meta = BUILDING_CATEGORY_META[category];
-  const stroke = options.selected ? meta.accent : "#ffffff";
+  const meta = BUILDING_CATEGORY_META[kind as BuildingCategory];
+  const stroke = options.selected ? meta?.accent ?? "#ffffff" : "#ffffff";
 
   return `
     <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 64 64" style="color: ${libraryPin.color};">
@@ -269,8 +302,8 @@ function buildSvgPin(category: BuildingCategory, options: PinOptions): string {
   `;
 }
 
-export function getPinAsset(category: BuildingCategory, options: PinOptions = {}): PinAsset {
-  const html = buildSvgPin(category, options);
+export function getPinAsset(kind: PinKind, options: PinOptions = {}): PinAsset {
+  const html = buildSvgPin(kind, options);
   return {
     html,
     className: "vsu-pin",
