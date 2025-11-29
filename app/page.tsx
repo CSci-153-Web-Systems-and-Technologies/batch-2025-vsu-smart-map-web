@@ -104,14 +104,6 @@ function MapTab({
         getFacilities({ isActive: true }),
       ]);
 
-      if (bResp.error || fResp.error) {
-        setError("Unable to load map data. Please try again later.");
-        setItems([]);
-        setFiltered([]);
-        setIsLoading(false);
-        return;
-      }
-
       const buildingItems: MapItem[] =
         bResp.data
           ?.filter((b) => b.lat && b.lng)
@@ -136,6 +128,16 @@ function MapTab({
           })) ?? [];
 
       const merged = [...buildingItems, ...facilityItems];
+
+      // Only show an error if both data sources failed; otherwise degrade gracefully.
+      if (!bResp.data && !fResp.data) {
+        setError("Unable to load map data. Please try again later.");
+        setItems([]);
+        setFiltered([]);
+        setIsLoading(false);
+        return;
+      }
+
       setItems(merged);
       setFiltered(merged);
       setError(null);
