@@ -10,6 +10,10 @@ export const VALIDATION_LIMITS = {
     name: { max: 120 },
     description: { max: 400 },
   },
+    facility: {
+    name: { min: 2, max: 120 },
+    description: { max: 400 },
+  },
   submission: {
     name: { max: 80 },
     email: { max: 120 },
