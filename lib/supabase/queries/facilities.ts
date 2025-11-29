@@ -31,9 +31,6 @@ const normalizeError = (error: PostgrestError | null) =>
 const resolveClient = async (client?: MaybeClient) =>
   Promise.resolve(client ?? getSupabaseBrowserClient());
 
-const loadServerClient = async () =>
-  (await import("../server-client")).getSupabaseServerClient();
-
 const toFacility = (row: FacilityRow): Facility => ({
   id: row.id,
   name: row.name,
@@ -124,7 +121,7 @@ export async function createFacility(
     };
   }
 
-  const supabase = await resolveClient(client ?? loadServerClient());
+  const supabase = await resolveClient(client);
   const insertPayload = mapInsertPayload(parsed.data);
   const { data, error } = await supabase
     .from("facilities")
@@ -155,7 +152,7 @@ export async function updateFacility(
     };
   }
 
-  const supabase = await resolveClient(client ?? loadServerClient());
+  const supabase = await resolveClient(client);
   const updatePayload = mapUpdatePayload(parsed.data);
 
   const { data, error } = await supabase
@@ -173,7 +170,7 @@ export async function deleteFacility(
   id: string,
   client?: MaybeClient,
 ): Promise<BaseResult<Facility>> {
-  const supabase = await resolveClient(client ?? loadServerClient());
+  const supabase = await resolveClient(client);
   const { data, error } = await supabase
     .from("facilities")
     .delete()
@@ -203,7 +200,7 @@ export async function upsertFacilitiesBulk(
     };
   }
 
-  const supabase = await resolveClient(client ?? loadServerClient());
+  const supabase = await resolveClient(client);
   const insertPayloads = parsed.data.map(mapInsertPayload);
   const { data, error } = await supabase
     .from("facilities")
