@@ -110,6 +110,7 @@ function MapTab({
         .filter((f) => f.coordinates?.lat && f.coordinates?.lng)
         .map((f) => ({
           id: f.id,
+          code: f.code,
           name: f.name,
           category: f.category,
           hasRooms: f.hasRooms,

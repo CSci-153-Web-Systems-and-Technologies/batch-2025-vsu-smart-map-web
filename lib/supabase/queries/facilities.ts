@@ -15,7 +15,7 @@ type BaseResult<T> = { data: T | null; error: PostgrestError | null };
 type MaybeClient = SupabaseClient | Promise<SupabaseClient>;
 
 const selectBase = () =>
-  "id, name, slug, description, category, has_rooms, latitude, longitude, image_url, created_at, updated_at";
+  "id, code, name, slug, description, category, has_rooms, latitude, longitude, image_url, created_at, updated_at";
 
 const normalizeError = (error: PostgrestError | null) =>
   error ? { ...error, message: "Unable to complete facility request" } : null;
@@ -26,6 +26,7 @@ const resolveClient = async (client?: MaybeClient) =>
 function toFacility(row: FacilityRow): Facility {
   const base = {
     id: row.id,
+    code: row.code ?? undefined,
     name: row.name,
     slug: row.slug,
     description: row.description ?? undefined,
@@ -44,6 +45,7 @@ function toFacility(row: FacilityRow): Facility {
 
 function mapInsertPayload(input: FacilityInsert) {
   return {
+    code: input.code ?? null,
     name: input.name,
     slug: input.slug ?? input.name.toLowerCase().replace(/\s+/g, "-"),
     description: input.description ?? null,
@@ -57,6 +59,7 @@ function mapInsertPayload(input: FacilityInsert) {
 
 function mapUpdatePayload(input: FacilityUpdate) {
   const patch: Record<string, unknown> = {};
+  if (input.code !== undefined) patch.code = input.code ?? null;
   if (input.name !== undefined) patch.name = input.name;
   if (input.slug !== undefined) patch.slug = input.slug;
   if (input.description !== undefined) patch.description = input.description ?? null;
