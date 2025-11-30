@@ -46,6 +46,7 @@ export const POI_FACILITY_CATEGORIES: readonly FacilityCategory[] = [
  */
 export interface BaseFacility extends AuditFields {
   readonly id: string;
+  readonly code?: string;
   readonly slug: string;
   readonly name: string;
   readonly description?: string;
@@ -92,11 +93,12 @@ export function isBuildingCategory(category: FacilityCategory): boolean {
 
 export type FacilitySummary = Pick<
   Facility,
-  "id" | "slug" | "name" | "category" | "coordinates" | "hasRooms"
+  "id" | "code" | "slug" | "name" | "category" | "coordinates" | "hasRooms"
 >;
 
 export interface FacilityMarkerPayload {
   readonly id: string;
+  readonly code?: string;
   readonly name: string;
   readonly category: FacilityCategory;
   readonly coordinates: LatLng;
@@ -107,6 +109,7 @@ export interface FacilityMarkerPayload {
 
 export interface FacilityRow {
   id: string;
+  code: string | null;
   name: string;
   slug: string;
   description: string | null;
@@ -122,6 +125,7 @@ export interface FacilityRow {
 // ============ Insert/Update Types ============
 
 export interface FacilityInsert {
+  code?: string;
   name: string;
   slug?: string;
   description?: string;
