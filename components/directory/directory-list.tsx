@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 export interface DirectoryListProps {
   facilities: Facility[];
   onFacilityClick?: (facility: Facility) => void;
+  onViewOnMap?: (facility: Facility) => void;
   className?: string;
 }
 
@@ -39,6 +40,7 @@ function groupFacilitiesByCategory(
 export function DirectoryList({
   facilities,
   onFacilityClick,
+  onViewOnMap,
   className,
 }: DirectoryListProps) {
   const groupedFacilities = useMemo(
@@ -87,6 +89,7 @@ export function DirectoryList({
                   key={facility.id}
                   facility={facility}
                   onClick={onFacilityClick}
+                  onViewOnMap={onViewOnMap}
                 />
               ))}
             </div>
