@@ -1,23 +1,128 @@
 import type { AuditFields, LatLng } from "./common";
-import type { FacilityType } from "@/lib/constants/facilities";
+import type { Room } from "./room";
 
-export interface Facility extends AuditFields {
+/**
+ * Unified facility categories matching the database enum.
+ * These categories cover both buildings (hasRooms: true) and POIs (hasRooms: false).
+ */
+export const FACILITY_CATEGORIES = [
+  'academic',
+  'administrative',
+  'residential',
+  'sports',
+  'dining',
+  'library',
+  'medical',
+  'parking',
+  'landmark',
+  'religious',
+  'utility',
+  'commercial',
+  'transportation',
+  'atm'
+] as const;
+
+export type FacilityCategory = typeof FACILITY_CATEGORIES[number];
+
+/** Categories that typically represent buildings with rooms */
+export const BUILDING_FACILITY_CATEGORIES: readonly FacilityCategory[] = [
+  'academic', 'administrative', 'residential', 'library'
+] as const;
+
+/** Categories that typically represent POIs without rooms */
+export const POI_FACILITY_CATEGORIES: readonly FacilityCategory[] = [
+  'sports', 'dining', 'medical', 'parking', 'landmark',
+  'religious', 'utility', 'commercial', 'transportation', 'atm'
+] as const;
+
+/**
+ * Base facility interface with shared fields for all facilities.
+ */
+export interface BaseFacility extends AuditFields {
+  readonly id: string;
+  readonly slug: string;
+  readonly name: string;
+  readonly description?: string;
+  readonly category: FacilityCategory;
+  readonly coordinates: LatLng;
+  readonly imageUrl?: string;
+}
+
+/**
+ * Facility that contains rooms (buildings).
+ */
+export interface FacilityWithRooms extends BaseFacility {
+  readonly hasRooms: true;
+  readonly rooms?: readonly Room[];
+}
+
+/**
+ * Facility without rooms (POIs/amenities).
+ */
+export interface FacilityPOI extends BaseFacility {
+  readonly hasRooms: false;
+}
+
+/**
+ * Unified Facility type using discriminated union.
+ */
+export type Facility = FacilityWithRooms | FacilityPOI;
+
+// ============ Type Guards ============
+
+export function isFacilityWithRooms(facility: Facility): facility is FacilityWithRooms {
+  return facility.hasRooms === true;
+}
+
+export function isFacilityPOI(facility: Facility): facility is FacilityPOI {
+  return facility.hasRooms === false;
+}
+
+export function isBuildingCategory(category: FacilityCategory): boolean {
+  return (BUILDING_FACILITY_CATEGORIES as readonly string[]).includes(category);
+}
+
+// ============ Helper Types ============
+
+export type FacilitySummary = Pick<
+  Facility,
+  "id" | "slug" | "name" | "category" | "coordinates" | "hasRooms"
+>;
+
+export interface FacilityMarkerPayload {
   readonly id: string;
   readonly name: string;
-  readonly type: FacilityType;
-  readonly description?: string;
-  readonly buildingId?: string | null;
+  readonly category: FacilityCategory;
   readonly coordinates: LatLng;
-  readonly isActive: boolean;
+  readonly hasRooms: boolean;
 }
 
-export interface FacilityInput {
-  readonly name: string;
-  readonly type: FacilityType;
-  readonly description?: string;
-  readonly buildingId?: string | null;
-  readonly coordinates: LatLng;
-  readonly isActive?: boolean;
+// ============ Database Types ============
+
+export interface FacilityRow {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  category: string;
+  has_rooms: boolean;
+  latitude: number;
+  longitude: number;
+  image_url: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
-export type FacilityUpdateInput = Partial<FacilityInput>;
+// ============ Insert/Update Types ============
+
+export interface FacilityInsert {
+  name: string;
+  slug?: string;
+  description?: string;
+  category: FacilityCategory;
+  hasRooms: boolean;
+  coordinates: LatLng;
+  imageUrl?: string;
+}
+
+export type FacilityUpdate = Partial<FacilityInsert>;
