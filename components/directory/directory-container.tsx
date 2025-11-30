@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { DirectoryList } from "./directory-list";
 import { DirectorySearch } from "./directory-search";
 import { DirectoryCategoryFilters } from "./directory-category-filters";
@@ -13,6 +14,7 @@ export interface DirectoryContainerProps {
 }
 
 export function DirectoryContainer({ facilities }: DirectoryContainerProps) {
+  const router = useRouter();
   const {
     searchTerm,
     setSearchTerm,
@@ -23,7 +25,15 @@ export function DirectoryContainer({ facilities }: DirectoryContainerProps) {
     clearFilters,
     resultCount,
     totalCount,
-  } = useDirectorySearch({ facilities });
+  } = useDirectorySearch({ facilities, enableUrlSync: true });
+
+  const handleFacilityClick = (facility: Facility) => {
+    console.log("[DirectoryContainer] Facility selected:", facility.name, facility.id);
+  };
+
+  const handleViewOnMap = (facility: Facility) => {
+    router.push(`/?facility=${facility.id}`);
+  };
 
   return (
     <div className="space-y-6">
@@ -73,7 +83,11 @@ export function DirectoryContainer({ facilities }: DirectoryContainerProps) {
           </Button>
         </div>
       ) : (
-        <DirectoryList facilities={filteredFacilities} />
+        <DirectoryList
+          facilities={filteredFacilities}
+          onFacilityClick={handleFacilityClick}
+          onViewOnMap={handleViewOnMap}
+        />
       )}
     </div>
   );

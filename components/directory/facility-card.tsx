@@ -1,8 +1,10 @@
 "use client";
 
 import Image from "next/image";
+import { MapPinned } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { getCategoryMeta } from "@/lib/constants/facilities";
 import type { Facility } from "@/lib/types/facility";
 import { cn } from "@/lib/utils";
@@ -10,11 +12,13 @@ import { cn } from "@/lib/utils";
 export interface FacilityCardProps {
   facility: Facility;
   onClick?: (facility: Facility) => void;
+  onViewOnMap?: (facility: Facility) => void;
   className?: string;
 }
 
-export function FacilityCard({ facility, onClick, className }: FacilityCardProps) {
+export function FacilityCard({ facility, onClick, onViewOnMap, className }: FacilityCardProps) {
   const meta = getCategoryMeta(facility.category);
+  const hasCoordinates = facility.coordinates?.lat && facility.coordinates?.lng;
   
   const handleClick = () => {
     onClick?.(facility);
@@ -25,6 +29,11 @@ export function FacilityCard({ facility, onClick, className }: FacilityCardProps
       e.preventDefault();
       onClick?.(facility);
     }
+  };
+
+  const handleViewOnMap = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onViewOnMap?.(facility);
   };
 
   return (
@@ -67,16 +76,32 @@ export function FacilityCard({ facility, onClick, className }: FacilityCardProps
           {facility.name}
         </h3>
         
-        <Badge
-          className="text-xs"
-          style={{ 
-            backgroundColor: meta.color,
-            color: "#ffffff",
-            borderColor: meta.color 
-          }}
-        >
-          {meta.label}
-        </Badge>
+        <div className="flex items-center justify-between gap-2">
+          <Badge
+            className="text-xs"
+            style={{ 
+              backgroundColor: meta.color,
+              color: "#ffffff",
+              borderColor: meta.color 
+            }}
+          >
+            {meta.label}
+          </Badge>
+
+          {hasCoordinates && onViewOnMap && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleViewOnMap}
+              className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+              aria-label={`View ${facility.name} on map`}
+            >
+              <MapPinned className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Map</span>
+            </Button>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
