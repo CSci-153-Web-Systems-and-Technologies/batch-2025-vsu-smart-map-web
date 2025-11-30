@@ -8,21 +8,11 @@ import type { Facility } from "@/lib/types/facility";
 import { cn } from "@/lib/utils";
 
 export interface FacilityCardProps {
-  /** The facility data to display */
   facility: Facility;
-  /** Callback when the card is clicked */
   onClick?: (facility: Facility) => void;
-  /** Additional CSS classes */
   className?: string;
 }
 
-/**
- * FacilityCard displays a single facility in the directory.
- * 
- * - Buildings (hasRooms: true) show a hero image
- * - POIs (hasRooms: false) show a category icon
- * - All cards display the facility name and a colored category badge
- */
 export function FacilityCard({ facility, onClick, className }: FacilityCardProps) {
   const meta = getCategoryMeta(facility.category);
   
@@ -50,10 +40,8 @@ export function FacilityCard({ facility, onClick, className }: FacilityCardProps
       role="button"
       aria-label={`View details for ${facility.name}`}
     >
-      {/* Image/Icon Section */}
       <div className="relative aspect-[16/10] w-full overflow-hidden bg-muted">
         {facility.hasRooms && facility.imageUrl ? (
-          // Building with hero image
           <Image
             src={facility.imageUrl}
             alt={facility.name}
@@ -62,7 +50,6 @@ export function FacilityCard({ facility, onClick, className }: FacilityCardProps
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
         ) : (
-          // POI or building without image - show category icon
           <div className="flex h-full w-full items-center justify-center">
             <Image
               src={meta.pinAsset}
@@ -75,7 +62,6 @@ export function FacilityCard({ facility, onClick, className }: FacilityCardProps
         )}
       </div>
 
-      {/* Content Section */}
       <CardContent className="p-4">
         <h3 className="mb-2 line-clamp-2 text-base font-semibold leading-tight text-foreground">
           {facility.name}
