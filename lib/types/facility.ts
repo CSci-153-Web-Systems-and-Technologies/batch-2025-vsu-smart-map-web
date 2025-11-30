@@ -3,12 +3,18 @@ import type { Room } from "./room";
 
 /**
  * Unified facility categories matching the database enum.
- * These categories cover both buildings (hasRooms: true) and POIs (hasRooms: false).
+ * Categories aligned with VSU campus data.
  */
 export const FACILITY_CATEGORIES = [
+  // Buildings with rooms (has_rooms = true)
   'academic',
   'administrative',
+  'research',
+  'office',
   'residential',
+  'dormitory',
+  'lodging',
+  // Facilities/POIs (has_rooms = false typically)
   'sports',
   'dining',
   'library',
@@ -26,7 +32,7 @@ export type FacilityCategory = typeof FACILITY_CATEGORIES[number];
 
 /** Categories that typically represent buildings with rooms */
 export const BUILDING_FACILITY_CATEGORIES: readonly FacilityCategory[] = [
-  'academic', 'administrative', 'residential', 'library'
+  'academic', 'administrative', 'research', 'office', 'residential', 'dormitory', 'lodging', 'library'
 ] as const;
 
 /** Categories that typically represent POIs without rooms */

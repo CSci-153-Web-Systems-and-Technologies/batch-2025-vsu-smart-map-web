@@ -322,7 +322,11 @@ export function getPinAsset(kind: PinKind, options: PinOptions = {}): PinAsset {
 const FACILITY_CATEGORY_TO_PIN: Record<FacilityCategory, PinId> = {
   academic: "classroom",
   administrative: "admin",
+  research: "office",
+  office: "office",
   residential: "dorm",
+  dormitory: "dorm",
+  lodging: "dorm",
   sports: "gym",
   dining: "canteen",
   library: "library",
@@ -342,7 +346,11 @@ const FACILITY_CATEGORY_TO_PIN: Record<FacilityCategory, PinId> = {
 const CATEGORY_COLORS: Record<FacilityCategory, string> = {
   academic: "#006A4E",
   administrative: "#FFB81C",
+  research: "#6366F1",
+  office: "#374151",
   residential: "#2563EB",
+  dormitory: "#0EA5E9",
+  lodging: "#14B8A6",
   sports: "#16A34A",
   dining: "#F59E0B",
   library: "#4B5563",

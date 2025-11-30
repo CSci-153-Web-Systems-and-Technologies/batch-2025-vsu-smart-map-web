@@ -3,10 +3,17 @@
 -- The has_rooms boolean discriminates between buildings (true) and POIs (false)
 
 -- 1. Create facility_category enum with all possible categories
+-- Categories aligned with VSU campus data (locations.md)
 CREATE TYPE facility_category AS ENUM (
+  -- Buildings with rooms (has_rooms = true)
   'academic',
   'administrative',
+  'research',
+  'office',
   'residential',
+  'dormitory',
+  'lodging',
+  -- Facilities/POIs (has_rooms = false typically)
   'sports',
   'dining',
   'library',
