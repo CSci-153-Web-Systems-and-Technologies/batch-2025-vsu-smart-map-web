@@ -1,5 +1,6 @@
 import { BUILDING_CATEGORY_META, type BuildingCategory } from "@/lib/constants/buildings";
 import { FACILITY_TYPES, type FacilityType } from "@/lib/constants/facilities";
+import type { FacilityCategory } from "@/lib/types/facility";
 
 type PinKind = BuildingCategory | FacilityType;
 type PinId =
@@ -304,6 +305,76 @@ function buildSvgPin(kind: PinKind, options: PinOptions): string {
 
 export function getPinAsset(kind: PinKind, options: PinOptions = {}): PinAsset {
   const html = buildSvgPin(kind, options);
+  return {
+    html,
+    className: "vsu-pin",
+    iconSize: PIN_SIZE,
+    iconAnchor: PIN_ANCHOR,
+    tooltipAnchor: TOOLTIP_ANCHOR,
+  };
+}
+
+// ============ Unified Facility Category Support ============
+
+/**
+ * Map unified facility categories to pin IDs.
+ */
+const FACILITY_CATEGORY_TO_PIN: Record<FacilityCategory, PinId> = {
+  academic: "classroom",
+  administrative: "admin",
+  residential: "dorm",
+  sports: "gym",
+  dining: "canteen",
+  library: "library",
+  medical: "clinic",
+  parking: "parking",
+  landmark: "office",
+  religious: "office",
+  utility: "water",
+  commercial: "office",
+  transportation: "gate",
+  atm: "cashier",
+};
+
+/**
+ * Category colors for unified facilities.
+ */
+const CATEGORY_COLORS: Record<FacilityCategory, string> = {
+  academic: "#006A4E",
+  administrative: "#FFB81C",
+  residential: "#2563EB",
+  sports: "#16A34A",
+  dining: "#F59E0B",
+  library: "#4B5563",
+  medical: "#DC2626",
+  parking: "#6B7280",
+  landmark: "#8B5CF6",
+  religious: "#0284C7",
+  utility: "#6B7280",
+  commercial: "#16A34A",
+  transportation: "#2563EB",
+  atm: "#16A34A",
+};
+
+/**
+ * Get pin asset for a unified facility category.
+ */
+export function getPinAssetForCategory(
+  category: FacilityCategory,
+  options: { selected?: boolean } = {}
+): PinAsset {
+  const pinId = FACILITY_CATEGORY_TO_PIN[category];
+  const libraryPin = PIN_LIBRARY[pinId];
+  const color = CATEGORY_COLORS[category];
+  const stroke = options.selected ? "#FFB81C" : "#ffffff";
+
+  const html = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 64 64" style="color: ${color};">
+      <path d="M32 4c-12.15 0-22 9.85-22 22 0 15.6 22 34 22 34s22-18.4 22-34C54 13.85 44.15 4 32 4Z" fill="currentColor" stroke="${stroke}" stroke-width="3" />
+      ${libraryPin.inner}
+    </svg>
+  `;
+
   return {
     html,
     className: "vsu-pin",
