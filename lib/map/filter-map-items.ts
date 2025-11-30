@@ -5,15 +5,12 @@ export function filterMapItems(
   items: readonly MapItem[],
   term: string,
   selectedCategory?: FacilityCategory | null,
-  categoryFilters?: FacilityCategory[] | null,
 ) {
   const normalizedTerm = term.trim().toLowerCase();
   const filtered = items.filter((item) => {
     const matchesCategory = selectedCategory
       ? item.category === selectedCategory
-      : categoryFilters && categoryFilters.length > 0
-        ? item.category && categoryFilters.includes(item.category)
-        : true;
+      : true;
 
     const matchesTerm =
       normalizedTerm.length === 0 ||

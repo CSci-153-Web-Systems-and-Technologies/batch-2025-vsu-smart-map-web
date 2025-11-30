@@ -7,7 +7,6 @@ import { StudentTabs } from "@/components/student-tabs";
 import { MapContainerClient } from "@/components/map/map-container";
 import { MapSearchPanel } from "@/components/map/map-search-panel";
 import type { MapItem } from "@/lib/types/map";
-import type { FacilityCategory } from "@/lib/types/facility";
 import { getFacilities } from "@/lib/supabase/queries/facilities";
 
 const MapSelectionLayer = dynamic(
@@ -91,7 +90,6 @@ function MapTab({
 }) {
   const [items, setItems] = useState<readonly MapItem[]>([]);
   const [filtered, setFiltered] = useState<readonly MapItem[]>([]);
-  const [facilityFilters, setFacilityFilters] = useState<FacilityCategory[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -151,8 +149,6 @@ function MapTab({
         onSelect={onSelect}
         onClearSelection={onClearSelection}
         onResultsChange={setFiltered}
-        facilityFilters={facilityFilters}
-        onFacilityFiltersChange={setFacilityFilters}
       />
     </section>
   );
@@ -167,8 +163,6 @@ function MapView({
   onSelect,
   onClearSelection,
   onResultsChange,
-  facilityFilters,
-  onFacilityFiltersChange,
 }: {
   items: readonly MapItem[];
   filtered: readonly MapItem[];
@@ -178,8 +172,6 @@ function MapView({
   onSelect: (id: string) => void;
   onClearSelection: () => void;
   onResultsChange: (items: MapItem[]) => void;
-  facilityFilters: FacilityCategory[];
-  onFacilityFiltersChange: (types: FacilityCategory[]) => void;
 }) {
   const hasResults = filtered.length > 0;
 
@@ -188,8 +180,6 @@ function MapView({
       <MapSearchPanel
         items={items}
         onResultsChange={onResultsChange}
-        facilityFilters={facilityFilters}
-        onFacilityFiltersChange={onFacilityFiltersChange}
       />
 
       {error && (
