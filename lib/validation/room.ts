@@ -2,7 +2,7 @@ import { z } from "zod";
 import { VALIDATION_LIMITS } from "@/lib/constants";
 
 export const roomSchema = z.object({
-  buildingId: z.string().uuid(),
+  facilityId: z.string().uuid(),
   roomCode: z
     .string()
     .min(VALIDATION_LIMITS.room.code.min)

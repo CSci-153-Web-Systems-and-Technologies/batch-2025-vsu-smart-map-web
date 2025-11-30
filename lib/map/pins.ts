@@ -1,7 +1,5 @@
-import { BUILDING_CATEGORY_META, type BuildingCategory } from "@/lib/constants/buildings";
-import { FACILITY_TYPES, type FacilityType } from "@/lib/constants/facilities";
+import type { FacilityCategory } from "@/lib/types/facility";
 
-type PinKind = BuildingCategory | FacilityType;
 type PinId =
   | "classroom"
   | "office"
@@ -24,11 +22,6 @@ type PinId =
   | "gate"
   | "parking";
 
-type PinOptions = {
-  selected?: boolean;
-  pinId?: PinId;
-};
-
 type PinAsset = {
   html: string;
   className: string;
@@ -40,38 +33,6 @@ type PinAsset = {
 const PIN_SIZE: [number, number] = [40, 40];
 const PIN_ANCHOR: [number, number] = [20, 40];
 const TOOLTIP_ANCHOR: [number, number] = [0, -12];
-
-const DEFAULT_PIN_FOR_CATEGORY: Record<BuildingCategory, PinId> = {
-  ACADEMIC: "classroom",
-  ADMINISTRATIVE: "admin",
-  DORMITORY: "dorm",
-  SERVICE: "office",
-  SPORTS: "gym",
-  LABORATORY: "lab",
-};
-
-const DEFAULT_PIN_FOR_FACILITY: Record<FacilityType, PinId> = {
-  admin: "admin",
-  registrar: "registrar",
-  cashier: "cashier",
-  ict: "ict",
-  lab: "lab",
-  library: "library",
-  dorm: "dorm",
-  canteen: "canteen",
-  clinic: "clinic",
-  restroom: "restroom",
-  court: "court",
-  gym: "gym",
-  oval: "oval",
-  stage: "stage",
-  printing: "printing",
-  water: "water",
-  gate: "gate",
-  parking: "parking",
-  office: "office",
-  classroom: "classroom",
-};
 
 const PIN_LIBRARY: Record<
   PinId,
@@ -280,30 +241,64 @@ const PIN_LIBRARY: Record<
   },
 };
 
-function resolvePinId(kind: PinKind): PinId {
-  // Building categories map via default map; facility types map directly to pin ids by name
-  if ((FACILITY_TYPES as readonly string[]).includes(kind as string)) {
-    return DEFAULT_PIN_FOR_FACILITY[kind as FacilityType];
-  }
-  return DEFAULT_PIN_FOR_CATEGORY[kind as BuildingCategory];
-}
+const FACILITY_CATEGORY_TO_PIN: Record<FacilityCategory, PinId> = {
+  academic: "classroom",
+  administrative: "admin",
+  research: "office",
+  office: "office",
+  residential: "dorm",
+  dormitory: "dorm",
+  lodging: "dorm",
+  sports: "gym",
+  dining: "canteen",
+  library: "library",
+  medical: "clinic",
+  parking: "parking",
+  landmark: "office",
+  religious: "office",
+  utility: "water",
+  commercial: "office",
+  transportation: "gate",
+  atm: "cashier",
+};
 
-function buildSvgPin(kind: PinKind, options: PinOptions): string {
-  const pinId = options.pinId ?? resolvePinId(kind);
+const CATEGORY_COLORS: Record<FacilityCategory, string> = {
+  academic: "#006A4E",
+  administrative: "#FFB81C",
+  research: "#6366F1",
+  office: "#374151",
+  residential: "#2563EB",
+  dormitory: "#0EA5E9",
+  lodging: "#14B8A6",
+  sports: "#16A34A",
+  dining: "#F59E0B",
+  library: "#4B5563",
+  medical: "#DC2626",
+  parking: "#6B7280",
+  landmark: "#8B5CF6",
+  religious: "#0284C7",
+  utility: "#6B7280",
+  commercial: "#16A34A",
+  transportation: "#2563EB",
+  atm: "#16A34A",
+};
+
+export function getPinAssetForCategory(
+  category: FacilityCategory,
+  options: { selected?: boolean } = {}
+): PinAsset {
+  const pinId = FACILITY_CATEGORY_TO_PIN[category];
   const libraryPin = PIN_LIBRARY[pinId];
-  const meta = BUILDING_CATEGORY_META[kind as BuildingCategory];
-  const stroke = options.selected ? meta?.accent ?? "#ffffff" : "#ffffff";
+  const color = CATEGORY_COLORS[category];
+  const stroke = options.selected ? "#FFB81C" : "#ffffff";
 
-  return `
-    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 64 64" style="color: ${libraryPin.color};">
+  const html = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 64 64" style="color: ${color};">
       <path d="M32 4c-12.15 0-22 9.85-22 22 0 15.6 22 34 22 34s22-18.4 22-34C54 13.85 44.15 4 32 4Z" fill="currentColor" stroke="${stroke}" stroke-width="3" />
       ${libraryPin.inner}
     </svg>
   `;
-}
 
-export function getPinAsset(kind: PinKind, options: PinOptions = {}): PinAsset {
-  const html = buildSvgPin(kind, options);
   return {
     html,
     className: "vsu-pin",

@@ -1,29 +1,21 @@
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
-import { FACILITY_TYPES } from "@/lib/constants/facilities";
-import { facilitySchema, safeValidate } from "@/lib/validation";
-import type { Facility, FacilityInput, FacilityUpdateInput } from "@/lib/types/facility";
+import type {
+  Facility,
+  FacilityCategory,
+  FacilityRow,
+  FacilityInsert,
+  FacilityUpdate,
+  FacilityWithRooms,
+  FacilityPOI,
+} from "@/lib/types/facility";
+import { FACILITY_CATEGORIES } from "@/lib/types/facility";
 import { getSupabaseBrowserClient } from "../browser-client";
-
-type FacilityType = (typeof FACILITY_TYPES)[number];
-
-type FacilityRow = {
-  id: string;
-  name: string;
-  type: FacilityType;
-  description: string | null;
-  building_id: string | null;
-  latitude: number;
-  longitude: number;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-};
 
 type BaseResult<T> = { data: T | null; error: PostgrestError | null };
 type MaybeClient = SupabaseClient | Promise<SupabaseClient>;
 
 const selectBase = () =>
-  "id, name, type, description, building_id, latitude, longitude, is_active, created_at, updated_at";
+  "id, code, name, slug, description, category, has_rooms, latitude, longitude, image_url, created_at, updated_at";
 
 const normalizeError = (error: PostgrestError | null) =>
   error ? { ...error, message: "Unable to complete facility request" } : null;
@@ -31,61 +23,107 @@ const normalizeError = (error: PostgrestError | null) =>
 const resolveClient = async (client?: MaybeClient) =>
   Promise.resolve(client ?? getSupabaseBrowserClient());
 
-const toFacility = (row: FacilityRow): Facility => ({
-  id: row.id,
-  name: row.name,
-  type: row.type,
-  description: row.description ?? undefined,
-  buildingId: row.building_id,
-  coordinates: { lat: row.latitude, lng: row.longitude },
-  isActive: row.is_active,
-  createdAt: row.created_at,
-  updatedAt: row.updated_at,
-});
+function toFacility(row: FacilityRow): Facility {
+  const base = {
+    id: row.id,
+    code: row.code ?? undefined,
+    name: row.name,
+    slug: row.slug,
+    description: row.description ?? undefined,
+    category: row.category as FacilityCategory,
+    coordinates: { lat: row.latitude, lng: row.longitude },
+    imageUrl: row.image_url ?? undefined,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
 
-const mapInsertPayload = (input: FacilityInput) => ({
-  name: input.name,
-  type: input.type,
-  description: input.description || null,
-  building_id: input.buildingId || null,
-  latitude: input.coordinates.lat,
-  longitude: input.coordinates.lng,
-  is_active: input.isActive ?? true,
-});
+  if (row.has_rooms) {
+    return { ...base, hasRooms: true } as FacilityWithRooms;
+  }
+  return { ...base, hasRooms: false } as FacilityPOI;
+}
 
-const mapUpdatePayload = (input: FacilityUpdateInput) => {
+function mapInsertPayload(input: FacilityInsert) {
+  return {
+    code: input.code ?? null,
+    name: input.name,
+    slug: input.slug ?? input.name.toLowerCase().replace(/\s+/g, "-"),
+    description: input.description ?? null,
+    category: input.category,
+    has_rooms: input.hasRooms,
+    latitude: input.coordinates.lat,
+    longitude: input.coordinates.lng,
+    image_url: input.imageUrl ?? null,
+  };
+}
+
+function mapUpdatePayload(input: FacilityUpdate) {
   const patch: Record<string, unknown> = {};
+  if (input.code !== undefined) patch.code = input.code ?? null;
   if (input.name !== undefined) patch.name = input.name;
-  if (input.type !== undefined) patch.type = input.type;
-  if (input.description !== undefined) patch.description = input.description || null;
-  if (input.buildingId !== undefined) patch.building_id = input.buildingId || null;
+  if (input.slug !== undefined) patch.slug = input.slug;
+  if (input.description !== undefined) patch.description = input.description ?? null;
+  if (input.category !== undefined) patch.category = input.category;
+  if (input.hasRooms !== undefined) patch.has_rooms = input.hasRooms;
   if (input.coordinates) {
     patch.latitude = input.coordinates.lat;
     patch.longitude = input.coordinates.lng;
   }
-  if (input.isActive !== undefined) patch.is_active = input.isActive;
+  if (input.imageUrl !== undefined) patch.image_url = input.imageUrl ?? null;
   return patch;
-};
+}
 
 export async function getFacilities(params?: {
-  type?: FacilityType | FacilityType[];
-  isActive?: boolean;
+  category?: FacilityCategory | FacilityCategory[];
+  hasRooms?: boolean;
   client?: MaybeClient;
 }): Promise<BaseResult<Facility[]>> {
   const client = await resolveClient(params?.client);
   const query = client.from("facilities").select(selectBase());
 
-  if (params?.type) {
-    if (Array.isArray(params.type)) {
-      query.in("type", params.type);
+  if (params?.category) {
+    if (Array.isArray(params.category)) {
+      query.in("category", params.category);
     } else {
-      query.eq("type", params.type);
+      query.eq("category", params.category);
     }
+  }
+
+  if (params?.hasRooms !== undefined) {
+    query.eq("has_rooms", params.hasRooms);
   }
 
   const { data, error } = await query.order("name", { ascending: true });
   const rows = data as FacilityRow[] | null;
   return { data: rows ? rows.map(toFacility) : null, error: normalizeError(error) };
+}
+
+export async function getBuildings(params?: {
+  category?: FacilityCategory | FacilityCategory[];
+  client?: MaybeClient;
+}): Promise<BaseResult<FacilityWithRooms[]>> {
+  const result = await getFacilities({
+    ...params,
+    hasRooms: true,
+  });
+  return {
+    data: result.data as FacilityWithRooms[] | null,
+    error: result.error,
+  };
+}
+
+export async function getPOIs(params?: {
+  category?: FacilityCategory | FacilityCategory[];
+  client?: MaybeClient;
+}): Promise<BaseResult<FacilityPOI[]>> {
+  const result = await getFacilities({
+    ...params,
+    hasRooms: false,
+  });
+  return {
+    data: result.data as FacilityPOI[] | null,
+    error: result.error,
+  };
 }
 
 export async function getFacilityById(params: {
@@ -103,26 +141,27 @@ export async function getFacilityById(params: {
   return { data: row ? toFacility(row) : null, error: normalizeError(error) };
 }
 
+export async function getFacilityBySlug(params: {
+  slug: string;
+  client?: MaybeClient;
+}): Promise<BaseResult<Facility>> {
+  const client = await resolveClient(params.client);
+  const { data, error } = await client
+    .from("facilities")
+    .select(selectBase())
+    .eq("slug", params.slug)
+    .maybeSingle();
+
+  const row = data as FacilityRow | null;
+  return { data: row ? toFacility(row) : null, error: normalizeError(error) };
+}
+
 export async function createFacility(
-  payload: unknown,
+  input: FacilityInsert,
   client?: MaybeClient,
 ): Promise<BaseResult<Facility>> {
-  const parsed = safeValidate(facilitySchema, payload);
-  if (!parsed.success) {
-    return {
-      data: null,
-      error: {
-        name: "ValidationError",
-        message: parsed.errors.join("; "),
-        details: "",
-        hint: "",
-        code: "VALIDATION_FAILED",
-      } as PostgrestError,
-    };
-  }
-
   const supabase = await resolveClient(client);
-  const insertPayload = mapInsertPayload(parsed.data);
+  const insertPayload = mapInsertPayload(input);
   const { data, error } = await supabase
     .from("facilities")
     .insert(insertPayload)
@@ -135,25 +174,11 @@ export async function createFacility(
 
 export async function updateFacility(
   id: string,
-  payload: unknown,
+  input: FacilityUpdate,
   client?: MaybeClient,
 ): Promise<BaseResult<Facility>> {
-  const parsed = safeValidate(facilitySchema.partial(), payload);
-  if (!parsed.success) {
-    return {
-      data: null,
-      error: {
-        name: "ValidationError",
-        message: parsed.errors.join("; "),
-        details: "",
-        hint: "",
-        code: "VALIDATION_FAILED",
-      } as PostgrestError,
-    };
-  }
-
   const supabase = await resolveClient(client);
-  const updatePayload = mapUpdatePayload(parsed.data);
+  const updatePayload = mapUpdatePayload(input);
 
   const { data, error } = await supabase
     .from("facilities")
@@ -182,31 +207,6 @@ export async function deleteFacility(
   return { data: row ? toFacility(row) : null, error: normalizeError(error) };
 }
 
-export async function upsertFacilitiesBulk(
-  payloads: unknown[],
-  client?: MaybeClient,
-): Promise<BaseResult<Facility[]>> {
-  const parsed = safeValidate(facilitySchema.array(), payloads);
-  if (!parsed.success) {
-    return {
-      data: null,
-      error: {
-        name: "ValidationError",
-        message: parsed.errors.join("; "),
-        details: "",
-        hint: "",
-        code: "VALIDATION_FAILED",
-      } as PostgrestError,
-    };
-  }
-
-  const supabase = await resolveClient(client);
-  const insertPayloads = parsed.data.map(mapInsertPayload);
-  const { data, error } = await supabase
-    .from("facilities")
-    .upsert(insertPayloads, { onConflict: "id" })
-    .select(selectBase());
-
-  const rows = data as FacilityRow[] | null;
-  return { data: rows ? rows.map(toFacility) : null, error: normalizeError(error) };
+export function isValidCategory(category: string): category is FacilityCategory {
+  return (FACILITY_CATEGORIES as readonly string[]).includes(category);
 }

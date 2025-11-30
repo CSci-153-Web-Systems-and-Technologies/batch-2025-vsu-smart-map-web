@@ -11,7 +11,7 @@ type StorageResult<T> = {
   error: PostgrestError | StorageError | null;
 };
 
-const BUCKET = STORAGE_BUCKETS.buildingImages;
+const BUCKET = STORAGE_BUCKETS.facilityImages;
 const MAX_BYTES = STORAGE_LIMITS.imageMaxMB * 1024 * 1024;
 const ACCEPTED = new Set<string>(STORAGE_LIMITS.acceptedTypes);
 
@@ -39,8 +39,8 @@ const validateFile = (file: File | Blob) => {
 const getStorageClient = async (useServiceRole = false) =>
   useServiceRole ? getSupabaseServiceRoleClient() : getSupabaseServerClient();
 
-export const uploadBuildingHero = async (
-  buildingId: string,
+export const uploadFacilityHero = async (
+  facilityId: string,
   file: File | Blob,
   filename: string,
   useServiceRole = false,
@@ -50,7 +50,7 @@ export const uploadBuildingHero = async (
     return { data: null, error: normalizeError(validationError) };
   }
 
-  const prefix = stripBucket(STORAGE_PATHS.buildingHero(buildingId));
+  const prefix = stripBucket(STORAGE_PATHS.facilityHero(facilityId));
   const path = makePath(prefix, filename);
   const supabase = await getStorageClient(useServiceRole);
   const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
@@ -67,7 +67,7 @@ export const uploadBuildingHero = async (
 };
 
 export const uploadRoomImage = async (
-  buildingId: string,
+  facilityId: string,
   roomId: string,
   file: File | Blob,
   filename: string,
@@ -78,7 +78,7 @@ export const uploadRoomImage = async (
     return { data: null, error: normalizeError(validationError) };
   }
 
-  const prefix = stripBucket(STORAGE_PATHS.roomImage(buildingId, roomId));
+  const prefix = stripBucket(STORAGE_PATHS.roomImage(facilityId, roomId));
   const path = makePath(prefix, filename);
   const supabase = await getStorageClient(useServiceRole);
   const { error } = await supabase.storage.from(BUCKET).upload(path, file, {

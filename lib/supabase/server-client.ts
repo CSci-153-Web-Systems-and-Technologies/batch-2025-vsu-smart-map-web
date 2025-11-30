@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createClient as createSupabaseClient, type SupabaseClient } from "@supabase/supabase-js";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -48,10 +48,13 @@ export const getSupabaseServerClient = async () => {
   });
 };
 
+/** @deprecated Use getSupabaseServerClient instead */
+export const createClient = getSupabaseServerClient;
+
 export const getSupabaseServiceRoleClient = () => {
   if (serviceClient) return serviceClient;
   assertServiceEnv();
-  serviceClient = createClient(url!, serviceRoleKey!, {
+  serviceClient = createSupabaseClient(url!, serviceRoleKey!, {
     auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
   });
   return serviceClient;
