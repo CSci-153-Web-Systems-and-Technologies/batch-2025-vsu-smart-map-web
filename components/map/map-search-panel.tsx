@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import type { BuildingCategory } from "@/lib/constants/buildings";
-import { FACILITY_TYPES } from "@/lib/constants/facilities";
-import type { FacilityType } from "@/lib/constants/facilities";
+import type { FacilityCategory } from "@/lib/types/facility";
+import { FACILITY_CATEGORIES } from "@/lib/types/facility";
+import { getCategoryLabel } from "@/lib/constants/facilities";
 import type { MapItem } from "@/lib/types/map";
 import { filterMapItems } from "@/lib/map/filter-map-items";
 import { useMapSearch } from "@/hooks/use-map-search";
@@ -14,21 +14,21 @@ type MapSearchPanelProps = {
   items: readonly MapItem[];
   onResultsChange?: (items: MapItem[]) => void;
   onMatchCountChange?: (count: number) => void;
-  initialBuildingCategory?: BuildingCategory | null;
-  facilityFilters?: FacilityType[];
-  onFacilityFiltersChange?: (types: FacilityType[]) => void;
+  initialCategory?: FacilityCategory | null;
+  facilityFilters?: FacilityCategory[];
+  onFacilityFiltersChange?: (types: FacilityCategory[]) => void;
 };
 
 export function MapSearchPanel({
   items,
   onResultsChange,
   onMatchCountChange,
-  initialBuildingCategory = null,
+  initialCategory = null,
   facilityFilters = [],
   onFacilityFiltersChange,
 }: MapSearchPanelProps) {
   const { searchTerm, setSearchTerm, selectedCategory, setSelectedCategory, debouncedTerm } =
-    useMapSearch(initialBuildingCategory);
+    useMapSearch(initialCategory);
 
   const { results, matchCount } = useMemo(
     () => filterMapItems(items, debouncedTerm, selectedCategory, facilityFilters),
@@ -45,7 +45,7 @@ export function MapSearchPanel({
     }
   }, [matchCount, onMatchCountChange]);
 
-  const toggleFacility = (type: FacilityType) => {
+  const toggleFacility = (type: FacilityCategory) => {
     if (!onFacilityFiltersChange) return;
     if (facilityFilters.includes(type)) {
       onFacilityFiltersChange(facilityFilters.filter((t) => t !== type));
@@ -72,8 +72,8 @@ function FacilityFilters({
   onToggle,
   onClear,
 }: {
-  value: FacilityType[];
-  onToggle: (type: FacilityType) => void;
+  value: FacilityCategory[];
+  onToggle: (type: FacilityCategory) => void;
   onClear: () => void;
 }) {
   return (
@@ -87,7 +87,7 @@ function FacilityFilters({
       >
         All facilities
       </button>
-      {FACILITY_TYPES.map((type) => {
+      {FACILITY_CATEGORIES.map((type) => {
         const active = value.includes(type);
         return (
           <button
@@ -100,7 +100,7 @@ function FacilityFilters({
                 : "border-border text-foreground hover:border-muted-foreground/60"
             }`}
           >
-            {type}
+            {getCategoryLabel(type)}
           </button>
         );
       })}

@@ -1,16 +1,10 @@
 export const VALIDATION_LIMITS = {
-  building: {
-    code: { min: 2, max: 24 },
-    name: { min: 3, max: 120 },
-    description: { max: 800 },
-    address: { max: 160 },
-  },
   room: {
     code: { min: 1, max: 16 },
     name: { max: 120 },
     description: { max: 400 },
   },
-    facility: {
+  facility: {
     name: { min: 2, max: 120 },
     description: { max: 400 },
   },

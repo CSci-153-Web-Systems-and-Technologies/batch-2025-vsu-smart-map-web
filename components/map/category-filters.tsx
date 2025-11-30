@@ -1,10 +1,11 @@
 "use client";
 
-import { BUILDING_CATEGORIES, BUILDING_CATEGORY_META, type BuildingCategory } from "@/lib/constants/buildings";
+import { FACILITY_CATEGORIES, type FacilityCategory } from "@/lib/types/facility";
+import { FACILITY_CATEGORY_META } from "@/lib/constants/facilities";
 
 type CategoryFiltersProps = {
-  value: BuildingCategory | null;
-  onChange: (value: BuildingCategory | null) => void;
+  value: FacilityCategory | null;
+  onChange: (value: FacilityCategory | null) => void;
 };
 
 export function CategoryFilters({ value, onChange }: CategoryFiltersProps) {
@@ -21,8 +22,8 @@ export function CategoryFilters({ value, onChange }: CategoryFiltersProps) {
       >
         All
       </button>
-      {BUILDING_CATEGORIES.map((cat) => {
-        const meta = BUILDING_CATEGORY_META[cat];
+      {FACILITY_CATEGORIES.map((cat) => {
+        const meta = FACILITY_CATEGORY_META[cat];
         const isActive = value === cat;
         return (
           <button

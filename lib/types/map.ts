@@ -1,15 +1,11 @@
 import type { LatLng } from "./common";
-import type { BuildingCategory } from "@/lib/constants/buildings";
-import type { FacilityType } from "@/lib/constants/facilities";
-
-export type MapItemKind = "building" | "facility";
+import type { FacilityCategory } from "@/lib/types/facility";
 
 export type MapItem = {
-  readonly kind: MapItemKind;
   readonly id: string;
   readonly name: string;
   readonly code?: string;
-  readonly category?: BuildingCategory;
-  readonly facilityType?: FacilityType;
+  readonly category?: FacilityCategory;
+  readonly hasRooms?: boolean;
   readonly coordinates: LatLng;
 };
