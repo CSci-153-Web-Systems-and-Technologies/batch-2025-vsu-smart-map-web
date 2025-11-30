@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { AppHeader } from "@/components/app-header";
 import { StudentTabs } from "@/components/student-tabs";
 import { MapContainerClient } from "@/components/map/map-container";
@@ -32,8 +33,19 @@ const TAB_CONTENT: Record<TabId, { title: string; body: string }> = {
 };
 
 export default function HomePage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabId>("map");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const facilityId = searchParams.get("facility");
+    if (facilityId) {
+      setSelectedId(facilityId);
+      setActiveTab("map");
+      router.replace("/", { scroll: false });
+    }
+  }, [searchParams, router]);
 
   return (
     <>

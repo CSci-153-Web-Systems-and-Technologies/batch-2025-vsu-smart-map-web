@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { getFacilities } from "@/lib/supabase/queries/facilities";
 import { createClient } from "@/lib/supabase/server-client";
 import { DirectoryContainer } from "@/components/directory";
@@ -6,6 +7,24 @@ export const metadata = {
   title: "Directory | VSU SmartMap",
   description: "Browse all campus facilities and points of interest",
 };
+
+function DirectorySkeleton() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      <div className="h-10 w-full max-w-md rounded-md bg-muted" />
+      <div className="flex flex-wrap gap-2">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="h-8 w-20 rounded-full bg-muted" />
+        ))}
+      </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="h-48 rounded-xl bg-muted" />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default async function DirectoryPage() {
   const client = await createClient();
@@ -33,7 +52,9 @@ export default async function DirectoryPage() {
         </p>
       </header>
 
-      <DirectoryContainer facilities={facilities ?? []} />
+      <Suspense fallback={<DirectorySkeleton />}>
+        <DirectoryContainer facilities={facilities ?? []} />
+      </Suspense>
     </main>
   );
 }
