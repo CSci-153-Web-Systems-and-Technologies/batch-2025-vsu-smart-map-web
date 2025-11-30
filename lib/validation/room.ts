@@ -14,8 +14,6 @@ export const roomSchema = z.object({
     .optional()
     .or(z.literal("")),
   floor: z.number().int().optional(),
-  /** @deprecated Use facilityId instead */
-  buildingId: z.string().uuid().optional(),
 });
 
 export type RoomFormValues = z.infer<typeof roomSchema>;
