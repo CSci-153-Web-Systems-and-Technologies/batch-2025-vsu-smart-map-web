@@ -1,14 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import type { Facility, FacilityCategory } from "@/lib/types/facility";
+import { FACILITY_CATEGORY_META } from "@/lib/constants/facilities";
 
 const DEBOUNCE_MS = 300;
+const URL_SYNC_DEBOUNCE_MS = 500;
+
+const VALID_CATEGORIES = Object.keys(FACILITY_CATEGORY_META) as FacilityCategory[];
 
 export interface UseDirectorySearchOptions {
   facilities: Facility[];
   initialSearch?: string;
   initialCategories?: FacilityCategory[];
+  enableUrlSync?: boolean;
 }
 
 export interface UseDirectorySearchReturn {
@@ -28,11 +34,23 @@ export function useDirectorySearch({
   facilities,
   initialSearch = "",
   initialCategories = [],
+  enableUrlSync = false,
 }: UseDirectorySearchOptions): UseDirectorySearchReturn {
-  const [searchTerm, setSearchTerm] = useState(initialSearch);
-  const [debouncedTerm, setDebouncedTerm] = useState(initialSearch);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const urlSearch = enableUrlSync ? (searchParams.get("q") ?? "") : initialSearch;
+  const urlCategories = enableUrlSync
+    ? searchParams
+        .getAll("category")
+        .filter((c): c is FacilityCategory => VALID_CATEGORIES.includes(c as FacilityCategory))
+    : initialCategories;
+
+  const [searchTerm, setSearchTerm] = useState(urlSearch);
+  const [debouncedTerm, setDebouncedTerm] = useState(urlSearch);
   const [selectedCategories, setSelectedCategories] =
-    useState<FacilityCategory[]>(initialCategories);
+    useState<FacilityCategory[]>(urlCategories);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -41,6 +59,34 @@ export function useDirectorySearch({
 
     return () => clearTimeout(timer);
   }, [searchTerm]);
+
+  const updateUrl = useCallback(
+    (search: string, categories: FacilityCategory[]) => {
+      if (!enableUrlSync) return;
+
+      const params = new URLSearchParams();
+      if (search.trim()) {
+        params.set("q", search.trim());
+      }
+      categories.forEach((c) => params.append("category", c));
+
+      const queryString = params.toString();
+      const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
+
+      router.replace(newUrl, { scroll: false });
+    },
+    [enableUrlSync, pathname, router]
+  );
+
+  useEffect(() => {
+    if (!enableUrlSync) return;
+
+    const timer = setTimeout(() => {
+      updateUrl(debouncedTerm, selectedCategories);
+    }, URL_SYNC_DEBOUNCE_MS);
+
+    return () => clearTimeout(timer);
+  }, [debouncedTerm, selectedCategories, updateUrl, enableUrlSync]);
 
   const filteredFacilities = useMemo(() => {
     return facilities.filter((facility) => {
