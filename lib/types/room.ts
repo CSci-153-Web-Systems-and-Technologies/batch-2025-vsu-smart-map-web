@@ -7,8 +7,6 @@ export interface Room extends AuditFields {
   readonly name?: string;
   readonly description?: string;
   readonly floor?: number;
-  /** @deprecated Use facilityId instead */
-  readonly buildingId?: string;
 }
 
 export type RoomSummary = Pick<Room, "id" | "roomCode" | "name" | "facilityId">;
