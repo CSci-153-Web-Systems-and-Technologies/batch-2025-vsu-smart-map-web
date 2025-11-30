@@ -8,7 +8,9 @@ import {
 
 type RoomRow = {
   id: string;
-  building_id: string;
+  facility_id: string;
+  /** @deprecated Use facility_id instead */
+  building_id?: string;
   room_code: string;
   name: string | null;
   description: string | null;
@@ -17,23 +19,23 @@ type RoomRow = {
   updated_at: string;
 };
 
-type BuildingSummary = {
+type FacilitySummary = {
   id: string;
   name: string;
-  code: string;
+  slug: string;
 };
 
-type RoomRowWithBuilding = RoomRow & {
-  building: BuildingSummary | null;
+type RoomRowWithFacility = RoomRow & {
+  facility: FacilitySummary | null;
 };
 
 type BaseResult<T> = { data: T | null; error: PostgrestError | null };
 type MaybeClient = SupabaseClient | Promise<SupabaseClient>;
 
 const selectBase = () =>
-  "id, building_id, room_code, name, description, floor, created_at, updated_at";
-const selectWithBuilding = () =>
-  `${selectBase()}, building:buildings(id, name, code)`;
+  "id, facility_id, room_code, name, description, floor, created_at, updated_at";
+const selectWithFacility = () =>
+  `${selectBase()}, facility:facilities(id, name, slug)`;
 
 const toPostgrestError = (message: string): PostgrestError => ({
   name: "PostgrestError",
@@ -52,7 +54,7 @@ const resolveClient = async (client?: MaybeClient) =>
 const mapInsert = (payload: unknown) => {
   const parsed = roomSchema.parse(payload);
   return {
-    building_id: parsed.buildingId,
+    facility_id: parsed.facilityId,
     room_code: parsed.roomCode,
     name: parsed.name || null,
     description: parsed.description || null,
@@ -64,7 +66,7 @@ const mapUpdate = (payload: unknown) => {
   const parsed = roomSchema.partial().parse(payload);
   const patch: Record<string, unknown> = {};
 
-  if (parsed.buildingId !== undefined) patch.building_id = parsed.buildingId;
+  if (parsed.facilityId !== undefined) patch.facility_id = parsed.facilityId;
   if (parsed.roomCode !== undefined) patch.room_code = parsed.roomCode;
   if (parsed.name !== undefined) patch.name = parsed.name || null;
   if (parsed.description !== undefined) patch.description = parsed.description || null;
@@ -73,62 +75,80 @@ const mapUpdate = (payload: unknown) => {
   return patch;
 };
 
-export async function getRoomsByBuilding(params: {
-  buildingId: string;
-  includeBuilding?: boolean;
+/**
+ * Get all rooms for a facility.
+ */
+export async function getRoomsByFacility(params: {
+  facilityId: string;
+  includeFacility?: boolean;
   client?: MaybeClient;
-}): Promise<BaseResult<RoomRow[] | RoomRowWithBuilding[]>> {
+}): Promise<BaseResult<RoomRow[] | RoomRowWithFacility[]>> {
   const client = await resolveClient(params.client);
   const { data, error } = await client
     .from("rooms")
-    .select(params.includeBuilding ? selectWithBuilding() : selectBase())
-    .eq("building_id", params.buildingId)
+    .select(params.includeFacility ? selectWithFacility() : selectBase())
+    .eq("facility_id", params.facilityId)
     .order("room_code", { ascending: true });
 
   return {
-    data: data as RoomRow[] | RoomRowWithBuilding[] | null,
+    data: data as RoomRow[] | RoomRowWithFacility[] | null,
     error: normalizeError(error),
   };
 }
 
-export async function getRoomById(params: {
-  id: string;
+/**
+ * @deprecated Use getRoomsByFacility instead
+ */
+export async function getRoomsByBuilding(params: {
+  buildingId: string;
   includeBuilding?: boolean;
   client?: MaybeClient;
-}): Promise<BaseResult<RoomRow | RoomRowWithBuilding>> {
+}): Promise<BaseResult<RoomRow[] | RoomRowWithFacility[]>> {
+  return getRoomsByFacility({
+    facilityId: params.buildingId,
+    includeFacility: params.includeBuilding,
+    client: params.client,
+  });
+}
+
+export async function getRoomById(params: {
+  id: string;
+  includeFacility?: boolean;
+  client?: MaybeClient;
+}): Promise<BaseResult<RoomRow | RoomRowWithFacility>> {
   const client = await resolveClient(params.client);
   const { data, error } = await client
     .from("rooms")
-    .select(params.includeBuilding ? selectWithBuilding() : selectBase())
+    .select(params.includeFacility ? selectWithFacility() : selectBase())
     .eq("id", params.id)
     .maybeSingle();
 
   return {
-    data: data as RoomRow | RoomRowWithBuilding | null,
+    data: data as RoomRow | RoomRowWithFacility | null,
     error: normalizeError(error),
   };
 }
 
 export async function searchRooms(params: {
   term: string;
-  buildingId?: string;
-  includeBuilding?: boolean;
+  facilityId?: string;
+  includeFacility?: boolean;
   client?: MaybeClient;
-}): Promise<BaseResult<RoomRow[] | RoomRowWithBuilding[]>> {
+}): Promise<BaseResult<RoomRow[] | RoomRowWithFacility[]>> {
   const client = await resolveClient(params.client);
   const query = client
     .from("rooms")
-    .select(params.includeBuilding ? selectWithBuilding() : selectBase())
+    .select(params.includeFacility ? selectWithFacility() : selectBase())
     .or(`room_code.ilike.%${params.term}%,description.ilike.%${params.term}%`)
     .order("room_code", { ascending: true });
 
-  if (params.buildingId) {
-    query.eq("building_id", params.buildingId);
+  if (params.facilityId) {
+    query.eq("facility_id", params.facilityId);
   }
 
   const { data, error } = await query;
   return {
-    data: data as RoomRow[] | RoomRowWithBuilding[] | null,
+    data: data as RoomRow[] | RoomRowWithFacility[] | null,
     error: normalizeError(error),
   };
 }
