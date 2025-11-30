@@ -22,11 +22,6 @@ type PinId =
   | "gate"
   | "parking";
 
-type PinOptions = {
-  selected?: boolean;
-  pinId?: PinId;
-};
-
 type PinAsset = {
   html: string;
   className: string;
