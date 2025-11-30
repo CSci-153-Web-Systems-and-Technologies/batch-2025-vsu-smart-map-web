@@ -9,8 +9,6 @@ import {
 type RoomRow = {
   id: string;
   facility_id: string;
-  /** @deprecated Use facility_id instead */
-  building_id?: string;
   room_code: string;
   name: string | null;
   description: string | null;
@@ -94,21 +92,6 @@ export async function getRoomsByFacility(params: {
     data: data as RoomRow[] | RoomRowWithFacility[] | null,
     error: normalizeError(error),
   };
-}
-
-/**
- * @deprecated Use getRoomsByFacility instead
- */
-export async function getRoomsByBuilding(params: {
-  buildingId: string;
-  includeBuilding?: boolean;
-  client?: MaybeClient;
-}): Promise<BaseResult<RoomRow[] | RoomRowWithFacility[]>> {
-  return getRoomsByFacility({
-    facilityId: params.buildingId,
-    includeFacility: params.includeBuilding,
-    client: params.client,
-  });
 }
 
 export async function getRoomById(params: {
