@@ -15,6 +15,7 @@ export interface FacilityCategoryMeta {
  * Comprehensive metadata for all facility categories.
  */
 export const FACILITY_CATEGORY_META: Record<FacilityCategory, FacilityCategoryMeta> = {
+  // Buildings with rooms
   academic: {
     label: "Academic",
     color: COLORS.primary.DEFAULT,
@@ -25,11 +26,32 @@ export const FACILITY_CATEGORY_META: Record<FacilityCategory, FacilityCategoryMe
     color: COLORS.status.warning,
     pinAsset: "/pins/admin.svg",
   },
+  research: {
+    label: "Research",
+    color: COLORS.primary.light,
+    pinAsset: "/pins/research.svg",
+  },
+  office: {
+    label: "Office",
+    color: COLORS.neutral[700],
+    pinAsset: "/pins/office.svg",
+  },
   residential: {
     label: "Residential",
     color: COLORS.status.info,
     pinAsset: "/pins/dorm.svg",
   },
+  dormitory: {
+    label: "Dormitory",
+    color: COLORS.status.info,
+    pinAsset: "/pins/dorm.svg",
+  },
+  lodging: {
+    label: "Lodging",
+    color: COLORS.accent.DEFAULT,
+    pinAsset: "/pins/lodging.svg",
+  },
+  // Facilities/POIs
   sports: {
     label: "Sports",
     color: COLORS.status.success,
@@ -67,7 +89,7 @@ export const FACILITY_CATEGORY_META: Record<FacilityCategory, FacilityCategoryMe
   },
   utility: {
     label: "Utility",
-    color: COLORS.neutral[400],
+    color: COLORS.neutral[500],
     pinAsset: "/pins/utility.svg",
   },
   commercial: {
