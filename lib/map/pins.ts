@@ -314,11 +314,6 @@ export function getPinAsset(kind: PinKind, options: PinOptions = {}): PinAsset {
   };
 }
 
-// ============ Unified Facility Category Support ============
-
-/**
- * Map unified facility categories to pin IDs.
- */
 const FACILITY_CATEGORY_TO_PIN: Record<FacilityCategory, PinId> = {
   academic: "classroom",
   administrative: "admin",
@@ -340,9 +335,6 @@ const FACILITY_CATEGORY_TO_PIN: Record<FacilityCategory, PinId> = {
   atm: "cashier",
 };
 
-/**
- * Category colors for unified facilities.
- */
 const CATEGORY_COLORS: Record<FacilityCategory, string> = {
   academic: "#006A4E",
   administrative: "#FFB81C",
@@ -364,9 +356,6 @@ const CATEGORY_COLORS: Record<FacilityCategory, string> = {
   atm: "#16A34A",
 };
 
-/**
- * Get pin asset for a unified facility category.
- */
 export function getPinAssetForCategory(
   category: FacilityCategory,
   options: { selected?: boolean } = {}

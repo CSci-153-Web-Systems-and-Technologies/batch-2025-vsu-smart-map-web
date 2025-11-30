@@ -1,21 +1,13 @@
 import { COLORS } from "@/lib/design-tokens";
 import type { FacilityCategory } from "@/lib/types/facility";
 
-/**
- * Metadata for each facility category.
- * Includes display label, color for UI, and pin asset path.
- */
 export interface FacilityCategoryMeta {
   label: string;
   color: string;
   pinAsset: string;
 }
 
-/**
- * Comprehensive metadata for all facility categories.
- */
 export const FACILITY_CATEGORY_META: Record<FacilityCategory, FacilityCategoryMeta> = {
-  // Buildings with rooms
   academic: {
     label: "Academic",
     color: COLORS.primary.DEFAULT,
@@ -51,7 +43,6 @@ export const FACILITY_CATEGORY_META: Record<FacilityCategory, FacilityCategoryMe
     color: COLORS.accent.DEFAULT,
     pinAsset: "/pins/lodging.svg",
   },
-  // Facilities/POIs
   sports: {
     label: "Sports",
     color: COLORS.status.success,
@@ -109,8 +100,6 @@ export const FACILITY_CATEGORY_META: Record<FacilityCategory, FacilityCategoryMe
   },
 };
 
-// ============ Helper Functions ============
-
 export function getCategoryMeta(category: FacilityCategory): FacilityCategoryMeta {
   return FACILITY_CATEGORY_META[category];
 }
@@ -126,8 +115,6 @@ export function getCategoryColor(category: FacilityCategory): string {
 export function getCategoryPinAsset(category: FacilityCategory): string {
   return FACILITY_CATEGORY_META[category].pinAsset;
 }
-
-// ============ Deprecated exports for backward compatibility ============
 
 /** @deprecated Use FacilityCategory from types/facility instead */
 export const FACILITY_TYPES = [

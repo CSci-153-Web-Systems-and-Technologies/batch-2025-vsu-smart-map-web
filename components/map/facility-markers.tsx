@@ -10,9 +10,6 @@ interface FacilityMarkersProps {
   onMarkerClick?: (facility: FacilityMarkerPayload) => void;
 }
 
-/**
- * Render multiple facility markers with optional category filtering.
- */
 export function FacilityMarkers({
   facilities,
   selectedId,

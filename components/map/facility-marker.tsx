@@ -12,9 +12,6 @@ interface FacilityMarkerProps {
   onClick?: (facility: FacilityMarkerPayload) => void;
 }
 
-/**
- * Map marker for a unified Facility (building or POI).
- */
 export function FacilityMarker({
   facility,
   selected = false,

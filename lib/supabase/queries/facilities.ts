@@ -23,9 +23,6 @@ const normalizeError = (error: PostgrestError | null) =>
 const resolveClient = async (client?: MaybeClient) =>
   Promise.resolve(client ?? getSupabaseBrowserClient());
 
-/**
- * Transform database row to Facility domain type.
- */
 function toFacility(row: FacilityRow): Facility {
   const base = {
     id: row.id,
@@ -45,9 +42,6 @@ function toFacility(row: FacilityRow): Facility {
   return { ...base, hasRooms: false } as FacilityPOI;
 }
 
-/**
- * Transform insert payload to database format.
- */
 function mapInsertPayload(input: FacilityInsert) {
   return {
     name: input.name,
@@ -61,9 +55,6 @@ function mapInsertPayload(input: FacilityInsert) {
   };
 }
 
-/**
- * Transform update payload to database format.
- */
 function mapUpdatePayload(input: FacilityUpdate) {
   const patch: Record<string, unknown> = {};
   if (input.name !== undefined) patch.name = input.name;
@@ -79,11 +70,6 @@ function mapUpdatePayload(input: FacilityUpdate) {
   return patch;
 }
 
-// ============ Query Functions ============
-
-/**
- * Get all facilities, optionally filtered by category or hasRooms.
- */
 export async function getFacilities(params?: {
   category?: FacilityCategory | FacilityCategory[];
   hasRooms?: boolean;
@@ -109,9 +95,6 @@ export async function getFacilities(params?: {
   return { data: rows ? rows.map(toFacility) : null, error: normalizeError(error) };
 }
 
-/**
- * Get facilities that have rooms (buildings).
- */
 export async function getBuildings(params?: {
   category?: FacilityCategory | FacilityCategory[];
   client?: MaybeClient;
@@ -126,9 +109,6 @@ export async function getBuildings(params?: {
   };
 }
 
-/**
- * Get facilities without rooms (POIs).
- */
 export async function getPOIs(params?: {
   category?: FacilityCategory | FacilityCategory[];
   client?: MaybeClient;
@@ -143,9 +123,6 @@ export async function getPOIs(params?: {
   };
 }
 
-/**
- * Get a single facility by ID.
- */
 export async function getFacilityById(params: {
   id: string;
   client?: MaybeClient;
@@ -161,9 +138,6 @@ export async function getFacilityById(params: {
   return { data: row ? toFacility(row) : null, error: normalizeError(error) };
 }
 
-/**
- * Get a single facility by slug.
- */
 export async function getFacilityBySlug(params: {
   slug: string;
   client?: MaybeClient;
@@ -179,11 +153,6 @@ export async function getFacilityBySlug(params: {
   return { data: row ? toFacility(row) : null, error: normalizeError(error) };
 }
 
-// ============ Mutation Functions ============
-
-/**
- * Create a new facility.
- */
 export async function createFacility(
   input: FacilityInsert,
   client?: MaybeClient,
@@ -200,9 +169,6 @@ export async function createFacility(
   return { data: row ? toFacility(row) : null, error: normalizeError(error) };
 }
 
-/**
- * Update an existing facility.
- */
 export async function updateFacility(
   id: string,
   input: FacilityUpdate,
@@ -222,9 +188,6 @@ export async function updateFacility(
   return { data: row ? toFacility(row) : null, error: normalizeError(error) };
 }
 
-/**
- * Delete a facility.
- */
 export async function deleteFacility(
   id: string,
   client?: MaybeClient,
@@ -241,11 +204,6 @@ export async function deleteFacility(
   return { data: row ? toFacility(row) : null, error: normalizeError(error) };
 }
 
-// ============ Utility ============
-
-/**
- * Check if a category string is valid.
- */
 export function isValidCategory(category: string): category is FacilityCategory {
   return (FACILITY_CATEGORIES as readonly string[]).includes(category);
 }
