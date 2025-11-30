@@ -7,8 +7,7 @@ import { StudentTabs } from "@/components/student-tabs";
 import { MapContainerClient } from "@/components/map/map-container";
 import { MapSearchPanel } from "@/components/map/map-search-panel";
 import type { MapItem } from "@/lib/types/map";
-import type { FacilityType } from "@/lib/constants/facilities";
-import { getBuildingsClient } from "@/lib/supabase/queries/buildings-client";
+import type { FacilityCategory } from "@/lib/types/facility";
 import { getFacilities } from "@/lib/supabase/queries/facilities";
 
 const MapSelectionLayer = dynamic(
@@ -92,45 +91,16 @@ function MapTab({
 }) {
   const [items, setItems] = useState<readonly MapItem[]>([]);
   const [filtered, setFiltered] = useState<readonly MapItem[]>([]);
-  const [facilityFilters, setFacilityFilters] = useState<FacilityType[]>([]);
+  const [facilityFilters, setFacilityFilters] = useState<FacilityCategory[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       setIsLoading(true);
-      const [bResp, fResp] = await Promise.all([
-        getBuildingsClient(),
-        getFacilities({ isActive: true }),
-      ]);
+      const { data, error: fetchError } = await getFacilities();
 
-      const buildingItems: MapItem[] =
-        bResp.data
-          ?.filter((b) => b.lat && b.lng)
-          .map((b) => ({
-            kind: "building" as const,
-            id: b.id,
-            name: b.name,
-            code: b.code,
-            category: b.category,
-            coordinates: { lat: b.lat, lng: b.lng },
-          })) ?? [];
-
-      const facilityItems: MapItem[] =
-        fResp.data
-          ?.filter((f) => f.coordinates?.lat && f.coordinates?.lng)
-          .map((f) => ({
-            kind: "facility" as const,
-            id: f.id,
-            name: f.name,
-            facilityType: f.type,
-            coordinates: { lat: f.coordinates.lat, lng: f.coordinates.lng },
-          })) ?? [];
-
-      const merged = [...buildingItems, ...facilityItems];
-
-      // Only show an error if both data sources failed; otherwise degrade gracefully.
-      if (!bResp.data && !fResp.data) {
+      if (fetchError || !data) {
         setError("Unable to load map data. Please try again later.");
         setItems([]);
         setFiltered([]);
@@ -138,8 +108,18 @@ function MapTab({
         return;
       }
 
-      setItems(merged);
-      setFiltered(merged);
+      const mapItems: MapItem[] = data
+        .filter((f) => f.coordinates?.lat && f.coordinates?.lng)
+        .map((f) => ({
+          id: f.id,
+          name: f.name,
+          category: f.category,
+          hasRooms: f.hasRooms,
+          coordinates: { lat: f.coordinates.lat, lng: f.coordinates.lng },
+        }));
+
+      setItems(mapItems);
+      setFiltered(mapItems);
       setError(null);
       setIsLoading(false);
     };
@@ -198,8 +178,8 @@ function MapView({
   onSelect: (id: string) => void;
   onClearSelection: () => void;
   onResultsChange: (items: MapItem[]) => void;
-  facilityFilters: FacilityType[];
-  onFacilityFiltersChange: (types: FacilityType[]) => void;
+  facilityFilters: FacilityCategory[];
+  onFacilityFiltersChange: (types: FacilityCategory[]) => void;
 }) {
   const hasResults = filtered.length > 0;
 
