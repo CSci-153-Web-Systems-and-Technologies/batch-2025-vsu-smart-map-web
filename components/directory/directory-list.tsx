@@ -16,10 +16,8 @@ export interface DirectoryListProps {
 function groupFacilitiesByCategory(
   facilities: Facility[]
 ): Map<FacilityCategory, Facility[]> {
-  // Initialize map with category order from FACILITY_CATEGORIES
   const grouped = new Map<FacilityCategory, Facility[]>();
   
-  // Only add categories that have facilities
   for (const facility of facilities) {
     const existing = grouped.get(facility.category);
     if (existing) {
@@ -29,7 +27,6 @@ function groupFacilitiesByCategory(
     }
   }
 
-  // Sort map entries by FACILITY_CATEGORIES order
   const orderedEntries = [...grouped.entries()].sort((a, b) => {
     const indexA = FACILITY_CATEGORIES.indexOf(a[0]);
     const indexB = FACILITY_CATEGORIES.indexOf(b[0]);

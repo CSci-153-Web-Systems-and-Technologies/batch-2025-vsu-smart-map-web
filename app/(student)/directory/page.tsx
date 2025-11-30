@@ -1,18 +1,12 @@
 import { getFacilities } from "@/lib/supabase/queries/facilities";
 import { createClient } from "@/lib/supabase/server-client";
-import { DirectoryList } from "@/components/directory";
+import { DirectoryContainer } from "@/components/directory";
 
 export const metadata = {
   title: "Directory | VSU SmartMap",
   description: "Browse all campus facilities and points of interest",
 };
 
-/**
- * Directory Page - Server Component
- * 
- * Fetches all active facilities from the database and renders
- * them in a categorized list view.
- */
 export default async function DirectoryPage() {
   const client = await createClient();
   const { data: facilities, error } = await getFacilities({ client });
@@ -39,7 +33,7 @@ export default async function DirectoryPage() {
         </p>
       </header>
 
-      <DirectoryList facilities={facilities ?? []} />
+      <DirectoryContainer facilities={facilities ?? []} />
     </main>
   );
 }
