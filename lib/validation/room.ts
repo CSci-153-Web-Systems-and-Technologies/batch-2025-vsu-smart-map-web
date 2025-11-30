@@ -2,7 +2,7 @@ import { z } from "zod";
 import { VALIDATION_LIMITS } from "@/lib/constants";
 
 export const roomSchema = z.object({
-  buildingId: z.string().uuid(),
+  facilityId: z.string().uuid(),
   roomCode: z
     .string()
     .min(VALIDATION_LIMITS.room.code.min)
@@ -14,6 +14,8 @@ export const roomSchema = z.object({
     .optional()
     .or(z.literal("")),
   floor: z.number().int().optional(),
+  /** @deprecated Use facilityId instead */
+  buildingId: z.string().uuid().optional(),
 });
 
 export type RoomFormValues = z.infer<typeof roomSchema>;
