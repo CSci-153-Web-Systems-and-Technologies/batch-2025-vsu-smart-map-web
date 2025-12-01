@@ -1,10 +1,6 @@
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { roomSchema } from "@/lib/validation";
-import {
-  getSupabaseBrowserClient,
-  getSupabaseServerClient,
-  getSupabaseServiceRoleClient,
-} from "../index";
+import { getSupabaseBrowserClient } from "../browser-client";
 
 type RoomRow = {
   id: string;
@@ -141,7 +137,7 @@ export async function createRoom(
   client?: MaybeClient,
 ): Promise<BaseResult<RoomRow>> {
   try {
-    const supabase = await resolveClient(client ?? getSupabaseServerClient());
+    const supabase = await resolveClient(client);
     const insertPayload = mapInsert(payload);
 
     const { data, error } = await supabase
@@ -166,7 +162,7 @@ export async function updateRoom(
   const { id, ...rest } = payload;
 
   try {
-    const supabase = await resolveClient(client ?? getSupabaseServerClient());
+    const supabase = await resolveClient(client);
     const updatePayload = mapUpdate(rest);
 
     const { data, error } = await supabase
@@ -187,11 +183,9 @@ export async function updateRoom(
 
 export async function deleteRoom(
   id: string,
-  useServiceRole = false,
+  client?: MaybeClient,
 ): Promise<BaseResult<RoomRow>> {
-  const supabase = useServiceRole
-    ? await resolveClient(getSupabaseServiceRoleClient())
-    : await resolveClient(getSupabaseServerClient());
+  const supabase = await resolveClient(client);
 
   const { data, error } = await supabase
     .from("rooms")
