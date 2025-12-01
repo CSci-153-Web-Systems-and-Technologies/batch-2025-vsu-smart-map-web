@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback } from "react";
+import { Suspense, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AppHeader } from "@/components/app-header";
 import { StudentTabs } from "@/components/student-tabs";
+import { AppProvider } from "@/lib/context/app-context";
 
 type TabId = "map" | "directory" | "chat";
 
@@ -38,22 +39,24 @@ export default function StudentLayout({
   );
 
   return (
-    <>
-      <AppHeader
-        tabsSlot={
-          <StudentTabs
-            placement="inline"
-            activeTab={activeTab}
-            onTabChange={handleTabChange}
-          />
-        }
-      />
-      <StudentTabs
-        placement="bottom"
-        activeTab={activeTab}
-        onTabChange={handleTabChange}
-      />
-      {children}
-    </>
+    <Suspense>
+      <AppProvider>
+        <AppHeader
+          tabsSlot={
+            <StudentTabs
+              placement="inline"
+              activeTab={activeTab}
+              onTabChange={handleTabChange}
+            />
+          }
+        />
+        <StudentTabs
+          placement="bottom"
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+        />
+        {children}
+      </AppProvider>
+    </Suspense>
   );
 }

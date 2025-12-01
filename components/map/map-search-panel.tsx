@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import type { FacilityCategory } from "@/lib/types/facility";
 import type { MapItem } from "@/lib/types/map";
 import { filterMapItems } from "@/lib/map/filter-map-items";
-import { useMapSearch } from "@/hooks/use-map-search";
+import { useApp } from "@/lib/context/app-context";
 import { CategoryFilters } from "./category-filters";
 import { MapSearch } from "./map-search";
 
@@ -12,21 +11,24 @@ type MapSearchPanelProps = {
   items: readonly MapItem[];
   onResultsChange?: (items: MapItem[]) => void;
   onMatchCountChange?: (count: number) => void;
-  initialCategory?: FacilityCategory | null;
 };
 
 export function MapSearchPanel({
   items,
   onResultsChange,
   onMatchCountChange,
-  initialCategory = null,
 }: MapSearchPanelProps) {
-  const { searchTerm, setSearchTerm, selectedCategory, setSelectedCategory, debouncedTerm } =
-    useMapSearch(initialCategory);
+  const {
+    searchQuery,
+    setSearchQuery,
+    debouncedQuery,
+    selectedCategory,
+    setCategory,
+  } = useApp();
 
   const { results, matchCount } = useMemo(
-    () => filterMapItems(items, debouncedTerm, selectedCategory),
-    [items, debouncedTerm, selectedCategory],
+    () => filterMapItems(items, debouncedQuery, selectedCategory),
+    [items, debouncedQuery, selectedCategory],
   );
 
   useEffect(() => {
@@ -41,8 +43,8 @@ export function MapSearchPanel({
 
   return (
     <div className="space-y-3">
-      <MapSearch value={searchTerm} onChange={setSearchTerm} matchCount={matchCount} />
-      <CategoryFilters value={selectedCategory} onChange={setSelectedCategory} />
+      <MapSearch value={searchQuery} onChange={setSearchQuery} matchCount={matchCount} />
+      <CategoryFilters value={selectedCategory} onChange={setCategory} />
     </div>
   );
 }
