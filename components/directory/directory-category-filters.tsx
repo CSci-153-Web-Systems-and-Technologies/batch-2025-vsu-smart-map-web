@@ -8,8 +8,8 @@ import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 
 export interface DirectoryCategoryFiltersProps {
-  selected: FacilityCategory[];
-  onChange: (categories: FacilityCategory[]) => void;
+  selected: FacilityCategory | null;
+  onChange: (category: FacilityCategory | null) => void;
   className?: string;
 }
 
@@ -19,20 +19,44 @@ export function DirectoryCategoryFilters({
   className,
 }: DirectoryCategoryFiltersProps) {
   const toggleCategory = (category: FacilityCategory) => {
-    if (selected.includes(category)) {
-      onChange(selected.filter((c) => c !== category));
+    if (selected === category) {
+      onChange(null);
     } else {
-      onChange([...selected, category]);
+      onChange(category);
     }
   };
 
-  const clearAll = () => onChange([]);
+  const clearAll = () => onChange(null);
 
   return (
-    <div className={cn("flex flex-wrap items-center gap-2", className)}>
+    <div
+      className={cn("flex flex-wrap items-center gap-2", className)}
+      role="radiogroup"
+      aria-label="Filter by category"
+    >
+      <Badge
+        variant={selected === null ? "default" : "outline"}
+        className={cn(
+          "cursor-pointer transition-colors",
+          selected === null && "ring-2 ring-offset-1"
+        )}
+        onClick={() => onChange(null)}
+        role="radio"
+        aria-checked={selected === null}
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onChange(null);
+          }
+        }}
+      >
+        All
+      </Badge>
+
       {FACILITY_CATEGORIES.map((category) => {
         const meta = getCategoryMeta(category);
-        const isSelected = selected.includes(category);
+        const isSelected = selected === category;
 
         return (
           <Badge
@@ -45,14 +69,14 @@ export function DirectoryCategoryFilters({
             style={
               isSelected
                 ? {
-                    backgroundColor: meta.color,
-                    borderColor: meta.color,
-                    color: "#ffffff",
-                  }
+                  backgroundColor: meta.color,
+                  borderColor: meta.color,
+                  color: "#ffffff",
+                }
                 : undefined
             }
             onClick={() => toggleCategory(category)}
-            role="checkbox"
+            role="radio"
             aria-checked={isSelected}
             tabIndex={0}
             onKeyDown={(e) => {
@@ -67,7 +91,7 @@ export function DirectoryCategoryFilters({
         );
       })}
 
-      {selected.length > 0 && (
+      {selected !== null && (
         <Button
           type="button"
           variant="ghost"

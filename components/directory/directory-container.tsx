@@ -18,8 +18,8 @@ export function DirectoryContainer({ facilities }: DirectoryContainerProps) {
   const {
     searchTerm,
     setSearchTerm,
-    selectedCategories,
-    setSelectedCategories,
+    selectedCategory,
+    setSelectedCategory,
     filteredFacilities,
     hasActiveFilters,
     clearFilters,
@@ -45,8 +45,8 @@ export function DirectoryContainer({ facilities }: DirectoryContainerProps) {
         />
 
         <DirectoryCategoryFilters
-          selected={selectedCategories}
-          onChange={setSelectedCategories}
+          selected={selectedCategory}
+          onChange={setSelectedCategory}
         />
       </div>
 

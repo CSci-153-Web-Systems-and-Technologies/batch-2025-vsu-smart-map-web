@@ -13,7 +13,7 @@ const VALID_CATEGORIES = Object.keys(FACILITY_CATEGORY_META) as FacilityCategory
 export interface UseDirectorySearchOptions {
   facilities: Facility[];
   initialSearch?: string;
-  initialCategories?: FacilityCategory[];
+  initialCategory?: FacilityCategory | null;
   enableUrlSync?: boolean;
 }
 
@@ -21,8 +21,8 @@ export interface UseDirectorySearchReturn {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   debouncedTerm: string;
-  selectedCategories: FacilityCategory[];
-  setSelectedCategories: (categories: FacilityCategory[]) => void;
+  selectedCategory: FacilityCategory | null;
+  setSelectedCategory: (category: FacilityCategory | null) => void;
   filteredFacilities: Facility[];
   hasActiveFilters: boolean;
   clearFilters: () => void;
@@ -33,7 +33,7 @@ export interface UseDirectorySearchReturn {
 export function useDirectorySearch({
   facilities,
   initialSearch = "",
-  initialCategories = [],
+  initialCategory = null,
   enableUrlSync = false,
 }: UseDirectorySearchOptions): UseDirectorySearchReturn {
   const searchParams = useSearchParams();
@@ -41,28 +41,29 @@ export function useDirectorySearch({
   const pathname = usePathname();
 
   const urlSearch = enableUrlSync ? (searchParams.get("q") ?? "") : initialSearch;
-  const urlCategories = enableUrlSync
-    ? searchParams
-        .getAll("category")
-        .filter((c): c is FacilityCategory => VALID_CATEGORIES.includes(c as FacilityCategory))
-    : initialCategories;
+
+  const paramCategory = searchParams.get("category");
+  const urlCategory = enableUrlSync && paramCategory && VALID_CATEGORIES.includes(paramCategory as FacilityCategory)
+    ? (paramCategory as FacilityCategory)
+    : initialCategory;
 
   const [searchTerm, setSearchTerm] = useState(urlSearch);
   const [debouncedTerm, setDebouncedTerm] = useState(urlSearch);
-  const [selectedCategories, setSelectedCategories] =
-    useState<FacilityCategory[]>(urlCategories);
+  const [selectedCategory, setSelectedCategory] =
+    useState<FacilityCategory | null>(urlCategory);
 
   useEffect(() => {
     if (!enableUrlSync) return;
 
     const nextSearch = searchParams.get("q") ?? "";
-    const nextCategories = searchParams
-      .getAll("category")
-      .filter((c): c is FacilityCategory => VALID_CATEGORIES.includes(c as FacilityCategory));
+    const nextParamCategory = searchParams.get("category");
+    const nextCategory = nextParamCategory && VALID_CATEGORIES.includes(nextParamCategory as FacilityCategory)
+      ? (nextParamCategory as FacilityCategory)
+      : null;
 
     setSearchTerm(nextSearch);
     setDebouncedTerm(nextSearch);
-    setSelectedCategories(nextCategories);
+    setSelectedCategory(nextCategory);
   }, [enableUrlSync, searchParams]);
 
   useEffect(() => {
@@ -74,14 +75,16 @@ export function useDirectorySearch({
   }, [searchTerm]);
 
   const updateUrl = useCallback(
-    (search: string, categories: FacilityCategory[]) => {
+    (search: string, category: FacilityCategory | null) => {
       if (!enableUrlSync) return;
 
       const params = new URLSearchParams();
       if (search.trim()) {
         params.set("q", search.trim());
       }
-      categories.forEach((c) => params.append("category", c));
+      if (category) {
+        params.set("category", category);
+      }
 
       const queryString = params.toString();
       const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
@@ -95,11 +98,11 @@ export function useDirectorySearch({
     if (!enableUrlSync) return;
 
     const timer = setTimeout(() => {
-      updateUrl(debouncedTerm, selectedCategories);
+      updateUrl(debouncedTerm, selectedCategory);
     }, URL_SYNC_DEBOUNCE_MS);
 
     return () => clearTimeout(timer);
-  }, [debouncedTerm, selectedCategories, updateUrl, enableUrlSync]);
+  }, [debouncedTerm, selectedCategory, updateUrl, enableUrlSync]);
 
   const filteredFacilities = useMemo(() => {
     return facilities.filter((facility) => {
@@ -112,27 +115,27 @@ export function useDirectorySearch({
         facility.description?.toLowerCase().includes(searchLower);
 
       const matchesCategory =
-        selectedCategories.length === 0 ||
-        selectedCategories.includes(facility.category);
+        selectedCategory === null ||
+        facility.category === selectedCategory;
 
       return matchesSearch && matchesCategory;
     });
-  }, [facilities, debouncedTerm, selectedCategories]);
+  }, [facilities, debouncedTerm, selectedCategory]);
 
-  const hasActiveFilters = debouncedTerm !== "" || selectedCategories.length > 0;
+  const hasActiveFilters = debouncedTerm !== "" || selectedCategory !== null;
 
   const clearFilters = () => {
     setSearchTerm("");
     setDebouncedTerm("");
-    setSelectedCategories([]);
+    setSelectedCategory(null);
   };
 
   return {
     searchTerm,
     setSearchTerm,
     debouncedTerm,
-    selectedCategories,
-    setSelectedCategories,
+    selectedCategory,
+    setSelectedCategory,
     filteredFacilities,
     hasActiveFilters,
     clearFilters,
