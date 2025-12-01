@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { Suspense, useEffect, useMemo, useState, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { AppHeader } from "@/components/app-header";
 import { StudentTabs } from "@/components/student-tabs";
@@ -18,6 +18,25 @@ const MapSelectionLayer = dynamic(
 type TabId = "map" | "directory" | "chat";
 
 export default function HomePage() {
+  return (
+    <Suspense fallback={<HomePageSkeleton />}>
+      <HomePageContent />
+    </Suspense>
+  );
+}
+
+function HomePageSkeleton() {
+  return (
+    <>
+      <AppHeader tabsSlot={null} />
+      <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-6 bg-background px-4 py-10 md:px-6">
+        <div className="h-[560px] rounded-xl border border-border bg-muted animate-pulse" />
+      </main>
+    </>
+  );
+}
+
+function HomePageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [selectedId, setSelectedId] = useState<string | null>(null);
