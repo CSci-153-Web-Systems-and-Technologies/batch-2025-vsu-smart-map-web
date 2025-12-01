@@ -1,15 +1,15 @@
 "use client";
 
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useMemo, useEffect, useRef } from "react";
 import { DirectoryList } from "./directory-list";
 import { DirectorySearch } from "./directory-search";
 import { DirectoryCategoryFilters } from "./directory-category-filters";
-import { useDirectorySearch } from "@/hooks/use-directory-search";
 import { Button } from "@/components/ui/button";
 import type { Facility } from "@/lib/types/facility";
 import { X } from "lucide-react";
 import { FacilitySheet } from "@/components/facility/facility-sheet";
+import { useApp } from "@/lib/context/app-context";
 
 export interface DirectoryContainerProps {
   facilities: Facility[];
@@ -18,36 +18,54 @@ export interface DirectoryContainerProps {
 export function DirectoryContainer({ facilities }: DirectoryContainerProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const pathname = usePathname();
-
   const {
-    searchTerm,
-    setSearchTerm,
+    searchQuery,
+    setSearchQuery,
     selectedCategory,
-    setSelectedCategory,
-    filteredFacilities,
-    hasActiveFilters,
+    setCategory,
+    selectedFacility,
+    selectFacility,
     clearFilters,
-    resultCount,
-    totalCount,
-  } = useDirectorySearch({ facilities, enableUrlSync: true });
+  } = useApp();
 
-  const facilityId = searchParams.get("facility");
-  const selectedFacility = useMemo(
-    () => facilities.find((f) => f.id === facilityId) || null,
-    [facilities, facilityId]
-  );
+  const hasHydrated = useRef(false);
+  useEffect(() => {
+    if (hasHydrated.current) return;
+    const facilityId = searchParams.get("facility");
+    if (facilityId) {
+      const found = facilities.find((f) => f.id === facilityId);
+      if (found) {
+        selectFacility(found);
+        hasHydrated.current = true;
+      }
+    }
+  }, [searchParams, facilities, selectFacility]);
+
+  const filteredFacilities = useMemo(() => {
+    return facilities.filter((facility) => {
+      const searchLower = searchQuery.toLowerCase().trim();
+
+      const matchesSearch =
+        searchLower === "" ||
+        facility.name.toLowerCase().includes(searchLower) ||
+        facility.code?.toLowerCase().includes(searchLower) ||
+        facility.description?.toLowerCase().includes(searchLower);
+
+      const matchesCategory =
+        selectedCategory === null || facility.category === selectedCategory;
+
+      return matchesSearch && matchesCategory;
+    });
+  }, [facilities, searchQuery, selectedCategory]);
+
+  const hasActiveFilters = searchQuery !== "" || selectedCategory !== null;
 
   const handleFacilityClick = (facility: Facility) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("facility", facility.id);
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    selectFacility(facility);
   };
 
   const handleCloseSheet = () => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete("facility");
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    selectFacility(null);
   };
 
   const handleViewOnMap = (facility: Facility) => {
@@ -58,21 +76,21 @@ export function DirectoryContainer({ facilities }: DirectoryContainerProps) {
     <div className="space-y-6">
       <div className="space-y-4">
         <DirectorySearch
-          value={searchTerm}
-          onChange={setSearchTerm}
+          value={searchQuery}
+          onChange={setSearchQuery}
           className="max-w-md"
         />
 
         <DirectoryCategoryFilters
           selected={selectedCategory}
-          onChange={setSelectedCategory}
+          onChange={setCategory}
         />
       </div>
 
       {hasActiveFilters && (
         <div className="flex items-center gap-4">
           <p className="text-sm text-muted-foreground">
-            Showing {resultCount} of {totalCount} facilities
+            Showing {filteredFacilities.length} of {facilities.length} facilities
           </p>
           <Button
             type="button"
