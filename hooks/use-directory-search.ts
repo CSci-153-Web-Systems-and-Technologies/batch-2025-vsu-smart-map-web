@@ -86,12 +86,17 @@ export function useDirectorySearch({
         params.set("category", category);
       }
 
-      const queryString = params.toString();
-      const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
+      const nextQueryString = params.toString();
+      const currentQueryString = searchParams.toString();
 
+      if (nextQueryString === currentQueryString) {
+        return;
+      }
+
+      const newUrl = nextQueryString ? `${pathname}?${nextQueryString}` : pathname;
       router.replace(newUrl, { scroll: false });
     },
-    [enableUrlSync, pathname, router],
+    [enableUrlSync, pathname, router, searchParams],
   );
 
   useEffect(() => {
