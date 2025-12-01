@@ -1,60 +1,55 @@
 "use client";
 
 import {
-    Sheet,
-    SheetContent,
-    SheetHeader,
-    SheetTitle,
-    SheetDescription,
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { Facility } from "@/lib/types/facility";
 import { FacilityHeader } from "./facility-header";
 import { ContactInfo } from "./contact-info";
 import { RoomList } from "./room-list";
 import { ActionButtons } from "./action-buttons";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import { useApp } from "@/lib/context/app-context";
 
-interface FacilitySheetProps {
-    facility: Facility | null;
-    open: boolean;
-    onClose: () => void;
-}
+export function FacilitySheet() {
+  const { selectedFacility, selectFacility } = useApp();
+  const open = !!selectedFacility;
+  const onClose = () => selectFacility(null);
 
-export function FacilitySheet({ facility, open, onClose }: FacilitySheetProps) {
-    return (
-        <Sheet open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-            <SheetContent
-                side="bottom"
-                className="mx-auto h-[85vh] rounded-t-[20px] p-0 sm:max-w-md sm:rounded-none sm:border-l"
-            >
-                <SheetHeader className="px-6 pt-6">
-                    <VisuallyHidden>
-                        <SheetTitle>{facility?.name ?? "Facility Details"}</SheetTitle>
-                        <SheetDescription>Details for {facility?.name ?? "selected facility"}</SheetDescription>
-                    </VisuallyHidden>
-                </SheetHeader>
+  return (
+    <Sheet open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+      <SheetContent
+        side="bottom"
+        className="mx-auto h-[85vh] rounded-t-[20px] p-0 sm:max-w-md sm:rounded-none sm:border-l"
+      >
+        <SheetHeader className="px-6 pt-6">
+          <VisuallyHidden>
+            <SheetTitle>{selectedFacility?.name ?? "Facility Details"}</SheetTitle>
+            <SheetDescription>Details for {selectedFacility?.name ?? "selected facility"}</SheetDescription>
+          </VisuallyHidden>
+        </SheetHeader>
 
-                {facility && (
-                    <ScrollArea className="h-full px-6 pb-6">
-                        <div className="space-y-8 pb-8">
-                            <FacilityHeader facility={facility} />
+        {selectedFacility && (
+          <ScrollArea className="h-full px-6 pb-6">
+            <div className="space-y-8 pb-8">
+              <FacilityHeader facility={selectedFacility} />
+              <ActionButtons facility={selectedFacility} />
+              <ContactInfo address="Visayas State University, Baybay City, Leyte" />
 
-                            <ActionButtons facility={facility} />
-
-                            {/* Contact info placeholder - data not yet in DB */}
-                            <ContactInfo address="Visayas State University, Baybay City, Leyte" />
-
-                            {facility.hasRooms && (
-                                <>
-                                    <div className="h-px bg-border" />
-                                    <RoomList facilityId={facility.id} />
-                                </>
-                            )}
-                        </div>
-                    </ScrollArea>
-                )}
-            </SheetContent>
-        </Sheet>
-    );
+              {selectedFacility.hasRooms && (
+                <>
+                  <div className="h-px bg-border" />
+                  <RoomList facilityId={selectedFacility.id} />
+                </>
+              )}
+            </div>
+          </ScrollArea>
+        )}
+      </SheetContent>
+    </Sheet>
+  );
 }
