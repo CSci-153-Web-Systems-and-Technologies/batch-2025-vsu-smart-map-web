@@ -78,12 +78,18 @@ export function useDirectorySearch({
     (search: string, category: FacilityCategory | null) => {
       if (!enableUrlSync) return;
 
-      const params = new URLSearchParams();
+      const params = new URLSearchParams(searchParams.toString());
+
       if (search.trim()) {
         params.set("q", search.trim());
+      } else {
+        params.delete("q");
       }
+
       if (category) {
         params.set("category", category);
+      } else {
+        params.delete("category");
       }
 
       const nextQueryString = params.toString();
