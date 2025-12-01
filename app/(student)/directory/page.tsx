@@ -42,7 +42,7 @@ export default async function DirectoryPage() {
   }
 
   return (
-    <main className="container mx-auto px-4 py-6">
+    <main className="container mx-auto px-4 py-6 pb-24 md:pb-6">
       <header className="mb-6">
         <h1 className="text-2xl font-bold text-foreground md:text-3xl">
           Campus Directory
