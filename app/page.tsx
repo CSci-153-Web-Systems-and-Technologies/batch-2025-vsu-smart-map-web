@@ -2,13 +2,14 @@
 
 import dynamic from "next/dynamic";
 import { Suspense, useEffect, useMemo, useState, useCallback } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { AppHeader } from "@/components/app-header";
 import { StudentTabs } from "@/components/student-tabs";
 import { MapContainerClient } from "@/components/map/map-container";
 import { MapSearchPanel } from "@/components/map/map-search-panel";
-import type { MapItem } from "@/lib/types/map";
+import type { Facility } from "@/lib/types/facility";
 import { getFacilities } from "@/lib/supabase/queries/facilities";
+import { FacilitySheet } from "@/components/facility/facility-sheet";
 
 const MapSelectionLayer = dynamic(
   () => import("@/components/map/map-selection-layer").then((m) => m.MapSelectionLayer),
@@ -39,15 +40,13 @@ function HomePageSkeleton() {
 function HomePageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const pathname = usePathname();
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   useEffect(() => {
     const facilityId = searchParams.get("facility");
-    if (facilityId) {
-      setSelectedId(facilityId);
-      router.replace("/", { scroll: false });
-    }
-  }, [searchParams, router]);
+    setSelectedId(facilityId || null);
+  }, [searchParams]);
 
   const handleTabChange = useCallback(
     (tab: TabId) => {
@@ -60,6 +59,18 @@ function HomePageContent() {
     [router]
   );
 
+  const handleSelect = (id: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("facility", id);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  const handleClearSelection = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("facility");
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
   return (
     <>
       <AppHeader
@@ -71,8 +82,8 @@ function HomePageContent() {
       <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-6 bg-background px-4 py-10 md:px-6">
         <MapTab
           selectedId={selectedId}
-          onSelect={(id) => setSelectedId(id)}
-          onClearSelection={() => setSelectedId(null)}
+          onSelect={handleSelect}
+          onClearSelection={handleClearSelection}
         />
       </main>
     </>
@@ -88,8 +99,8 @@ function MapTab({
   onSelect: (id: string) => void;
   onClearSelection: () => void;
 }) {
-  const [items, setItems] = useState<readonly MapItem[]>([]);
-  const [filtered, setFiltered] = useState<readonly MapItem[]>([]);
+  const [items, setItems] = useState<readonly Facility[]>([]);
+  const [filtered, setFiltered] = useState<readonly Facility[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -106,25 +117,19 @@ function MapTab({
         return;
       }
 
-      const mapItems: MapItem[] = data
-        .filter((f) => f.coordinates?.lat && f.coordinates?.lng)
-        .map((f) => ({
-          id: f.id,
-          code: f.code,
-          name: f.name,
-          category: f.category,
-          hasRooms: f.hasRooms,
-          coordinates: { lat: f.coordinates.lat, lng: f.coordinates.lng },
-        }));
-
-      setItems(mapItems);
-      setFiltered(mapItems);
+      setItems(data);
+      setFiltered(data);
       setError(null);
       setIsLoading(false);
     };
 
     void load();
   }, []);
+
+  const selectedFacility = useMemo(
+    () => items.find((f) => f.id === selectedId) || null,
+    [items, selectedId]
+  );
 
   return (
     <section
@@ -149,7 +154,13 @@ function MapTab({
         selectedId={selectedId}
         onSelect={onSelect}
         onClearSelection={onClearSelection}
-        onResultsChange={setFiltered}
+        onResultsChange={(results) => setFiltered(results as Facility[])}
+      />
+
+      <FacilitySheet
+        facility={selectedFacility}
+        open={!!selectedFacility}
+        onClose={onClearSelection}
       />
     </section>
   );
@@ -165,14 +176,14 @@ function MapView({
   onClearSelection,
   onResultsChange,
 }: {
-  items: readonly MapItem[];
-  filtered: readonly MapItem[];
+  items: readonly Facility[];
+  filtered: readonly Facility[];
   isLoading: boolean;
   error: string | null;
   selectedId: string | null;
   onSelect: (id: string) => void;
   onClearSelection: () => void;
-  onResultsChange: (items: MapItem[]) => void;
+  onResultsChange: (items: Facility[]) => void;
 }) {
   const hasResults = filtered.length > 0;
 
@@ -180,7 +191,7 @@ function MapView({
     <div className="mt-4 space-y-4 md:mt-6">
       <MapSearchPanel
         items={items}
-        onResultsChange={onResultsChange}
+        onResultsChange={(results) => onResultsChange(results as Facility[])}
       />
 
       {error && (
@@ -224,7 +235,7 @@ function SelectedNotice({
   selectedId,
   onClear,
 }: {
-  items: readonly MapItem[];
+  items: readonly Facility[];
   selectedId: string;
   onClear: () => void;
 }) {

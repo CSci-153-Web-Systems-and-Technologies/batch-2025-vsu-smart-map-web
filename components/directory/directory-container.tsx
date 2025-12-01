@@ -1,6 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useMemo } from "react";
 import { DirectoryList } from "./directory-list";
 import { DirectorySearch } from "./directory-search";
 import { DirectoryCategoryFilters } from "./directory-category-filters";
@@ -8,6 +9,7 @@ import { useDirectorySearch } from "@/hooks/use-directory-search";
 import { Button } from "@/components/ui/button";
 import type { Facility } from "@/lib/types/facility";
 import { X } from "lucide-react";
+import { FacilitySheet } from "@/components/facility/facility-sheet";
 
 export interface DirectoryContainerProps {
   facilities: Facility[];
@@ -15,6 +17,9 @@ export interface DirectoryContainerProps {
 
 export function DirectoryContainer({ facilities }: DirectoryContainerProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+
   const {
     searchTerm,
     setSearchTerm,
@@ -27,8 +32,22 @@ export function DirectoryContainer({ facilities }: DirectoryContainerProps) {
     totalCount,
   } = useDirectorySearch({ facilities, enableUrlSync: true });
 
+  const facilityId = searchParams.get("facility");
+  const selectedFacility = useMemo(
+    () => facilities.find((f) => f.id === facilityId) || null,
+    [facilities, facilityId]
+  );
+
   const handleFacilityClick = (facility: Facility) => {
-    console.log("[DirectoryContainer] Facility selected:", facility.name, facility.id);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("facility", facility.id);
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  const handleCloseSheet = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("facility");
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
   const handleViewOnMap = (facility: Facility) => {
@@ -89,6 +108,12 @@ export function DirectoryContainer({ facilities }: DirectoryContainerProps) {
           onViewOnMap={handleViewOnMap}
         />
       )}
+
+      <FacilitySheet
+        facility={selectedFacility}
+        open={!!selectedFacility}
+        onClose={handleCloseSheet}
+      />
     </div>
   );
 }
