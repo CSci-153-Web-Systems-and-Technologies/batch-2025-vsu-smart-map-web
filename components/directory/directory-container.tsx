@@ -32,7 +32,7 @@ export function DirectoryContainer({ facilities }: DirectoryContainerProps) {
   };
 
   const handleViewOnMap = (facility: Facility) => {
-    router.push(`/?facility=${facility.id}`);
+    router.push(`/?facility=${facility.id}`, { scroll: false });
   };
 
   return (
