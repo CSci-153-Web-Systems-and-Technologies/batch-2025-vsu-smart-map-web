@@ -18,12 +18,14 @@ interface AppState {
   searchQuery: string;
   debouncedQuery: string;
   selectedCategory: FacilityCategory | null;
+  activeTab: "map" | "directory" | "chat";
 }
 
 interface AppContextValue extends AppState {
   selectFacility: (facility: Facility | null) => void;
   setSearchQuery: (query: string) => void;
   setCategory: (category: FacilityCategory | null) => void;
+  setActiveTab: (tab: AppState["activeTab"]) => void;
   clearFilters: () => void;
 }
 
@@ -128,14 +130,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSelectedCategory(null);
   }, []);
 
+  const [activeTab, setActiveTabState] = useState<AppState["activeTab"]>("map");
+
+  useEffect(() => {
+    if (pathname.startsWith("/directory")) setActiveTabState("directory");
+    else if (pathname.startsWith("/chat")) setActiveTabState("chat");
+    else setActiveTabState("map");
+  }, [pathname]);
+
+  const setActiveTab = useCallback(
+    (tab: AppState["activeTab"]) => {
+      setActiveTabState(tab);
+      if (tab === "map") router.push("/", { scroll: false });
+      else if (tab === "directory") router.push("/directory", { scroll: false });
+      else if (tab === "chat") router.push("/chat", { scroll: false });
+    },
+    [router]
+  );
+
   const value: AppContextValue = {
     selectedFacility,
     searchQuery,
     debouncedQuery,
     selectedCategory,
+    activeTab,
     selectFacility: setSelectedFacility,
     setSearchQuery,
     setCategory: setSelectedCategory,
+    setActiveTab,
     clearFilters,
   };
 
