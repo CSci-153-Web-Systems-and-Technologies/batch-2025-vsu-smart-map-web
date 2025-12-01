@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 import { ListOrdered, MapPinned, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useApp } from "@/lib/context/app-context";
 
 type TabId = "map" | "directory" | "chat";
 type Placement = "inline" | "bottom";
@@ -15,8 +16,6 @@ interface StudentTab {
 
 interface StudentTabsProps {
   tabs?: StudentTab[];
-  activeTab: TabId;
-  onTabChange: (id: TabId) => void;
   className?: string;
   placement?: Placement;
 }
@@ -29,11 +28,10 @@ const defaultTabs: StudentTab[] = [
 
 export function StudentTabs({
   tabs = defaultTabs,
-  activeTab,
-  onTabChange,
   className,
   placement = "inline",
 }: StudentTabsProps) {
+  const { activeTab, setActiveTab } = useApp();
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
       const lastIndex = tabs.length - 1;
@@ -46,10 +44,10 @@ export function StudentTabs({
 
       if (nextIndex !== index) {
         event.preventDefault();
-        onTabChange(tabs[nextIndex].id as TabId);
+        setActiveTab(tabs[nextIndex].id as TabId);
       }
     },
-    [tabs, onTabChange],
+    [tabs, setActiveTab],
   );
 
   const isInline = placement === "inline";
@@ -80,7 +78,7 @@ export function StudentTabs({
               aria-controls={`${tab.id}-panel`}
               tabIndex={tabIndex}
               type="button"
-              onClick={() => onTabChange(tab.id)}
+              onClick={() => setActiveTab(tab.id)}
               onKeyDown={(event) => handleKeyDown(event, index)}
               className={cn(
                 "group relative flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition",

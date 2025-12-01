@@ -1,14 +1,13 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { useMemo } from "react";
 import { DirectoryList } from "./directory-list";
 import { DirectorySearch } from "./directory-search";
 import { DirectoryCategoryFilters } from "./directory-category-filters";
 import { Button } from "@/components/ui/button";
 import type { Facility } from "@/lib/types/facility";
 import { X } from "lucide-react";
-import { FacilitySheet } from "@/components/facility/facility-sheet";
 import { useApp } from "@/lib/context/app-context";
 
 export interface DirectoryContainerProps {
@@ -17,29 +16,14 @@ export interface DirectoryContainerProps {
 
 export function DirectoryContainer({ facilities }: DirectoryContainerProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const {
     searchQuery,
     setSearchQuery,
     selectedCategory,
     setCategory,
-    selectedFacility,
     selectFacility,
     clearFilters,
   } = useApp();
-
-  const hasHydrated = useRef(false);
-  useEffect(() => {
-    if (hasHydrated.current) return;
-    const facilityId = searchParams.get("facility");
-    if (facilityId) {
-      const found = facilities.find((f) => f.id === facilityId);
-      if (found) {
-        selectFacility(found);
-        hasHydrated.current = true;
-      }
-    }
-  }, [searchParams, facilities, selectFacility]);
 
   const filteredFacilities = useMemo(() => {
     return facilities.filter((facility) => {
@@ -62,10 +46,6 @@ export function DirectoryContainer({ facilities }: DirectoryContainerProps) {
 
   const handleFacilityClick = (facility: Facility) => {
     selectFacility(facility);
-  };
-
-  const handleCloseSheet = () => {
-    selectFacility(null);
   };
 
   const handleViewOnMap = (facility: Facility) => {
@@ -126,12 +106,6 @@ export function DirectoryContainer({ facilities }: DirectoryContainerProps) {
           onViewOnMap={handleViewOnMap}
         />
       )}
-
-      <FacilitySheet
-        facility={selectedFacility}
-        open={!!selectedFacility}
-        onClose={handleCloseSheet}
-      />
     </div>
   );
 }

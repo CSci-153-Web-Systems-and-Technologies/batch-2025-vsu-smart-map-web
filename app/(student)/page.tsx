@@ -1,13 +1,11 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { MapContainerClient } from "@/components/map/map-container";
 import { MapSearchPanel } from "@/components/map/map-search-panel";
 import type { Facility } from "@/lib/types/facility";
 import { getFacilities } from "@/lib/supabase/queries/facilities";
-import { FacilitySheet } from "@/components/facility/facility-sheet";
 import { useApp } from "@/lib/context/app-context";
 
 const MapSelectionLayer = dynamic(
@@ -68,20 +66,6 @@ function MapTab() {
     void load();
   }, []);
 
-  const searchParams = useSearchParams();
-  const hasHydrated = useRef(false);
-  useEffect(() => {
-    if (hasHydrated.current) return;
-    const facilityId = searchParams.get("facility");
-    if (facilityId && items.length > 0) {
-      const found = items.find((f) => f.id === facilityId);
-      if (found) {
-        selectFacility(found);
-        hasHydrated.current = true;
-      }
-    }
-  }, [searchParams, items, selectFacility]);
-
   return (
     <section
       id="map-panel"
@@ -109,12 +93,6 @@ function MapTab() {
         }}
         onClearSelection={() => selectFacility(null)}
         onResultsChange={(results) => setFiltered(results as Facility[])}
-      />
-
-      <FacilitySheet
-        facility={selectedFacility}
-        open={!!selectedFacility}
-        onClose={() => selectFacility(null)}
       />
     </section>
   );
