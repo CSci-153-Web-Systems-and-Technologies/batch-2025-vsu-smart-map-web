@@ -22,38 +22,38 @@ interface FacilitySheetProps {
 }
 
 export function FacilitySheet({ facility, open, onClose }: FacilitySheetProps) {
-    if (!facility) return null;
-
     return (
         <Sheet open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
             <SheetContent
                 side="bottom"
-                className="h-[85vh] rounded-t-[20px] p-0 sm:max-w-md sm:rounded-none sm:border-l"
+                className="mx-auto h-[85vh] rounded-t-[20px] p-0 sm:max-w-md sm:rounded-none sm:border-l"
             >
                 <SheetHeader className="px-6 pt-6">
                     <VisuallyHidden>
-                        <SheetTitle>{facility.name}</SheetTitle>
-                        <SheetDescription>Details for {facility.name}</SheetDescription>
+                        <SheetTitle>{facility?.name ?? "Facility Details"}</SheetTitle>
+                        <SheetDescription>Details for {facility?.name ?? "selected facility"}</SheetDescription>
                     </VisuallyHidden>
                 </SheetHeader>
 
-                <ScrollArea className="h-full px-6 pb-6">
-                    <div className="space-y-8 pb-8">
-                        <FacilityHeader facility={facility} />
+                {facility && (
+                    <ScrollArea className="h-full px-6 pb-6">
+                        <div className="space-y-8 pb-8">
+                            <FacilityHeader facility={facility} />
 
-                        <ActionButtons facility={facility} />
+                            <ActionButtons facility={facility} />
 
-                        {/* Contact info placeholder - data not yet in DB */}
-                        <ContactInfo address="Visayas State University, Baybay City, Leyte" />
+                            {/* Contact info placeholder - data not yet in DB */}
+                            <ContactInfo address="Visayas State University, Baybay City, Leyte" />
 
-                        {facility.hasRooms && (
-                            <>
-                                <div className="h-px bg-border" />
-                                <RoomList facilityId={facility.id} />
-                            </>
-                        )}
-                    </div>
-                </ScrollArea>
+                            {facility.hasRooms && (
+                                <>
+                                    <div className="h-px bg-border" />
+                                    <RoomList facilityId={facility.id} />
+                                </>
+                            )}
+                        </div>
+                    </ScrollArea>
+                )}
             </SheetContent>
         </Sheet>
     );
