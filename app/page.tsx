@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { AppHeader } from "@/components/app-header";
 import { StudentTabs } from "@/components/student-tabs";
@@ -17,77 +17,65 @@ const MapSelectionLayer = dynamic(
 
 type TabId = "map" | "directory" | "chat";
 
-const TAB_CONTENT: Record<TabId, { title: string; body: string }> = {
-  directory: {
-    title: "Browse the directory",
-    body: "Soon: searchable building list with categories, rooms, and details.",
-  },
-  chat: {
-    title: "Ask the assistant",
-    body: "Soon: chat with Gemini to find locations and highlight them on the map.",
-  },
-  map: {
-    title: "Explore the campus map",
-    body: "Interactive Leaflet map with category pins and selection highlight.",
-  },
-};
-
 export default function HomePage() {
+  return (
+    <Suspense fallback={<HomePageSkeleton />}>
+      <HomePageContent />
+    </Suspense>
+  );
+}
+
+function HomePageSkeleton() {
+  return (
+    <>
+      <AppHeader tabsSlot={null} />
+      <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-6 bg-background px-4 py-10 md:px-6">
+        <div className="h-[560px] rounded-xl border border-border bg-muted animate-pulse" />
+      </main>
+    </>
+  );
+}
+
+function HomePageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<TabId>("map");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   useEffect(() => {
     const facilityId = searchParams.get("facility");
     if (facilityId) {
       setSelectedId(facilityId);
-      setActiveTab("map");
       router.replace("/", { scroll: false });
     }
   }, [searchParams, router]);
+
+  const handleTabChange = useCallback(
+    (tab: TabId) => {
+      if (tab === "directory") {
+        router.push("/directory");
+      } else if (tab === "chat") {
+        router.push("/chat");
+      }
+    },
+    [router]
+  );
 
   return (
     <>
       <AppHeader
         tabsSlot={
-          <StudentTabs placement="inline" activeTab={activeTab} onTabChange={setActiveTab} />
+          <StudentTabs placement="inline" activeTab="map" onTabChange={handleTabChange} />
         }
       />
-      <StudentTabs placement="bottom" activeTab={activeTab} onTabChange={setActiveTab} />
+      <StudentTabs placement="bottom" activeTab="map" onTabChange={handleTabChange} />
       <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-6 bg-background px-4 py-10 md:px-6">
-        {activeTab === "map" ? (
-          <MapTab
-            selectedId={selectedId}
-            onSelect={(id) => setSelectedId(id)}
-            onClearSelection={() => setSelectedId(null)}
-          />
-        ) : (
-          <PlaceholderTab tab={activeTab} />
-        )}
+        <MapTab
+          selectedId={selectedId}
+          onSelect={(id) => setSelectedId(id)}
+          onClearSelection={() => setSelectedId(null)}
+        />
       </main>
     </>
-  );
-}
-
-function PlaceholderTab({ tab }: { tab: Exclude<TabId, "map"> }) {
-  const content = TAB_CONTENT[tab];
-
-  return (
-    <section
-      id={`${tab}-panel`}
-      role="tabpanel"
-      aria-label={`${tab} panel`}
-      className="rounded-xl border border-border bg-card p-6 shadow-card"
-      tabIndex={0}
-    >
-      <p className="text-sm uppercase tracking-wide text-muted-foreground">
-        {tab === "directory" && "Directory"}
-        {tab === "chat" && "Chat"}
-      </p>
-      <h1 className="mt-2 text-2xl font-bold text-foreground">{content.title}</h1>
-      <p className="mt-3 text-base text-muted-foreground">{content.body}</p>
-    </section>
   );
 }
 
