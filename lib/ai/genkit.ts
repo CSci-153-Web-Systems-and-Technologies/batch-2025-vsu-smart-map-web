@@ -27,15 +27,17 @@ export async function runWithKeyRotation<T>(
       currentKey = apiKeyManager.getNextKey();
       const ai = createGenkit(currentKey);
       return await operation(ai);
-    } catch (error: any) {
+    } catch (error: unknown) {
       attempts++;
 
       // Check for rate limit errors (429)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const err = error as any;
       const isRateLimit =
-        error?.status === 429 ||
-        error?.message?.includes('429') ||
-        error?.message?.includes('quota') ||
-        error?.response?.status === 429;
+        err?.status === 429 ||
+        err?.message?.includes('429') ||
+        err?.message?.includes('quota') ||
+        err?.response?.status === 429;
 
       if (isRateLimit && currentKey) {
         console.warn(`Genkit operation failed with rate limit for key ending in ...${currentKey.slice(-4)}, retrying...`);
