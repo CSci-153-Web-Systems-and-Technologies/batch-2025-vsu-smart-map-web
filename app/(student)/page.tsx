@@ -1,22 +1,19 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Suspense, useEffect, useMemo, useState, useCallback } from "react";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { AppHeader } from "@/components/app-header";
-import { StudentTabs } from "@/components/student-tabs";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { MapContainerClient } from "@/components/map/map-container";
 import { MapSearchPanel } from "@/components/map/map-search-panel";
 import type { Facility } from "@/lib/types/facility";
 import { getFacilities } from "@/lib/supabase/queries/facilities";
 import { FacilitySheet } from "@/components/facility/facility-sheet";
+import { useApp } from "@/lib/context/app-context";
 
 const MapSelectionLayer = dynamic(
   () => import("@/components/map/map-selection-layer").then((m) => m.MapSelectionLayer),
   { ssr: false },
 );
-
-type TabId = "map" | "directory" | "chat";
 
 export default function HomePage() {
   return (
@@ -28,77 +25,22 @@ export default function HomePage() {
 
 function HomePageSkeleton() {
   return (
-    <>
-      <AppHeader tabsSlot={null} />
-      <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-6 bg-background px-4 py-10 md:px-6">
-        <div className="h-[560px] rounded-xl border border-border bg-muted animate-pulse" />
-      </main>
-    </>
+    <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-6 bg-background px-4 py-10 md:px-6">
+      <div className="h-[560px] rounded-xl border border-border bg-muted animate-pulse" />
+    </main>
   );
 }
 
 function HomePageContent() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const facilityId = searchParams.get("facility");
-    setSelectedId(facilityId || null);
-  }, [searchParams]);
-
-  const handleTabChange = useCallback(
-    (tab: TabId) => {
-      if (tab === "directory") {
-        router.push("/directory", { scroll: false });
-      } else if (tab === "chat") {
-        router.push("/chat", { scroll: false });
-      }
-    },
-    [router]
-  );
-
-  const handleSelect = (id: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("facility", id);
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  };
-
-  const handleClearSelection = () => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete("facility");
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  };
-
   return (
-    <>
-      <AppHeader
-        tabsSlot={
-          <StudentTabs placement="inline" activeTab="map" onTabChange={handleTabChange} />
-        }
-      />
-      <StudentTabs placement="bottom" activeTab="map" onTabChange={handleTabChange} />
-      <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-6 bg-background px-4 py-10 md:px-6">
-        <MapTab
-          selectedId={selectedId}
-          onSelect={handleSelect}
-          onClearSelection={handleClearSelection}
-        />
-      </main>
-    </>
+    <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-6 bg-background px-4 py-10 md:px-6">
+      <MapTab />
+    </main>
   );
 }
 
-function MapTab({
-  selectedId,
-  onSelect,
-  onClearSelection,
-}: {
-  selectedId: string | null;
-  onSelect: (id: string) => void;
-  onClearSelection: () => void;
-}) {
+function MapTab() {
+  const { selectedFacility, selectFacility } = useApp();
   const [items, setItems] = useState<readonly Facility[]>([]);
   const [filtered, setFiltered] = useState<readonly Facility[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -126,10 +68,19 @@ function MapTab({
     void load();
   }, []);
 
-  const selectedFacility = useMemo(
-    () => items.find((f) => f.id === selectedId) || null,
-    [items, selectedId]
-  );
+  const searchParams = useSearchParams();
+  const hasHydrated = useRef(false);
+  useEffect(() => {
+    if (hasHydrated.current) return;
+    const facilityId = searchParams.get("facility");
+    if (facilityId && items.length > 0) {
+      const found = items.find((f) => f.id === facilityId);
+      if (found) {
+        selectFacility(found);
+        hasHydrated.current = true;
+      }
+    }
+  }, [searchParams, items, selectFacility]);
 
   return (
     <section
@@ -151,16 +102,19 @@ function MapTab({
         filtered={filtered}
         isLoading={isLoading}
         error={error}
-        selectedId={selectedId}
-        onSelect={onSelect}
-        onClearSelection={onClearSelection}
+        selectedId={selectedFacility?.id ?? null}
+        onSelect={(id) => {
+          const facility = items.find((f) => f.id === id) || null;
+          selectFacility(facility);
+        }}
+        onClearSelection={() => selectFacility(null)}
         onResultsChange={(results) => setFiltered(results as Facility[])}
       />
 
       <FacilitySheet
         facility={selectedFacility}
         open={!!selectedFacility}
-        onClose={onClearSelection}
+        onClose={() => selectFacility(null)}
       />
     </section>
   );
