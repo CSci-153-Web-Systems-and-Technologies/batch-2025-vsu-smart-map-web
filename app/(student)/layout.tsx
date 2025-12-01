@@ -1,9 +1,9 @@
 "use client";
 
+import { useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AppHeader } from "@/components/app-header";
 import { StudentTabs } from "@/components/student-tabs";
-import { useCallback } from "react";
 
 type TabId = "map" | "directory" | "chat";
 
@@ -24,15 +24,17 @@ export default function StudentLayout({
 
   const handleTabChange = useCallback(
     (tab: TabId) => {
+      if (tab === activeTab) return;
+
       if (tab === "map") {
-        router.push("/");
+        router.push("/", { scroll: false });
       } else if (tab === "directory") {
-        router.push("/directory");
-      } else if (tab === "chat") {
-        router.push("/chat");
+        router.push("/directory", { scroll: false });
+      } else {
+        router.push("/chat", { scroll: false });
       }
     },
-    [router]
+    [activeTab, router],
   );
 
   return (

@@ -52,9 +52,9 @@ function HomePageContent() {
   const handleTabChange = useCallback(
     (tab: TabId) => {
       if (tab === "directory") {
-        router.push("/directory");
+        router.push("/directory", { scroll: false });
       } else if (tab === "chat") {
-        router.push("/chat");
+        router.push("/chat", { scroll: false });
       }
     },
     [router]
