@@ -53,6 +53,19 @@ export function useDirectorySearch({
     useState<FacilityCategory[]>(urlCategories);
 
   useEffect(() => {
+    if (!enableUrlSync) return;
+
+    const nextSearch = searchParams.get("q") ?? "";
+    const nextCategories = searchParams
+      .getAll("category")
+      .filter((c): c is FacilityCategory => VALID_CATEGORIES.includes(c as FacilityCategory));
+
+    setSearchTerm(nextSearch);
+    setDebouncedTerm(nextSearch);
+    setSelectedCategories(nextCategories);
+  }, [enableUrlSync, searchParams]);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedTerm(searchTerm);
     }, DEBOUNCE_MS);
@@ -75,7 +88,7 @@ export function useDirectorySearch({
 
       router.replace(newUrl, { scroll: false });
     },
-    [enableUrlSync, pathname, router]
+    [enableUrlSync, pathname, router],
   );
 
   useEffect(() => {
