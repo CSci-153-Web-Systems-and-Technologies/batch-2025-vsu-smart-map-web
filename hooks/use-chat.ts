@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import type { ChatMessage, ChatState, FacilityMatch } from "@/lib/types";
 
 function createMessageId() {
@@ -9,17 +9,25 @@ function createMessageId() {
     : Date.now().toString();
 }
 
-export function useChat() {
+interface UseChatOptions {
+  streaming?: boolean;
+}
+
+export function useChat({ streaming = false }: UseChatOptions = {}) {
   const [state, setState] = useState<ChatState>({
     messages: [],
     isLoading: false,
     error: null,
   });
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const sendMessage = useCallback(
     async (content: string) => {
       const trimmed = content.trim();
       if (!trimmed) return;
+
+      abortControllerRef.current?.abort();
+      abortControllerRef.current = new AbortController();
 
       const userMessage: ChatMessage = {
         id: createMessageId(),
@@ -27,6 +35,8 @@ export function useChat() {
         content: trimmed,
         timestamp: new Date(),
       };
+
+      const assistantId = createMessageId();
 
       setState((prev) => ({
         ...prev,
@@ -44,38 +54,95 @@ export function useChat() {
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: trimmed, history }),
+          body: JSON.stringify({ message: trimmed, history, streaming }),
+          signal: abortControllerRef.current.signal,
         });
 
         if (!res.ok) {
           throw new Error(`Request failed: ${res.status}`);
         }
 
-        const data = (await res.json()) as {
-          content: string;
-          facilities?: FacilityMatch[];
-          followUp?: string | null;
-        };
+        if (streaming && res.body) {
+          setState((prev) => ({
+            ...prev,
+            messages: [
+              ...prev.messages,
+              {
+                id: assistantId,
+                role: "assistant",
+                content: "",
+                timestamp: new Date(),
+              },
+            ],
+          }));
 
-        const assistantMessage: ChatMessage = {
-          id: createMessageId(),
-          role: "assistant",
-          content: data.content,
-          timestamp: new Date(),
-          facilities: data.facilities,
-        };
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          let fullContent = "";
 
-        setState((prev) => ({
-          ...prev,
-          messages: [...prev.messages, assistantMessage],
-          isLoading: false,
-        }));
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split("\n");
+
+            for (const line of lines) {
+              if (line.startsWith("data: ")) {
+                const data = line.slice(6);
+                if (data === "[DONE]") continue;
+
+                try {
+                  const parsed = JSON.parse(data) as string | { error: string };
+                  if (typeof parsed === "string") {
+                    fullContent += parsed;
+                    setState((prev) => ({
+                      ...prev,
+                      messages: prev.messages.map((m) =>
+                        m.id === assistantId ? { ...m, content: fullContent } : m
+                      ),
+                    }));
+                  }
+                } catch {
+                  // Skip malformed JSON
+                }
+              }
+            }
+          }
+
+          setState((prev) => ({ ...prev, isLoading: false }));
+        } else {
+          const data = (await res.json()) as {
+            content: string;
+            facilities?: FacilityMatch[];
+            followUp?: string | null;
+          };
+
+          const assistantMessage: ChatMessage = {
+            id: assistantId,
+            role: "assistant",
+            content: data.content,
+            timestamp: new Date(),
+            facilities: data.facilities,
+          };
+
+          setState((prev) => ({
+            ...prev,
+            messages: [...prev.messages, assistantMessage],
+            isLoading: false,
+          }));
+        }
       } catch (err) {
+        if (err instanceof Error && err.name === "AbortError") {
+          setState((prev) => ({ ...prev, isLoading: false }));
+          return;
+        }
+
         const errorMessage =
           err instanceof Error ? err.message : "Something went wrong";
 
         const errorAssistant: ChatMessage = {
-          id: createMessageId(),
+          id: assistantId,
           role: "assistant",
           content: errorMessage,
           timestamp: new Date(),
@@ -90,7 +157,7 @@ export function useChat() {
         }));
       }
     },
-    [state.messages]
+    [state.messages, streaming]
   );
 
   const clearMessages = useCallback(() => {
