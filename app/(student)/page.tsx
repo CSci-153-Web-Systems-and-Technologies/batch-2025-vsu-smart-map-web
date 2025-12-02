@@ -38,7 +38,7 @@ function HomePageContent() {
 }
 
 function MapTab() {
-  const { selectedFacility, selectFacility } = useApp();
+  const { selectedFacility, selectFacility, pendingFacilityId, resolvePendingFacility } = useApp();
   const [items, setItems] = useState<readonly Facility[]>([]);
   const [filtered, setFiltered] = useState<readonly Facility[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -65,6 +65,16 @@ function MapTab() {
 
     void load();
   }, []);
+
+  useEffect(() => {
+    if (!items.length || !pendingFacilityId) return;
+    if (selectedFacility?.id === pendingFacilityId) return;
+
+    const match = items.find((facility) => facility.id === pendingFacilityId);
+    if (match) {
+      resolvePendingFacility(match);
+    }
+  }, [items, pendingFacilityId, selectedFacility, resolvePendingFacility]);
 
   return (
     <section
