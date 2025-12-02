@@ -1,9 +1,14 @@
-import { findLocationFlow } from "@/lib/ai/flows/find-location";
+import {
+  findLocationFlow,
+  streamFindLocation,
+} from "@/lib/ai/flows/find-location";
 import { getFacilitiesByIds } from "@/lib/supabase/queries/facilities";
 import { NextResponse } from "next/server";
+import { CHAT_HISTORY } from "@/lib/constants/chat";
 import type { FacilityMatch } from "@/lib/types/chat";
 
 type HistoryEntry = { role: "user" | "assistant"; content: string };
+const encoder = new TextEncoder();
 
 function getPreviousQueries(history: unknown): string[] {
   if (!Array.isArray(history)) return [];
@@ -15,7 +20,7 @@ function getPreviousQueries(history: unknown): string[] {
     )
     .map((entry) => entry.content)
     .filter(Boolean)
-    .slice(-6);
+    .slice(-CHAT_HISTORY.MAX_CONTEXT_MESSAGES);
 }
 
 async function resolveFacilityMatches(
@@ -46,6 +51,8 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const message = typeof body?.message === "string" ? body.message.trim() : "";
+    const streaming = Boolean(body?.streaming);
+    const history = Array.isArray(body?.history) ? body.history : [];
 
     if (!message) {
       return NextResponse.json(
@@ -54,11 +61,71 @@ export async function POST(request: Request) {
       );
     }
 
-    const previousQueries = getPreviousQueries(body?.history);
+    const previousQueries = getPreviousQueries(history);
+    const context = { previousQueries };
+
+    if (streaming) {
+      const stream = await streamFindLocation({
+        query: message,
+        context,
+      });
+
+      const readable = new ReadableStream({
+        async start(controller) {
+          const send = (data: unknown) =>
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+
+          try {
+            let lastResponseText = "";
+
+            for await (const chunk of stream.stream) {
+              const output = (chunk as { output?: { response?: string } }).output;
+              if (!output?.response) continue;
+
+              const newText = output.response.slice(lastResponseText.length);
+              if (!newText) continue;
+
+              lastResponseText = output.response;
+              send({ type: "chunk", content: newText });
+            }
+
+            const response = await stream.response;
+            if (!response.output) {
+              throw new Error("AI response missing output");
+            }
+
+            const matches = await resolveFacilityMatches(response.output.facilities);
+
+            send({
+              type: "final",
+              content: response.output.response,
+              facilities: matches,
+              followUp: response.output.followUp ?? null,
+            });
+          } catch (error) {
+            const errorMessage =
+              error instanceof Error ? error.message : "Failed to stream response";
+            send({ type: "error", error: errorMessage });
+          } finally {
+            controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+            controller.close();
+          }
+        },
+      });
+
+      return new Response(readable, {
+        status: 200,
+        headers: {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache, no-transform",
+          Connection: "keep-alive",
+        },
+      });
+    }
 
     const result = await findLocationFlow({
       query: message,
-      context: { previousQueries },
+      context,
     });
 
     const matches = await resolveFacilityMatches(result.facilities);

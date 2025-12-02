@@ -3,7 +3,7 @@ import type { ChatMessage } from "@/lib/types";
 
 interface TruncationResult {
   messages: ChatMessage[];
-  wasTriuncated: boolean;
+  wasTruncated: boolean;
   removedCount: number;
 }
 
@@ -14,7 +14,7 @@ export function truncateHistory(
   if (messages.length <= maxMessages) {
     return {
       messages,
-      wasTriuncated: false,
+      wasTruncated: false,
       removedCount: 0,
     };
   }
@@ -24,7 +24,7 @@ export function truncateHistory(
 
   return {
     messages: truncated,
-    wasTriuncated: true,
+    wasTruncated: true,
     removedCount,
   };
 }
