@@ -5,6 +5,7 @@ export const LocationQuerySchema = z.object({
   context: z
     .object({
       previousQueries: z.array(z.string()).optional(),
+      summary: z.string().optional().describe("Summary of previous conversation history"),
       userLocation: z
         .object({
           lat: z.number(),
