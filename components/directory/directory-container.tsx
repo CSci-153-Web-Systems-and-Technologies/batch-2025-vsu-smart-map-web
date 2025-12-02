@@ -21,8 +21,8 @@ export function DirectoryContainer({ facilities }: DirectoryContainerProps) {
     setSearchQuery,
     selectedCategory,
     setCategory,
-    selectFacility,
     clearFilters,
+    selectFacility,
   } = useApp();
 
   const filteredFacilities = useMemo(() => {
@@ -43,10 +43,6 @@ export function DirectoryContainer({ facilities }: DirectoryContainerProps) {
   }, [facilities, searchQuery, selectedCategory]);
 
   const hasActiveFilters = searchQuery !== "" || selectedCategory !== null;
-
-  const handleFacilityClick = (facility: Facility) => {
-    selectFacility(facility);
-  };
 
   const handleViewOnMap = (facility: Facility) => {
     router.push(`/?facility=${facility.id}`, { scroll: false });
@@ -102,7 +98,7 @@ export function DirectoryContainer({ facilities }: DirectoryContainerProps) {
       ) : (
         <DirectoryList
           facilities={filteredFacilities}
-          onFacilityClick={handleFacilityClick}
+          onFacilityClick={selectFacility}
           onViewOnMap={handleViewOnMap}
         />
       )}

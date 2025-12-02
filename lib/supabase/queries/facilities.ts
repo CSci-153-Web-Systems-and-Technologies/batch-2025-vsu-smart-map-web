@@ -224,6 +224,24 @@ export async function deleteFacility(
   return { data: row ? toFacility(row) : null, error: normalizeError(error) };
 }
 
+export async function getFacilitiesByIds(params: {
+  ids: string[];
+  client?: MaybeClient;
+}): Promise<BaseResult<Facility[]>> {
+  if (!params.ids.length) {
+    return { data: [], error: null };
+  }
+
+  const client = await resolveClient(params.client);
+  const { data, error } = await client
+    .from("facilities")
+    .select(selectBase())
+    .in("id", params.ids);
+
+  const rows = data as FacilityRow[] | null;
+  return { data: rows ? rows.map(toFacility) : [], error: normalizeError(error) };
+}
+
 export function isValidCategory(category: string): category is FacilityCategory {
   return (FACILITY_CATEGORIES as readonly string[]).includes(category);
 }

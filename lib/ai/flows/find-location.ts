@@ -1,5 +1,5 @@
 import { flow } from "@genkit-ai/core";
-import { runWithKeyRotation } from "../genkit";
+import { runWithKeyRotation, streamWithKeyRotation } from "../genkit";
 import { LocationQuerySchema, LocationResponseSchema, LocationQuery } from "../schemas/location";
 import { CAMPUS_ASSISTANT_PROMPT } from "../prompts/campus-assistant";
 import { getFacilitiesForChat } from "@/lib/supabase/queries/facilities";
@@ -66,3 +66,30 @@ Answer the user's query based on the available facilities.
     });
   }
 );
+
+export async function streamFindLocation(input: LocationQuery) {
+  const facilitiesContext = await getCachedFacilities(input.context?.forceRefresh);
+
+  const userQuery = input.query;
+  const previousContext = input.context ? JSON.stringify(input.context) : "None";
+
+  const prompt = `
+${CAMPUS_ASSISTANT_PROMPT}
+
+## Context
+User Query: "${userQuery}"
+Previous Context: ${previousContext}
+
+## Available Facilities
+${JSON.stringify(facilitiesContext, null, 2)}
+
+Answer the user's query based on the available facilities.
+`;
+
+  return await streamWithKeyRotation(async (ai) => {
+    return await ai.generateStream({
+      prompt: prompt,
+      output: { schema: LocationResponseSchema },
+    });
+  });
+}

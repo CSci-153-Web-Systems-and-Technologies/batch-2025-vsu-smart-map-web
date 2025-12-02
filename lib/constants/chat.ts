@@ -1,0 +1,9 @@
+export const CHAT_HISTORY = {
+  MAX_MESSAGES: 20,
+  MAX_CONTEXT_MESSAGES: 6,
+  SUMMARY_THRESHOLD: 10,
+  TOKEN_ESTIMATE_PER_MESSAGE: 100,
+  MAX_TOKENS_ESTIMATE: 2000,
+} as const;
+
+export type ChatHistoryConfig = typeof CHAT_HISTORY;

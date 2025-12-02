@@ -1,3 +1,4 @@
+export * from "./chat";
 export * from "./map";
 export * from "./forms";
 export * from "./status";

@@ -7,7 +7,8 @@ import {
   useState,
   useCallback,
   useRef,
-  ReactNode,
+  useMemo,
+  type ReactNode,
 } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import type { Facility, FacilityCategory } from "@/lib/types/facility";
@@ -15,6 +16,7 @@ import { FACILITY_CATEGORY_META } from "@/lib/constants/facilities";
 
 interface AppState {
   selectedFacility: Facility | null;
+  pendingFacilityId: string | null;
   searchQuery: string;
   debouncedQuery: string;
   selectedCategory: FacilityCategory | null;
@@ -23,6 +25,7 @@ interface AppState {
 
 interface AppContextValue extends AppState {
   selectFacility: (facility: Facility | null) => void;
+  resolvePendingFacility: (facility: Facility) => void;
   setSearchQuery: (query: string) => void;
   setCategory: (category: FacilityCategory | null) => void;
   setActiveTab: (tab: AppState["activeTab"]) => void;
@@ -32,86 +35,80 @@ interface AppContextValue extends AppState {
 const AppContext = createContext<AppContextValue | null>(null);
 
 const DEBOUNCE_MS = 300;
+const CLOSE_GUARD_MS = 100;
 const VALID_CATEGORIES = Object.keys(FACILITY_CATEGORY_META) as FacilityCategory[];
+
+function isValidCategory(value: string | null): value is FacilityCategory {
+  return value !== null && VALID_CATEGORIES.includes(value as FacilityCategory);
+}
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  const isUpdatingUrl = useRef(false);
+  
+  const lastSyncedFacilityId = useRef<string | null>(null);
+  const isUserClosing = useRef(false);
 
   const initialSearch = searchParams.get("q") ?? "";
-  const paramCategory = searchParams.get("category");
-  const initialCategory =
-    paramCategory && VALID_CATEGORIES.includes(paramCategory as FacilityCategory)
-      ? (paramCategory as FacilityCategory)
-      : null;
+  const initialFacilityId = searchParams.get("facility") ?? null;
+  const urlCategory = searchParams.get("category");
+  const initialCategory = isValidCategory(urlCategory) ? urlCategory : null;
 
   const [selectedFacility, setSelectedFacility] = useState<Facility | null>(null);
+  const [pendingFacilityId, setPendingFacilityId] = useState<string | null>(initialFacilityId);
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [debouncedQuery, setDebouncedQuery] = useState(initialSearch);
-  const [selectedCategory, setSelectedCategory] = useState<FacilityCategory | null>(
-    initialCategory
-  );
+  const [selectedCategory, setSelectedCategory] = useState<FacilityCategory | null>(initialCategory);
+  const [activeTab, setActiveTabState] = useState<AppState["activeTab"]>("map");
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedQuery(searchQuery);
-    }, DEBOUNCE_MS);
+    lastSyncedFacilityId.current = initialFacilityId;
+  }, [initialFacilityId]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery), DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  const updateUrl = useCallback(
-    (query: string, category: FacilityCategory | null, facilityId: string | null) => {
-      const params = new URLSearchParams(searchParams.toString());
-
-      if (query.trim()) {
-        params.set("q", query.trim());
-      } else {
-        params.delete("q");
-      }
-
-      if (category) {
-        params.set("category", category);
-      } else {
-        params.delete("category");
-      }
-
-      if (facilityId) {
-        params.set("facility", facilityId);
-      } else {
-        params.delete("facility");
-      }
-
-      const nextQueryString = params.toString();
-      const currentQueryString = searchParams.toString();
-
-      if (nextQueryString === currentQueryString) return;
-
-      isUpdatingUrl.current = true;
-      const newUrl = nextQueryString ? `${pathname}?${nextQueryString}` : pathname;
-      router.replace(newUrl, { scroll: false });
-
-      setTimeout(() => {
-        isUpdatingUrl.current = false;
-      }, 50);
-    },
-    [pathname, router, searchParams]
-  );
+  const currentFacilityId = selectedFacility?.id ?? pendingFacilityId ?? null;
 
   useEffect(() => {
-    updateUrl(debouncedQuery, selectedCategory, selectedFacility?.id ?? null);
-  }, [debouncedQuery, selectedCategory, selectedFacility, updateUrl]);
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (debouncedQuery.trim()) {
+      params.set("q", debouncedQuery.trim());
+    } else {
+      params.delete("q");
+    }
+
+    if (selectedCategory) {
+      params.set("category", selectedCategory);
+    } else {
+      params.delete("category");
+    }
+
+    if (currentFacilityId) {
+      params.set("facility", currentFacilityId);
+    } else {
+      params.delete("facility");
+    }
+
+    const nextQueryString = params.toString();
+    if (nextQueryString === searchParams.toString()) {
+      lastSyncedFacilityId.current = currentFacilityId;
+      return;
+    }
+
+    lastSyncedFacilityId.current = currentFacilityId;
+    const newUrl = nextQueryString ? `${pathname}?${nextQueryString}` : pathname;
+    router.replace(newUrl, { scroll: false });
+  }, [debouncedQuery, selectedCategory, currentFacilityId, pathname, router, searchParams]);
 
   useEffect(() => {
-    if (isUpdatingUrl.current) return;
-
     const urlSearch = searchParams.get("q") ?? "";
     const urlCategoryParam = searchParams.get("category");
-    const urlCategory =
-      urlCategoryParam && VALID_CATEGORIES.includes(urlCategoryParam as FacilityCategory)
-        ? (urlCategoryParam as FacilityCategory)
-        : null;
+    const urlCategory = isValidCategory(urlCategoryParam) ? urlCategoryParam : null;
     const urlFacilityId = searchParams.get("facility");
 
     if (urlSearch !== searchQuery && urlSearch !== debouncedQuery) {
@@ -120,17 +117,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (urlCategory !== selectedCategory) {
       setSelectedCategory(urlCategory);
     }
-    if (!urlFacilityId && selectedFacility) {
-      setSelectedFacility(null);
+
+    if (isUserClosing.current) return;
+
+    if (urlFacilityId && urlFacilityId !== lastSyncedFacilityId.current) {
+      setPendingFacilityId(urlFacilityId);
+      if (selectedFacility?.id !== urlFacilityId) {
+        setSelectedFacility(null);
+      }
+      lastSyncedFacilityId.current = urlFacilityId;
     }
   }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const clearFilters = useCallback(() => {
-    setSearchQuery("");
-    setSelectedCategory(null);
-  }, []);
-
-  const [activeTab, setActiveTabState] = useState<AppState["activeTab"]>("map");
 
   useEffect(() => {
     if (pathname.startsWith("/directory")) setActiveTabState("directory");
@@ -138,28 +135,58 @@ export function AppProvider({ children }: { children: ReactNode }) {
     else setActiveTabState("map");
   }, [pathname]);
 
-  const setActiveTab = useCallback(
-    (tab: AppState["activeTab"]) => {
-      setActiveTabState(tab);
-      if (tab === "map") router.push("/", { scroll: false });
-      else if (tab === "directory") router.push("/directory", { scroll: false });
-      else if (tab === "chat") router.push("/chat", { scroll: false });
-    },
-    [router]
-  );
+  const selectFacility = useCallback((facility: Facility | null) => {
+    if (facility === null) {
+      isUserClosing.current = true;
+      setTimeout(() => { isUserClosing.current = false; }, CLOSE_GUARD_MS);
+    }
+    setSelectedFacility(facility);
+    setPendingFacilityId(facility?.id ?? null);
+  }, []);
 
-  const value: AppContextValue = {
+  const resolvePendingFacility = useCallback((facility: Facility) => {
+    if (isUserClosing.current) return;
+    if (pendingFacilityId === facility.id && selectedFacility?.id !== facility.id) {
+      setSelectedFacility(facility);
+    }
+  }, [pendingFacilityId, selectedFacility?.id]);
+
+  const clearFilters = useCallback(() => {
+    setSearchQuery("");
+    setSelectedCategory(null);
+  }, []);
+
+  const setActiveTab = useCallback((tab: AppState["activeTab"]) => {
+    setActiveTabState(tab);
+    const routes = { map: "/", directory: "/directory", chat: "/chat" } as const;
+    router.push(routes[tab], { scroll: false });
+  }, [router]);
+
+  const value = useMemo<AppContextValue>(() => ({
     selectedFacility,
+    pendingFacilityId,
     searchQuery,
     debouncedQuery,
     selectedCategory,
     activeTab,
-    selectFacility: setSelectedFacility,
+    selectFacility,
+    resolvePendingFacility,
     setSearchQuery,
     setCategory: setSelectedCategory,
     setActiveTab,
     clearFilters,
-  };
+  }), [
+    selectedFacility,
+    pendingFacilityId,
+    searchQuery,
+    debouncedQuery,
+    selectedCategory,
+    activeTab,
+    selectFacility,
+    resolvePendingFacility,
+    setActiveTab,
+    clearFilters,
+  ]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
