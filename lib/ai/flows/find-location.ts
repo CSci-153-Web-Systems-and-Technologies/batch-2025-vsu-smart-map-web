@@ -2,7 +2,30 @@ import { flow } from "@genkit-ai/core";
 import { runWithKeyRotation } from "../genkit";
 import { LocationQuerySchema, LocationResponseSchema, LocationQuery } from "../schemas/location";
 import { CAMPUS_ASSISTANT_PROMPT } from "../prompts/campus-assistant";
-import { getFacilities } from "@/lib/supabase/queries/facilities";
+import { getFacilitiesForChat } from "@/lib/supabase/queries/facilities";
+import type { Facility } from "@/lib/types/facility";
+
+type FacilityContext = Pick<Facility, "id" | "name" | "category" | "description" | "code">;
+
+const CACHE_TTL_MS = 5 * 60 * 1000;
+let cachedFacilities: FacilityContext[] | null = null;
+let cachedAt: number | null = null;
+
+async function getCachedFacilities(forceRefresh = false): Promise<FacilityContext[]> {
+  const now = Date.now();
+  const isExpired = !cachedAt || now - cachedAt > CACHE_TTL_MS;
+
+  if (!cachedFacilities || isExpired || forceRefresh) {
+    const { data } = await getFacilitiesForChat();
+    if (!data) {
+      throw new Error("Failed to fetch facilities context");
+    }
+    cachedFacilities = data;
+    cachedAt = now;
+  }
+
+  return cachedFacilities as FacilityContext[];
+}
 
 export const findLocationFlow = flow(
   {
@@ -11,18 +34,7 @@ export const findLocationFlow = flow(
     outputSchema: LocationResponseSchema,
   },
   async (input: LocationQuery) => {
-    const { data: facilities } = await getFacilities();
-
-    if (!facilities) {
-      throw new Error("Failed to fetch facilities context");
-    }
-
-    const facilitiesContext = facilities.map((f) => ({
-      id: f.id,
-      name: f.name,
-      category: f.category,
-      description: f.description,
-    }));
+    const facilitiesContext = await getCachedFacilities(input.context?.forceRefresh);
 
     const userQuery = input.query;
     const previousContext = input.context ? JSON.stringify(input.context) : "None";

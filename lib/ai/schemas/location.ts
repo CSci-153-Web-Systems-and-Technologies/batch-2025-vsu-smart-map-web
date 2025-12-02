@@ -1,5 +1,4 @@
 import { z } from "genkit";
-import { FACILITY_CATEGORIES } from "@/lib/types/facility";
 
 export const LocationQuerySchema = z.object({
   query: z.string().describe("The user's natural language query about a location"),
@@ -12,6 +11,7 @@ export const LocationQuerySchema = z.object({
           lng: z.number(),
         })
         .optional(),
+      forceRefresh: z.boolean().optional().describe("Force refresh cached facilities"),
     })
     .optional(),
 });
