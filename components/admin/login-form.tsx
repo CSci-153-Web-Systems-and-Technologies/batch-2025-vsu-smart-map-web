@@ -1,41 +1,35 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { useState } from 'react';
+import { useFormStatus } from 'react-dom';
+import { login } from '@/app/admin/login/actions';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { AlertCircle } from 'lucide-react';
 
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" className="w-full" disabled={pending}>
+      {pending ? 'Signing in...' : 'Sign In'}
+    </Button>
+  );
+}
+
 export function LoginForm() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
-  const supabase = createClient();
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  async function handleSubmit(formData: FormData) {
     setError('');
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-    } else {
-      router.push('/admin');
+    const result = await login(formData);
+    if (result?.error) {
+      setError(result.error);
     }
-  };
+  }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form action={handleSubmit}>
       <Card className="w-[350px]">
         <CardHeader>
           <CardTitle>Admin Login</CardTitle>
@@ -51,9 +45,8 @@ export function LoginForm() {
           <div className="space-y-2">
             <Input
               type="email"
+              name="email"
               placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>
@@ -61,16 +54,13 @@ export function LoginForm() {
           <div className="space-y-2">
             <Input
               type="password"
+              name="password"
               placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
               required
             />
           </div>
 
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Signing in...' : 'Sign In'}
-          </Button>
+          <SubmitButton />
         </CardContent>
       </Card>
     </form>

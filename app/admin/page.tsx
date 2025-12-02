@@ -1,8 +1,17 @@
-export default function AdminDashboardPage() {
+export default function AdminDashboard() {
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold mb-4">Admin Dashboard</h1>
-      <p className="text-muted-foreground">Welcome to the admin dashboard.</p>
+    <div>
+      <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="p-6 rounded-lg border bg-card text-card-foreground shadow-sm">
+          <h3 className="font-semibold leading-none tracking-tight">Facilities</h3>
+          <p className="text-sm text-muted-foreground mt-2">Manage campus buildings and locations.</p>
+        </div>
+        <div className="p-6 rounded-lg border bg-card text-card-foreground shadow-sm">
+          <h3 className="font-semibold leading-none tracking-tight">Submissions</h3>
+          <p className="text-sm text-muted-foreground mt-2">Review pending contribution requests.</p>
+        </div>
+      </div>
     </div>
   );
 }
