@@ -7,10 +7,11 @@ interface SuggestionChipsProps {
 }
 
 const DEFAULT_SUGGESTIONS = [
-  "Where is the library?",
-  "Find the registrar's office",
-  "What buildings are near the main gate?",
-  "Show me the gymnasium",
+  "Where is the registrar's office?",
+  "Find the nearest CR",
+  "How do I get to COE?",
+  "Where can I pay tuition?",
+  "Find a computer lab",
 ];
 
 export function SuggestionChips({

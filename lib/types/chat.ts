@@ -14,6 +14,7 @@ export interface ChatMessage {
   content: string;
   timestamp: Date;
   facilities?: FacilityMatch[];
+  followUp?: string | null;
   isError?: boolean;
 }
 

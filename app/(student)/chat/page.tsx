@@ -1,8 +1,14 @@
+import type { Metadata } from "next";
 import { ChatView } from "@/components/chat/chat-view";
+
+export const metadata: Metadata = {
+  title: "Chat | VSU SmartMap",
+  description: "Ask the Campus Assistant about campus buildings, offices, and services.",
+};
 
 export default function ChatPage() {
   return (
-    <div className="h-[calc(100vh-4rem)]">
+    <div className="h-[calc(100vh-4rem)] pb-20 md:pb-0">
       <ChatView />
     </div>
   );

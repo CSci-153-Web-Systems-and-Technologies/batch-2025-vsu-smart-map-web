@@ -12,13 +12,11 @@ import { TypingIndicator } from "./typing-indicator";
 
 export function ChatView() {
   const { messages, isLoading, sendMessage, clearMessages, retryLastMessage } =
-    useChat();
-  const scrollRef = useRef<HTMLDivElement>(null);
+    useChat({ streaming: true });
+  const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, isLoading]);
 
   const hasMessages = messages.length > 0;
@@ -27,7 +25,7 @@ export function ChatView() {
     <div className="flex h-full flex-col">
       <ChatHeader onClear={clearMessages} hasMessages={hasMessages} />
 
-      <ScrollArea ref={scrollRef} className="flex-1">
+      <ScrollArea className="flex-1">
         {!hasMessages ? (
           <ChatWelcome onSuggestionSelect={sendMessage} disabled={isLoading} />
         ) : (
@@ -45,6 +43,9 @@ export function ChatView() {
                         ? retryLastMessage
                         : undefined
                     }
+                    onFollowUp={
+                      message.followUp ? () => sendMessage(message.followUp!) : undefined
+                    }
                   />
                   {message.facilities && (
                     <div className="ml-11">
@@ -56,6 +57,7 @@ export function ChatView() {
             })}
 
             {isLoading && <TypingIndicator />}
+            <div ref={endRef} />
           </div>
         )}
       </ScrollArea>

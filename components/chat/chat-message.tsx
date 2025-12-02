@@ -8,10 +8,11 @@ import { ChatTimestamp } from "./chat-timestamp";
 interface ChatMessageProps {
   message: ChatMessageType;
   onRetry?: () => void;
+  onFollowUp?: (followUp: string) => void;
 }
 
-export function ChatMessage({ message, onRetry }: ChatMessageProps) {
-  const { role, content, timestamp, isError } = message;
+export function ChatMessage({ message, onRetry, onFollowUp }: ChatMessageProps) {
+  const { role, content, timestamp, isError, followUp } = message;
   const isAssistant = role === "assistant";
 
   return (
@@ -52,6 +53,16 @@ export function ChatMessage({ message, onRetry }: ChatMessageProps) {
             </button>
           )}
         </div>
+
+        {followUp && onFollowUp && !isError && (
+          <button
+            type="button"
+            onClick={() => onFollowUp(followUp)}
+            className="rounded-full border px-3 py-1 text-xs font-medium text-primary transition hover:bg-primary/5"
+          >
+            {followUp}
+          </button>
+        )}
       </div>
     </div>
   );

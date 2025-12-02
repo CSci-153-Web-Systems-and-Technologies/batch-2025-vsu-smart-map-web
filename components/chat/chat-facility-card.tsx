@@ -1,8 +1,9 @@
 "use client";
 
-import Link from "next/link";
-import { Building2, ExternalLink } from "lucide-react";
+import { ChevronRight, MapPin } from "lucide-react";
+import { getCategoryMeta } from "@/lib/constants/facilities";
 import type { FacilityMatch } from "@/lib/types";
+import { useRouter } from "next/navigation";
 
 interface ChatFacilityCardProps {
   match: FacilityMatch;
@@ -10,29 +11,45 @@ interface ChatFacilityCardProps {
 
 export function ChatFacilityCard({ match }: ChatFacilityCardProps) {
   const { facility, matchReason } = match;
+  const meta = getCategoryMeta(facility.category);
+  const router = useRouter();
+
+  const handleClick = () => {
+    const params = new URLSearchParams({ facility: facility.id });
+    router.push(`/?${params.toString()}`, { scroll: false });
+  };
 
   return (
-    <Link
-      href={`/directory/${facility.slug}`}
-      className="group flex items-start gap-3 rounded-lg border bg-card p-3 transition-colors hover:bg-accent"
+    <button
+      type="button"
+      onClick={handleClick}
+      className="group flex w-full items-start gap-3 rounded-lg border bg-card/90 p-3 text-left transition hover:border-primary/40 hover:bg-accent"
     >
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-        <Building2 className="h-5 w-5" />
+      <div
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md"
+        style={{ backgroundColor: `${meta.color}1a`, color: meta.color }}
+      >
+        <MapPin className="h-4 w-4" />
       </div>
 
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <h4 className="truncate text-sm font-medium group-hover:text-primary">
-            {facility.name}
-          </h4>
-          <ExternalLink className="h-3 w-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
+      <div className="min-w-0 flex-1 space-y-1">
+        <div className="flex items-start gap-2">
+          <div className="min-w-0 flex-1">
+            <h4 className="truncate text-sm font-medium group-hover:text-primary">
+              {facility.name}
+            </h4>
+            <p className="text-xs font-medium text-muted-foreground">
+              {meta.label}
+            </p>
+          </div>
+          <ChevronRight className="h-4 w-4 text-muted-foreground transition group-hover:translate-x-0.5" />
         </div>
         {matchReason && (
-          <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+          <p className="line-clamp-2 text-xs text-muted-foreground">
             {matchReason}
           </p>
         )}
       </div>
-    </Link>
+    </button>
   );
 }
