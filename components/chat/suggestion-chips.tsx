@@ -1,7 +1,7 @@
 "use client";
 
 interface SuggestionChipsProps {
-  suggestions: string[];
+  suggestions?: string[];
   onSelect: (suggestion: string) => void;
   disabled?: boolean;
 }
