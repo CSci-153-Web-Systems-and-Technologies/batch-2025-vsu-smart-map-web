@@ -2,23 +2,17 @@ import { genkit } from 'genkit';
 import { googleAI, gemini15Flash } from '@genkit-ai/googleai';
 import { apiKeyManager } from './api-key-manager';
 
-// Helper to create a Genkit instance with a specific key
 const createGenkit = (apiKey: string) => {
-  // We need to set the API key in the environment for the Google AI plugin to pick it up
-  // The plugin looks for GOOGLE_GENAI_API_KEY
-  process.env.GOOGLE_GENAI_API_KEY = apiKey;
-
   return genkit({
-    plugins: [googleAI()],
+    plugins: [googleAI({ apiKey })],
     model: gemini15Flash,
   });
 };
 
-// Wrapper to run an operation with key rotation
 export async function runWithKeyRotation<T>(
   operation: (ai: ReturnType<typeof createGenkit>) => Promise<T>
 ): Promise<T> {
-  const maxRetries = 3; // Prevent infinite loops
+  const maxRetries = 3;
   let attempts = 0;
 
   while (attempts < maxRetries) {
@@ -30,7 +24,6 @@ export async function runWithKeyRotation<T>(
     } catch (error: unknown) {
       attempts++;
 
-      // Check for rate limit errors (429)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const err = error as any;
       const isRateLimit =
@@ -52,6 +45,4 @@ export async function runWithKeyRotation<T>(
   throw new Error('Max retries exceeded for Genkit operation');
 }
 
-// Export a default instance for non-rotated usage (e.g. dev)
-// This might fail if no keys are valid, but it's useful for type inference
 export const ai = createGenkit(process.env.GEMINI_API_KEYS?.split(',')[0] || '');
