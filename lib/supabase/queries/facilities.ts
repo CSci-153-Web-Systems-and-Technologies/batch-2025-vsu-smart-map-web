@@ -73,6 +73,23 @@ function mapUpdatePayload(input: FacilityUpdate) {
   return patch;
 }
 
+type FacilityChatContext = Pick<Facility, "id" | "name" | "category" | "description" | "code">;
+
+export async function getFacilitiesForChat(
+  client?: MaybeClient
+): Promise<BaseResult<FacilityChatContext[]>> {
+  const resolved = await resolveClient(client);
+  const { data, error } = await resolved
+    .from("facilities")
+    .select("id, name, code, category, description")
+    .order("name", { ascending: true });
+
+  return {
+    data: data as FacilityChatContext[] | null,
+    error: normalizeError(error),
+  };
+}
+
 export async function getFacilities(params?: {
   category?: FacilityCategory | FacilityCategory[];
   hasRooms?: boolean;
