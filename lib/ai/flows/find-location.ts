@@ -37,14 +37,23 @@ export const findLocationFlow = flow(
     const facilitiesContext = await getCachedFacilities(input.context?.forceRefresh);
 
     const userQuery = input.query;
-    const previousContext = input.context ? JSON.stringify(input.context) : "None";
+    const contextData = input.context || {};
+    const previousQueries = contextData.previousQueries?.length
+      ? contextData.previousQueries.join("\n- ")
+      : "None";
+    const summary = contextData.summary || "None";
 
     const prompt = `
 ${CAMPUS_ASSISTANT_PROMPT}
 
 ## Context
 User Query: "${userQuery}"
-Previous Context: ${previousContext}
+
+Previous Conversation Summary:
+${summary}
+
+Recent Queries:
+- ${previousQueries}
 
 ## Available Facilities
 ${JSON.stringify(facilitiesContext, null, 2)}
@@ -71,14 +80,23 @@ export async function streamFindLocation(input: LocationQuery) {
   const facilitiesContext = await getCachedFacilities(input.context?.forceRefresh);
 
   const userQuery = input.query;
-  const previousContext = input.context ? JSON.stringify(input.context) : "None";
+  const contextData = input.context || {};
+  const previousQueries = contextData.previousQueries?.length
+    ? contextData.previousQueries.join("\n- ")
+    : "None";
+  const summary = contextData.summary || "None";
 
   const prompt = `
 ${CAMPUS_ASSISTANT_PROMPT}
 
 ## Context
 User Query: "${userQuery}"
-Previous Context: ${previousContext}
+
+Previous Conversation Summary:
+${summary}
+
+Recent Queries:
+- ${previousQueries}
 
 ## Available Facilities
 ${JSON.stringify(facilitiesContext, null, 2)}
