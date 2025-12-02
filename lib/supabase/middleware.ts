@@ -29,13 +29,11 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // IMPORTANT: DO NOT REMOVE auth.getUser()
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (request.nextUrl.pathname.startsWith("/admin")) {
-    // If user is on login page and is already logged in, redirect to dashboard
     if (request.nextUrl.pathname === "/admin/login") {
       if (user) {
         const url = request.nextUrl.clone();
@@ -45,7 +43,6 @@ export async function updateSession(request: NextRequest) {
       return supabaseResponse;
     }
 
-    // If user is on any other admin page and is NOT logged in, redirect to login
     if (!user) {
       const url = request.nextUrl.clone();
       url.pathname = "/admin/login";
