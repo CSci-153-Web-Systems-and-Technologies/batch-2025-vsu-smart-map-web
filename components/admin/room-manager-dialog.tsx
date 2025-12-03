@@ -14,6 +14,7 @@ import {
 } from '@/app/admin/facilities/actions';
 import { useRouter } from 'next/navigation';
 import type { RoomFormValues } from '@/lib/validation/room';
+import { ConfirmDialog } from './confirm-dialog';
 
 interface RoomManagerDialogProps {
   open: boolean;
@@ -47,6 +48,8 @@ export function RoomManagerDialog({ open, facility, onOpenChange }: RoomManagerD
   const [mode, setMode] = useState<'create' | 'edit'>('create');
   const [selectedRoom, setSelectedRoom] = useState<RoomRecord | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [roomToDelete, setRoomToDelete] = useState<RoomRecord | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const router = useRouter();
 
   const title = useMemo(() => facility?.name ?? 'Rooms', [facility]);
@@ -114,65 +117,98 @@ export function RoomManagerDialog({ open, facility, onOpenChange }: RoomManagerD
   };
 
   const handleDelete = (room: RoomRecord) => {
-    if (!confirm(`Delete room ${room.roomCode}?`)) return;
-
     setError(null);
-    startTransition(async () => {
-      const result = await deleteRoomAction(room.id);
-      if (result.error) {
-        setError(result.error);
-        return;
-      }
-      setRooms((prev) => prev.filter((item) => item.id !== room.id));
+    setRoomToDelete(room);
+  };
+
+  const confirmDelete = async () => {
+    if (!roomToDelete) {
+      return;
+    }
+
+    setDeleteLoading(true);
+    const result = await deleteRoomAction(roomToDelete.id);
+    if (result.error) {
+      setError(result.error);
+      setDeleteLoading(false);
+      setRoomToDelete(null);
+      return;
+    }
+
+    startTransition(() => {
+      setRooms((prev) => prev.filter((item) => item.id !== roomToDelete.id));
       router.refresh();
     });
+
+    setDeleteLoading(false);
+    setRoomToDelete(null);
+  };
+
+  const cancelDelete = () => {
+    if (deleteLoading) return;
+    setRoomToDelete(null);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col overflow-hidden">
-        <DialogHeader>
-          <DialogTitle>Manage rooms</DialogTitle>
-          <DialogDescription>
-            {title}
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Manage rooms</DialogTitle>
+            <DialogDescription>
+              {title}
+            </DialogDescription>
+          </DialogHeader>
 
-        {!facility && (
-          <p className="text-sm text-muted-foreground">Select a facility to manage rooms.</p>
-        )}
+          {!facility && (
+            <p className="text-sm text-muted-foreground">Select a facility to manage rooms.</p>
+          )}
 
-        {facility && (
-          <div className="space-y-4 flex-1 overflow-y-auto min-h-0 pr-2">
-            <div className="flex items-center justify-between gap-3">
-              <div className="text-sm text-muted-foreground">
-                Rooms linked to {facility.name}
+          {facility && (
+            <div className="space-y-4 flex-1 overflow-y-auto min-h-0 pr-2">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-sm text-muted-foreground">
+                  Rooms linked to {facility.name}
+                </div>
+                <Button size="sm" onClick={handleCreate} disabled={isPending}>
+                  Add room
+                </Button>
               </div>
-              <Button size="sm" onClick={handleCreate} disabled={isPending}>
-                Add room
-              </Button>
+
+              {formOpen && (
+                <RoomForm
+                  facilityId={facility.id}
+                  initialValues={selectedRoom ?? undefined}
+                  submitting={isPending}
+                  onSubmit={handleRoomSubmit}
+                  onCancel={() => setFormOpen(false)}
+                />
+              )}
+
+              {error && <p className="text-sm text-destructive">{error}</p>}
+
+              {loading ? (
+                <p className="text-sm text-muted-foreground">Loading rooms...</p>
+              ) : (
+                <RoomList rooms={rooms} onEdit={handleEdit} onDelete={handleDelete} disabled={isPending} />
+              )}
             </div>
-
-            {formOpen && (
-              <RoomForm
-                facilityId={facility.id}
-                initialValues={selectedRoom ?? undefined}
-                submitting={isPending}
-                onSubmit={handleRoomSubmit}
-                onCancel={() => setFormOpen(false)}
-              />
-            )}
-
-            {error && <p className="text-sm text-destructive">{error}</p>}
-
-            {loading ? (
-              <p className="text-sm text-muted-foreground">Loading rooms...</p>
-            ) : (
-              <RoomList rooms={rooms} onEdit={handleEdit} onDelete={handleDelete} disabled={isPending} />
-            )}
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+          )}
+        </DialogContent>
+      </Dialog>
+      <ConfirmDialog
+        open={Boolean(roomToDelete)}
+        title="Delete room"
+        description={
+          roomToDelete
+            ? `Delete room ${roomToDelete.roomCode}? This cannot be undone.`
+            : undefined
+        }
+        confirmLabel={deleteLoading ? 'Deleting...' : 'Delete'}
+        loading={deleteLoading}
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+      />
+    </>
   );
 }
