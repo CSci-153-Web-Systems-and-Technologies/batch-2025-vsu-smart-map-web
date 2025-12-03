@@ -1,5 +1,5 @@
 export const STORAGE_BUCKETS = {
-  facilityImages: "Smartmap_Bucket",
+  facilityImages: "smartmap-bucket",
 } as const;
 
 export const STORAGE_PATHS = {
