@@ -10,10 +10,27 @@ create policy "Public read Smartmap_Bucket"
   to public
   using (bucket_id = 'Smartmap_Bucket');
 
--- Authenticated users can manage Smartmap_Bucket
-create policy "Authenticated manage Smartmap_Bucket"
+-- Remove overly broad policy if it exists
+drop policy if exists "Authenticated manage Smartmap_Bucket" on storage.objects;
+
+-- Authenticated users can upload their own files
+create policy "Authenticated upload Smartmap_Bucket"
   on storage.objects
-  for all
+  for insert
   to authenticated
-  using (bucket_id = 'Smartmap_Bucket')
-  with check (bucket_id = 'Smartmap_Bucket');
+  with check (bucket_id = 'Smartmap_Bucket' and owner = auth.uid());
+
+-- Authenticated users can update their own files
+create policy "Authenticated update Smartmap_Bucket"
+  on storage.objects
+  for update
+  to authenticated
+  using (bucket_id = 'Smartmap_Bucket' and owner = auth.uid())
+  with check (bucket_id = 'Smartmap_Bucket' and owner = auth.uid());
+
+-- Authenticated users can delete their own files
+create policy "Authenticated delete Smartmap_Bucket"
+  on storage.objects
+  for delete
+  to authenticated
+  using (bucket_id = 'Smartmap_Bucket' and owner = auth.uid());
