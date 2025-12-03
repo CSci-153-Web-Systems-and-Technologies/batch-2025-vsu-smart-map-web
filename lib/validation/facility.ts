@@ -7,15 +7,15 @@ const coordsSchema = z.object({
   lng: z.number().min(-180).max(180),
 });
 
-const codeSchema = z.preprocess(
-  (value) => (value === "" || value === null ? undefined : value),
-  z
-    .string()
-    .trim()
-    .min(VALIDATION_LIMITS.facility.code.min)
-    .max(VALIDATION_LIMITS.facility.code.max)
-    .optional(),
-);
+const codeSchema = z.preprocess((value) => {
+  if (typeof value !== "string") return value;
+  const trimmed = value.trim();
+  return trimmed === "" ? undefined : trimmed;
+}, z
+  .string()
+  .min(VALIDATION_LIMITS.facility.code.min)
+  .max(VALIDATION_LIMITS.facility.code.max)
+  .optional());
 
 const baseFacilitySchema = z.object({
   code: codeSchema,
@@ -26,7 +26,16 @@ const baseFacilitySchema = z.object({
   coordinates: coordsSchema,
   imageUrl: z.preprocess(
     (value) => (value === "" || value === null ? undefined : value),
-    z.string().url().optional(),
+    z
+      .string()
+      .refine(
+        (val) =>
+          val.startsWith("http://") ||
+          val.startsWith("https://") ||
+          val.startsWith("/"),
+        { message: "Image URL must be absolute (http/https) or a relative path." }
+      )
+      .optional(),
   ),
 });
 

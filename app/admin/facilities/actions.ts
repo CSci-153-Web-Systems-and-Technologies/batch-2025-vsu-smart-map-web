@@ -38,7 +38,7 @@ export async function createFacilityAction(input: unknown) {
 }
 
 export async function updateFacilityAction(id: string, input: unknown) {
-  const parsed = unifiedFacilitySchema.safeParse(input);
+  const parsed = unifiedFacilitySchema.partial().safeParse(input);
   if (!parsed.success) {
     return { error: FACILITY_VALIDATION_ERROR };
   }
