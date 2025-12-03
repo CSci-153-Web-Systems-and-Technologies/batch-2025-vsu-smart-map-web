@@ -13,6 +13,7 @@ import {
   updateFacilityAction,
 } from '@/app/admin/facilities/actions';
 import { uploadFacilityHeroClient } from '@/lib/supabase/storage-client';
+import { ConfirmDialog } from './confirm-dialog';
 
 interface FacilitiesPageClientProps {
   facilities: Facility[];
@@ -26,6 +27,8 @@ export function FacilitiesPageClient({ facilities }: FacilitiesPageClientProps) 
   const [selected, setSelected] = useState<Facility | undefined>();
   const [isPending, startTransition] = useTransition();
   const [roomsOpen, setRoomsOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<Facility | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const router = useRouter();
 
   const handleAdd = () => {
@@ -45,6 +48,37 @@ export function FacilitiesPageClient({ facilities }: FacilitiesPageClientProps) 
     setRoomsOpen(true);
   };
 
+  const syncImage = async (facility: Facility, file?: File | null, clearImage?: boolean) => {
+    if (clearImage && !file) {
+      const result = await updateFacilityAction(facility.id, { imageUrl: null });
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      return result.data ? (result.data as Facility) : { ...facility, imageUrl: null };
+    }
+
+    if (!file) {
+      return facility;
+    }
+
+    const upload = await uploadFacilityHeroClient(facility.id, file, file.name);
+    if (upload.error) {
+      throw new Error(upload.error.message);
+    }
+
+    const publicUrl = upload.data?.publicUrl ?? null;
+    const updateResult = await updateFacilityAction(facility.id, { imageUrl: publicUrl });
+    if (updateResult.error) {
+      throw new Error(updateResult.error);
+    }
+
+    if (updateResult.data) {
+      return updateResult.data as Facility;
+    }
+
+    return publicUrl ? { ...facility, imageUrl: publicUrl } : facility;
+  };
+
   const handleSubmit = async (
     values: UnifiedFacilityFormValues,
     options?: { file?: File | null; clearImage?: boolean },
@@ -60,78 +94,70 @@ export function FacilitiesPageClient({ facilities }: FacilitiesPageClientProps) 
       }
 
       if (createResult.data) {
-        let created = createResult.data as Facility;
-        if (file) {
-          const upload = await uploadFacilityHeroClient(created.id, file, file.name);
-          if (upload.error) {
-            throw new Error(upload.error.message);
-          }
-          const publicUrl = upload.data?.publicUrl ?? null;
-          const updateResult = await updateFacilityAction(created.id, { imageUrl: publicUrl });
-          if (updateResult.error) {
-            throw new Error(updateResult.error);
-          }
-          if (updateResult.data) {
-            created = updateResult.data as Facility;
-          } else if (publicUrl) {
-            created = { ...created, imageUrl: publicUrl };
-          }
-        }
-        setItems((prev) => [...prev, created]);
-      }
-    } else if (selected) {
-      if (clearImage && !file) {
-        const result = await updateFacilityAction(selected.id, { ...values, imageUrl: null });
-        if (result.error) {
-          throw new Error(result.error);
-        }
-        if (result.data) {
-          const updated = result.data as Facility;
-          setItems((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
-        }
-      } else if (file) {
-        const upload = await uploadFacilityHeroClient(selected.id, file, file.name);
-        if (upload.error) {
-          throw new Error(upload.error.message);
-        }
-        const publicUrl = upload.data?.publicUrl ?? null;
-        const result = await updateFacilityAction(selected.id, {
-          ...values,
-          imageUrl: publicUrl,
+        const created = await syncImage(createResult.data as Facility, file, clearImage);
+        startTransition(() => {
+          setItems((prev) => [...prev, created]);
+          router.refresh();
         });
-        if (result.error) {
-          throw new Error(result.error);
-        }
-        if (result.data) {
-          const updated = result.data as Facility;
-          setItems((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
-        }
-      } else {
-        const result = await updateFacilityAction(selected.id, values);
-        if (result.error) {
-          throw new Error(result.error);
-        }
-        if (result.data) {
-          const updated = result.data as Facility;
-          setItems((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
-        }
       }
+      return;
     }
 
-    startTransition(() => router.refresh());
+    if (!selected) {
+      return;
+    }
+
+    const basePayload =
+      clearImage && !file ? { ...values, imageUrl: null } : values;
+    const updateResult = await updateFacilityAction(selected.id, basePayload);
+    if (updateResult.error) {
+      throw new Error(updateResult.error);
+    }
+
+    let updated =
+      (updateResult.data as Facility | undefined) ??
+      { ...selected, ...values, ...(clearImage && !file ? { imageUrl: null } : {}) };
+
+    updated = await syncImage(updated, file, false);
+
+    startTransition(() => {
+      setItems((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+      router.refresh();
+    });
   };
 
   const handleDelete = (facility: Facility) => {
     setMessage(null);
-    startTransition(async () => {
-      const result = await deleteFacilityAction(facility.id);
-      if (result.error) {
-        setMessage(result.error);
-        return;
-      }
-      setItems((prev) => prev.filter((item) => item.id !== facility.id));
+    setPendingDelete(facility);
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) {
+      return;
+    }
+
+    setDeleteLoading(true);
+    const result = await deleteFacilityAction(pendingDelete.id);
+
+    if (result.error) {
+      setMessage(result.error);
+      setDeleteLoading(false);
+      setPendingDelete(null);
+      return;
+    }
+
+    startTransition(() => {
+      setItems((prev) => prev.filter((item) => item.id !== pendingDelete.id));
       router.refresh();
     });
+
+    setDeleteLoading(false);
+    setPendingDelete(null);
+  };
+
+  const cancelDelete = () => {
+    if (deleteLoading) return;
+    setPendingDelete(null);
   };
 
   const dialogFacility = useMemo(
@@ -166,6 +192,15 @@ export function FacilitiesPageClient({ facilities }: FacilitiesPageClientProps) 
         open={roomsOpen}
         facility={dialogFacility}
         onOpenChange={setRoomsOpen}
+      />
+      <ConfirmDialog
+        open={Boolean(pendingDelete)}
+        title="Delete facility"
+        description={`Are you sure you want to delete ${pendingDelete?.name ?? 'this facility'}? This action cannot be undone.`}
+        confirmLabel={deleteLoading ? 'Deleting...' : 'Delete'}
+        loading={deleteLoading}
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
       />
     </>
   );
