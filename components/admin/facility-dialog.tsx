@@ -14,6 +14,7 @@ import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { CoordinatePicker } from './coordinate-picker';
+import { MAP_DEFAULT_CENTER } from '@/lib/constants/map';
 
 type Mode = 'create' | 'edit';
 
@@ -29,7 +30,7 @@ interface FacilityDialogProps {
   onManageRooms?: () => void;
 }
 
-const defaultCoordinates = { lat: 10.741, lng: 124.802 };
+const defaultCoordinates = MAP_DEFAULT_CENTER;
 
 export function FacilityDialog({
   open,
@@ -169,10 +170,16 @@ export function FacilityDialog({
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="type">Type</Label>
-                  <div className="flex rounded-lg border bg-muted/40 p-1">
+                  <Label id="facility-type-label">Type</Label>
+                  <div
+                    className="flex rounded-lg border bg-muted/40 p-1"
+                    role="radiogroup"
+                    aria-labelledby="facility-type-label"
+                  >
                     <button
                       type="button"
+                      role="radio"
+                      aria-checked={values.hasRooms}
                       className={cn(
                         'flex-1 px-3 py-1 text-sm rounded-md transition',
                         values.hasRooms ? 'bg-background shadow-sm' : 'text-muted-foreground'
@@ -183,6 +190,8 @@ export function FacilityDialog({
                     </button>
                     <button
                       type="button"
+                      role="radio"
+                      aria-checked={!values.hasRooms}
                       className={cn(
                         'flex-1 px-3 py-1 text-sm rounded-md transition',
                         !values.hasRooms ? 'bg-background shadow-sm' : 'text-muted-foreground'
