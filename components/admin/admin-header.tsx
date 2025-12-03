@@ -19,21 +19,29 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
   };
 
   return (
-    <header className="h-16 border-b flex items-center justify-between px-4 bg-background">
-      <button
-        onClick={onMenuClick}
-        className="lg:hidden p-2 -ml-2 text-muted-foreground hover:text-foreground"
-      >
-        <Menu className="h-6 w-6" />
-        <span className="sr-only">Open menu</span>
-      </button>
+    <header className="sticky top-0 z-[95] border-b bg-white/80 backdrop-blur-md supports-[backdrop-filter]:bg-white/60">
+      <div className="flex h-16 items-center gap-4 px-4 sm:px-6 lg:px-8">
+        <button
+          onClick={onMenuClick}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-border bg-background text-muted-foreground transition hover:bg-accent hover:text-accent-foreground"
+          aria-label="Toggle navigation menu"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
 
-      <div className="flex-1" />
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span className="hidden sm:inline text-foreground font-semibold">Admin</span>
+          <span className="hidden sm:inline text-muted-foreground/40">/</span>
+          <span>SmartMap Control Center</span>
+        </div>
 
-      <Button variant="ghost" size="sm" onClick={handleLogout}>
-        <LogOut className="h-4 w-4 mr-2" />
-        Logout
-      </Button>
+        <div className="flex-1" />
+
+        <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-2 text-muted-foreground hover:text-destructive">
+          <LogOut className="h-4 w-4" />
+          Logout
+        </Button>
+      </div>
     </header>
   );
 }

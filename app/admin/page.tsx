@@ -1,16 +1,31 @@
-export default function AdminDashboard() {
+import { AdminBreadcrumbs } from '@/components/admin/admin-breadcrumbs';
+import { QuickActions } from '@/components/admin/quick-actions';
+import { RecentSubmissions } from '@/components/admin/recent-submissions';
+import { StatsCards } from '@/components/admin/stats-cards';
+import { getAdminStats, getRecentSubmissions } from '@/lib/admin/dashboard';
+
+export default async function AdminDashboard() {
+  const [stats, submissions] = await Promise.all([getAdminStats(), getRecentSubmissions(5)]);
+
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <div className="p-6 rounded-lg border bg-card text-card-foreground shadow-sm">
-          <h3 className="font-semibold leading-none tracking-tight">Facilities</h3>
-          <p className="text-sm text-muted-foreground mt-2">Manage campus buildings and locations.</p>
+    <div className="space-y-6">
+      <AdminBreadcrumbs />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <p className="text-muted-foreground">
+            Overview of facilities, rooms, and submissions.
+          </p>
         </div>
-        <div className="p-6 rounded-lg border bg-card text-card-foreground shadow-sm">
-          <h3 className="font-semibold leading-none tracking-tight">Submissions</h3>
-          <p className="text-sm text-muted-foreground mt-2">Review pending contribution requests.</p>
+      </div>
+
+      <StatsCards stats={stats} />
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="space-y-4 lg:col-span-2">
+          <RecentSubmissions submissions={submissions} />
         </div>
+        <QuickActions />
       </div>
     </div>
   );
