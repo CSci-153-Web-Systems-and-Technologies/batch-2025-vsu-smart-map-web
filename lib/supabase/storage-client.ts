@@ -9,9 +9,9 @@ type StorageResult<T> = {
 const BUCKET = STORAGE_BUCKETS.facilityImages;
 const MAX_BYTES = STORAGE_LIMITS.imageMaxMB * 1024 * 1024;
 const ACCEPTED = new Set<string>(STORAGE_LIMITS.acceptedTypes);
+const BUCKET_REGEX = new RegExp(`^${BUCKET}/?`);
 
-const stripBucket = (path: string) =>
-  path.replace(new RegExp(`^${BUCKET}/?`), "");
+const stripBucket = (path: string) => path.replace(BUCKET_REGEX, "");
 
 const makePath = (prefix: string, filename: string) => {
   const safeName = filename.trim().replace(/\s+/g, "-");
@@ -20,7 +20,10 @@ const makePath = (prefix: string, filename: string) => {
 
 const validateFile = (file: File | Blob) => {
   const type = (file as File).type || "";
-  if (type && !ACCEPTED.has(type)) {
+  if (!type) {
+    return "File type is required and must be valid.";
+  }
+  if (!ACCEPTED.has(type)) {
     return `Unsupported file type: ${type}`;
   }
   if (file.size > MAX_BYTES) {
@@ -48,7 +51,7 @@ export const uploadFacilityHeroClient = async (
   if (error) return { data: null, error };
 
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
-  const publicUrl = data?.publicUrl ? `${data.publicUrl}?t=${Date.now()}` : null;
+  const publicUrl = data?.publicUrl ? data.publicUrl : null;
 
   return { data: { path, publicUrl }, error: null };
 };
