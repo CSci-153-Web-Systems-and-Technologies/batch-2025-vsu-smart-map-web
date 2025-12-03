@@ -93,27 +93,34 @@ export function RoomManagerDialog({ open, facility, onOpenChange }: RoomManagerD
     if (!facility) return;
     setError(null);
 
-    if (mode === 'create') {
-      const result = await createRoomAction({ ...values, facilityId: facility.id });
-      if (result.error) {
-        throw new Error(result.error);
+    try {
+      if (mode === 'create') {
+        const result = await createRoomAction({ ...values, facilityId: facility.id });
+        if (result.error) {
+          setError(result.error);
+          return;
+        }
+        if (result.data) {
+          setRooms((prev) => [...prev, toRoomRecord(result.data as RoomRowLike)]);
+        }
+      } else if (selectedRoom) {
+        const result = await updateRoomAction(selectedRoom.id, { ...values, facilityId: facility.id });
+        if (result.error) {
+          setError(result.error);
+          return;
+        }
+        if (result.data) {
+          const updated = toRoomRecord(result.data);
+          setRooms((prev) => prev.map((room) => (room.id === updated.id ? updated : room)));
+        }
       }
-      if (result.data) {
-        setRooms((prev) => [...prev, toRoomRecord(result.data as RoomRowLike)]);
-      }
-    } else if (selectedRoom) {
-      const result = await updateRoomAction(selectedRoom.id, { ...values, facilityId: facility.id });
-      if (result.error) {
-        throw new Error(result.error);
-      }
-      if (result.data) {
-        const updated = toRoomRecord(result.data);
-        setRooms((prev) => prev.map((room) => (room.id === updated.id ? updated : room)));
-      }
-    }
 
-    setFormOpen(false);
-    startTransition(() => router.refresh());
+      setFormOpen(false);
+      startTransition(() => router.refresh());
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'An unexpected error occurred.';
+      setError(message);
+    }
   };
 
   const handleDelete = (room: RoomRecord) => {
@@ -208,6 +215,7 @@ export function RoomManagerDialog({ open, facility, onOpenChange }: RoomManagerD
         loading={deleteLoading}
         onConfirm={confirmDelete}
         onCancel={cancelDelete}
+        contentClassName="z-[110]"
       />
     </>
   );

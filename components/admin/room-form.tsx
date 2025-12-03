@@ -78,11 +78,16 @@ export function RoomForm({
             id="floor"
             type="number"
             inputMode="numeric"
+            min={-10}
+            max={100}
             value={values.floor ?? ''}
             onChange={(event) =>
               setValues({
                 ...values,
-                floor: event.target.value === '' ? undefined : Number(event.target.value),
+                floor:
+                  event.target.value === ''
+                    ? undefined
+                    : Math.min(100, Math.max(-10, Number(event.target.value))),
               })
             }
           />
