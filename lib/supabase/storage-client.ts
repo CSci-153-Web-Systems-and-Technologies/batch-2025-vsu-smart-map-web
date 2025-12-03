@@ -14,7 +14,7 @@ const BUCKET_REGEX = new RegExp(`^${BUCKET}/?`);
 const stripBucket = (path: string) => path.replace(BUCKET_REGEX, "");
 
 const makePath = (prefix: string, filename: string) => {
-  const safeName = filename.trim().replace(/\s+/g, "-");
+  const safeName = filename.trim().replace(/[^a-zA-Z0-9.-]/g, "-");
   return `${prefix}/${Date.now()}-${safeName}`;
 };
 
@@ -32,6 +32,10 @@ const validateFile = (file: File | Blob) => {
   return null;
 };
 
+/**
+ * Upload a facility hero image to Supabase storage and return its public URL.
+ * Uses upsert to overwrite existing hero images for the facility.
+ */
 export const uploadFacilityHeroClient = async (
   facilityId: string,
   file: File,
