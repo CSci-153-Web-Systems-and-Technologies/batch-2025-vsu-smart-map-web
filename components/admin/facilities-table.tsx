@@ -61,26 +61,30 @@ export function FacilitiesTable({
       );
     };
 
-    const sorted = [...facilities]
+    const facilitiesWithTimestamp = [...facilities]
       .filter((facility) => byQuery(facility, filters.query))
       .filter((facility) => byCategory(facility, filters.category))
-      .filter((facility) => byType(facility, filters.type));
+      .filter((facility) => byType(facility, filters.type))
+      .map((facility) => ({
+        facility,
+        updatedTimestamp: new Date(facility.updatedAt ?? facility.createdAt).getTime(),
+      }));
 
-    sorted.sort((a, b) => {
+    facilitiesWithTimestamp.sort((a, b) => {
       switch (filters.sort) {
         case 'name-desc':
-          return b.name.localeCompare(a.name);
+          return b.facility.name.localeCompare(a.facility.name);
         case 'updated-desc':
-          return new Date(b.updatedAt ?? b.createdAt).getTime() - new Date(a.updatedAt ?? a.createdAt).getTime();
+          return b.updatedTimestamp - a.updatedTimestamp;
         case 'updated-asc':
-          return new Date(a.updatedAt ?? a.createdAt).getTime() - new Date(b.updatedAt ?? b.createdAt).getTime();
+          return a.updatedTimestamp - b.updatedTimestamp;
         case 'name-asc':
         default:
-          return a.name.localeCompare(b.name);
+          return a.facility.name.localeCompare(b.facility.name);
       }
     });
 
-    return sorted;
+    return facilitiesWithTimestamp.map((item) => item.facility);
   }, [facilities, filters]);
 
   return (
