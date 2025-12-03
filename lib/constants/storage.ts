@@ -1,5 +1,5 @@
 export const STORAGE_BUCKETS = {
-  facilityImages: "facility-images",
+  facilityImages: "Smartmap_Bucket",
 } as const;
 
 export const STORAGE_PATHS = {
@@ -10,6 +10,6 @@ export const STORAGE_PATHS = {
 } as const;
 
 export const STORAGE_LIMITS = {
-  imageMaxMB: 3,
+  imageMaxMB: 5,
   acceptedTypes: ["image/png", "image/jpeg", "image/webp"] as const,
 } as const;
