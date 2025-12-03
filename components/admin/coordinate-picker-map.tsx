@@ -4,7 +4,7 @@ import "leaflet/dist/leaflet.css";
 
 import { MapContainer, TileLayer, useMapEvents, CircleMarker } from "react-leaflet";
 import type { LatLng } from "@/lib/types/common";
-import { MAP_DEFAULT_CENTER, MAP_MAX_ZOOM, MAP_MIN_ZOOM, MAP_TILES } from "@/lib/constants/map";
+import { MAP_MAX_ZOOM, MAP_MIN_ZOOM, MAP_TILES } from "@/lib/constants/map";
 
 interface CoordinatePickerMapProps {
   value: LatLng;
@@ -23,7 +23,7 @@ function ClickCapture({ onChange }: { onChange: (coords: LatLng) => void }) {
 export function CoordinatePickerMap({ value, onChange }: CoordinatePickerMapProps) {
   return (
     <MapContainer
-      center={[value?.lat ?? MAP_DEFAULT_CENTER.lat, value?.lng ?? MAP_DEFAULT_CENTER.lng]}
+      center={[value.lat, value.lng]}
       zoom={17}
       minZoom={MAP_MIN_ZOOM}
       maxZoom={MAP_MAX_ZOOM}

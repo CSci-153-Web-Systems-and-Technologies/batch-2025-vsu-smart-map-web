@@ -72,10 +72,21 @@ export function FacilityDialog({
   const [clearImage, setClearImage] = useState(false);
 
   useEffect(() => {
+    if (preview && preview.startsWith('blob:')) {
+      return () => URL.revokeObjectURL(preview);
+    }
+  }, [preview]);
+
+  useEffect(() => {
     setValues(initialValues);
     setError(null);
     setFile(null);
-    setPreview(facility?.imageUrl ?? null);
+    setPreview((previous) => {
+      if (previous && previous.startsWith('blob:')) {
+        URL.revokeObjectURL(previous);
+      }
+      return facility?.imageUrl ?? null;
+    });
     setClearImage(false);
   }, [initialValues, open, facility]);
 
@@ -95,8 +106,8 @@ export function FacilityDialog({
       await onSubmit(parsed.data, { file, clearImage });
       onOpenChange(false);
     } catch (submitError) {
-      const message = submitError instanceof Error ? submitError.message : 'Unable to save facility';
-      setError(message);
+      console.error('Failed to save facility:', submitError);
+      setError('Failed to save facility');
     } finally {
       setSubmitting(false);
     }
@@ -216,6 +227,9 @@ export function FacilityDialog({
                       type="button"
                       variant="ghost"
                       onClick={() => {
+                        if (preview && preview.startsWith('blob:')) {
+                          URL.revokeObjectURL(preview);
+                        }
                         setPreview(null);
                         setFile(null);
                         setClearImage(true);
@@ -233,6 +247,9 @@ export function FacilityDialog({
                   onChange={(event) => {
                     const nextFile = event.target.files?.[0];
                     if (nextFile) {
+                      if (preview && preview.startsWith('blob:')) {
+                        URL.revokeObjectURL(preview);
+                      }
                       setFile(nextFile);
                       setPreview(URL.createObjectURL(nextFile));
                       setClearImage(false);
