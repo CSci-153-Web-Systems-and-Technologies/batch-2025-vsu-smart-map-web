@@ -88,7 +88,9 @@ export function AdminSidebar({ open, onClose }: AdminSidebarProps) {
   return (
     <Sheet open={open} onOpenChange={(val) => !val && onClose()}>
       <SheetContent side="left" className="w-72 p-0 border-r-0 [&>button]:hidden">
-        <SheetTitle className="sr-only">Admin Navigation Menu</SheetTitle>
+        <SheetTitle className="px-6 pt-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Admin Navigation
+        </SheetTitle>
         <SidebarContent pathname={pathname} onClose={onClose} />
       </SheetContent>
     </Sheet>
