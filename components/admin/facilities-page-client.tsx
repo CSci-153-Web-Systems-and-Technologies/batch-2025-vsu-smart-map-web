@@ -87,43 +87,48 @@ export function FacilitiesPageClient({ facilities }: FacilitiesPageClientProps) 
     const file = options?.file ?? null;
     const clearImage = options?.clearImage ?? false;
 
-    if (mode === 'create') {
-      const createResult = await createFacilityAction({ ...values, imageUrl: undefined });
-      if (createResult.error) {
-        throw new Error(createResult.error);
+    try {
+      if (mode === 'create') {
+        const createResult = await createFacilityAction({ ...values, imageUrl: undefined });
+        if (createResult.error) {
+          throw new Error(createResult.error);
+        }
+
+        if (createResult.data) {
+          const created = await syncImage(createResult.data as Facility, file, clearImage);
+          startTransition(() => {
+            setItems((prev) => [...prev, created]);
+            router.refresh();
+          });
+        }
+        return;
       }
 
-      if (createResult.data) {
-        const created = await syncImage(createResult.data as Facility, file, clearImage);
-        startTransition(() => {
-          setItems((prev) => [...prev, created]);
-          router.refresh();
-        });
+      if (!selected) {
+        return;
       }
-      return;
+
+      const basePayload =
+        clearImage && !file ? { ...values, imageUrl: null } : values;
+      const updateResult = await updateFacilityAction(selected.id, basePayload);
+      if (updateResult.error) {
+        throw new Error(updateResult.error);
+      }
+
+      let updated =
+        (updateResult.data as Facility | undefined) ??
+        { ...selected, ...values, ...(clearImage && !file ? { imageUrl: null } : {}) };
+
+      updated = await syncImage(updated, file, false);
+
+      startTransition(() => {
+        setItems((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+        router.refresh();
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'An unexpected error occurred.';
+      setMessage(message);
     }
-
-    if (!selected) {
-      return;
-    }
-
-    const basePayload =
-      clearImage && !file ? { ...values, imageUrl: null } : values;
-    const updateResult = await updateFacilityAction(selected.id, basePayload);
-    if (updateResult.error) {
-      throw new Error(updateResult.error);
-    }
-
-    let updated =
-      (updateResult.data as Facility | undefined) ??
-      { ...selected, ...values, ...(clearImage && !file ? { imageUrl: null } : {}) };
-
-    updated = await syncImage(updated, file, false);
-
-    startTransition(() => {
-      setItems((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
-      router.refresh();
-    });
   };
 
   const handleDelete = (facility: Facility) => {
