@@ -3,24 +3,31 @@
 import { useState } from 'react';
 import { AdminSidebar } from './admin-sidebar';
 import { AdminHeader } from './admin-header';
+import { cn } from '@/lib/utils';
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen flex bg-muted/10">
-      <AdminSidebar
-        open={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-      />
+    <div className="min-h-screen bg-white text-foreground">
+      <div className="flex min-h-screen overflow-hidden">
+        <div
+          className={cn(
+            'flex min-w-0 flex-1 flex-col transition-all duration-300 ease-in-out'
+          )}
+        >
+          <AdminHeader onMenuClick={() => setSidebarOpen((prev) => !prev)} />
+          <main className="flex-1 px-4 py-6 sm:px-6 lg:px-10">
+            <div className="mx-auto w-full max-w-7xl space-y-6">
+              {children}
+            </div>
+          </main>
+        </div>
 
-      <div className="flex-1 flex flex-col min-w-0">
-        <AdminHeader onMenuClick={() => setSidebarOpen(true)} />
-        <main className="flex-1 p-6 overflow-y-auto">
-          <div className="mx-auto max-w-6xl">
-            {children}
-          </div>
-        </main>
+        <AdminSidebar
+          open={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+        />
       </div>
     </div>
   );
