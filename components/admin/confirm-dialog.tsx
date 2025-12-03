@@ -10,6 +10,7 @@ interface ConfirmDialogProps {
   confirmLabel?: string;
   cancelLabel?: string;
   loading?: boolean;
+  contentClassName?: string;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -21,12 +22,19 @@ export function ConfirmDialog({
   confirmLabel = 'Confirm',
   cancelLabel = 'Cancel',
   loading = false,
+  contentClassName,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={(next) => (!next && !loading ? onCancel() : null)}>
-      <DialogContent>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next && loading) return;
+        if (!next) onCancel();
+      }}
+    >
+      <DialogContent className={contentClassName}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           {description ? <DialogDescription>{description}</DialogDescription> : null}
