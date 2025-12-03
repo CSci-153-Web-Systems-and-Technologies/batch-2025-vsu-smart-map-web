@@ -7,7 +7,7 @@ if (supabaseUrl && typeof supabaseUrl === "string") {
   try {
     supabaseHost = new URL(supabaseUrl).hostname;
   } catch (error) {
-    console.warn("Invalid NEXT_PUBLIC_SUPABASE_URL provided:", error);
+    console.warn("Invalid NEXT_PUBLIC_SUPABASE_URL format. Expected a valid URL, got:", supabaseUrl, error);
   }
 }
 
