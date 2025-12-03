@@ -7,13 +7,27 @@ const coordsSchema = z.object({
   lng: z.number().min(-180).max(180),
 });
 
+const codeSchema = z.preprocess(
+  (value) => (value === "" || value === null ? undefined : value),
+  z
+    .string()
+    .trim()
+    .min(VALIDATION_LIMITS.facility.code.min)
+    .max(VALIDATION_LIMITS.facility.code.max)
+    .optional(),
+);
+
 const baseFacilitySchema = z.object({
+  code: codeSchema,
   name: z.string().min(VALIDATION_LIMITS.facility.name.min).max(VALIDATION_LIMITS.facility.name.max),
   slug: z.string().min(1).max(100).optional(),
   description: z.string().max(VALIDATION_LIMITS.facility.description.max).optional().or(z.literal("")),
   category: z.enum(FACILITY_CATEGORIES),
   coordinates: coordsSchema,
-  imageUrl: z.string().url().optional().or(z.literal("")),
+  imageUrl: z.preprocess(
+    (value) => (value === "" || value === null ? undefined : value),
+    z.string().url().optional(),
+  ),
 });
 
 export const facilityWithRoomsSchema = baseFacilitySchema.extend({
