@@ -1,0 +1,31 @@
+import Link from 'next/link';
+import { Plus, ClipboardList } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+
+export function QuickActions() {
+  return (
+    <Card className="border bg-white shadow-sm">
+      <CardHeader>
+        <CardTitle className="text-base">Quick actions</CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Jump to the most common admin tasks.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <Button asChild className="w-full justify-start gap-2">
+          <Link href="/admin/facilities">
+            <Plus className="mr-2 h-4 w-4" />
+            Add facility
+          </Link>
+        </Button>
+        <Button asChild variant="outline" className="w-full justify-start gap-2">
+          <Link href="/admin/submissions">
+            <ClipboardList className="mr-2 h-4 w-4" />
+            Review submissions
+          </Link>
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
