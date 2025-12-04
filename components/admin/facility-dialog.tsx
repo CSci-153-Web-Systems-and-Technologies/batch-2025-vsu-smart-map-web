@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import Image from 'next/image';
 import type { Facility } from '@/lib/types/facility';
 import { FACILITY_CATEGORIES } from '@/lib/types/facility';
@@ -28,6 +28,11 @@ interface FacilityDialogProps {
     options?: { file?: File | null; clearImage?: boolean },
   ) => Promise<void> | void;
   onManageRooms?: () => void;
+  title?: string;
+  description?: string;
+  submitLabel?: string;
+  submittingLabel?: string;
+  children?: ReactNode;
 }
 
 const defaultCoordinates = MAP_DEFAULT_CENTER;
@@ -39,6 +44,11 @@ export function FacilityDialog({
   onOpenChange,
   onSubmit,
   onManageRooms,
+  title,
+  description,
+  submitLabel,
+  submittingLabel,
+  children,
 }: FacilityDialogProps) {
   const initialValues = useMemo<UnifiedFacilityFormValues>(() => {
     if (facility) {
@@ -71,6 +81,17 @@ export function FacilityDialog({
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(facility?.imageUrl ?? null);
   const [clearImage, setClearImage] = useState(false);
+
+  const resolvedTitle =
+    title ?? (mode === 'create' ? 'Add facility' : 'Edit facility');
+  const resolvedDescription =
+    description ??
+    (mode === 'create'
+      ? 'Create a building or point of interest.'
+      : 'Update facility details.');
+  const resolvedSubmit =
+    submitLabel ?? (mode === 'create' ? 'Create' : 'Save changes');
+  const resolvedSubmitting = submittingLabel ?? `${resolvedSubmit}...`;
 
   useEffect(() => {
     if (preview && preview.startsWith('blob:')) {
@@ -118,11 +139,9 @@ export function FacilityDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl max-h-[85dvh] p-0 flex flex-col gap-0 overflow-hidden">
         <DialogHeader className="p-6 pb-2 shrink-0">
-          <DialogTitle>{mode === 'create' ? 'Add facility' : 'Edit facility'}</DialogTitle>
+          <DialogTitle>{resolvedTitle}</DialogTitle>
           <DialogDescription>
-            {mode === 'create'
-              ? 'Create a building or point of interest.'
-              : 'Update facility details.'}
+            {resolvedDescription}
           </DialogDescription>
         </DialogHeader>
 
@@ -271,10 +290,11 @@ export function FacilityDialog({
               </div>
 
               {error && (
-                <div className="text-sm text-destructive">
+                <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
                   {error}
                 </div>
               )}
+              {children}
             </div>
           </div>
 
@@ -291,7 +311,7 @@ export function FacilityDialog({
                 Cancel
               </Button>
               <Button type="submit" disabled={submitting}>
-                {submitting ? 'Saving...' : mode === 'create' ? 'Create' : 'Save changes'}
+                {submitting ? resolvedSubmitting : resolvedSubmit}
               </Button>
             </div>
           </DialogFooter>
