@@ -16,7 +16,7 @@ const suggestionSchema = z.object({
   id: z.string().uuid().optional(),
   type: z.enum(SUGGESTION_TYPES),
   targetId: z.string().uuid().nullable(),
-  payload: z.record(z.string(), z.any()),
+  payload: z.record(z.string(), z.unknown()),
   adminNote: z.string().optional().nullable(),
 });
 

@@ -38,7 +38,10 @@ export function SuggestEditModal({ facility, open, onOpenChange }: SuggestEditMo
     }
 
     if (file) {
-      const upload = await uploadFacilityHeroClient(facility.id, file, file.name);
+      // Use a temporary ID for the upload to avoid overwriting existing facility images
+      // or polluting the facility's folder before approval.
+      const tempId = crypto.randomUUID();
+      const upload = await uploadFacilityHeroClient(tempId, file, file.name);
       if (upload.error) {
         setMessage(upload.error.message);
         return;
