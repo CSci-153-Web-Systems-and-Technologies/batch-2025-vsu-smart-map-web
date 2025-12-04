@@ -1,19 +1,41 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { unifiedFacilitySchema } from "@/lib/validation/facility";
+import { unifiedFacilitySchema, partialFacilitySchema } from "@/lib/validation/facility";
 import { roomSchema } from "@/lib/validation/room";
 import {
   createFacility,
   deleteFacility as deleteFacilityQuery,
   updateFacility,
+  getFacilityById,
 } from "@/lib/supabase/queries/facilities";
+import {
+  getSuggestions,
+  createSuggestion,
+  pruneHistory,
+} from "@/lib/supabase/queries/suggestions";
 import {
   createRoom,
   deleteRoom as deleteRoomQuery,
   updateRoom,
+  getRoomById,
 } from "@/lib/supabase/queries/rooms";
-import { getSupabaseServerClient } from "@/lib/supabase/server-client";
+import { getSupabaseServerClient, getSupabaseAdminClient } from "@/lib/supabase/server-client";
+
+export async function getFacilityHistory(facilityId: string) {
+  const { client } = await getSupabaseAdminClient({ requireServiceRole: true });
+  const { data, error } = await getSuggestions({
+    targetId: facilityId,
+    status: "APPROVED",
+    client,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  return { data };
+}
 
 const FACILITY_VALIDATION_ERROR =
   "Invalid facility data. Please check your entries and try again.";
@@ -33,20 +55,86 @@ export async function createFacilityAction(input: unknown) {
     return { error: error.message ?? GENERIC_ERROR };
   }
 
+  if (data) {
+    await createSuggestion(
+      {
+        type: "ADD_FACILITY",
+        targetId: data.id,
+        status: "APPROVED",
+        payload: { ...parsed.data, source: "ADMIN" },
+      },
+      client
+    );
+  }
+
   revalidatePath("/admin/facilities");
   return { data };
 }
 
 export async function updateFacilityAction(id: string, input: unknown) {
-  const parsed = unifiedFacilitySchema.partial().safeParse(input);
+  const parsed = partialFacilitySchema.safeParse(input);
   if (!parsed.success) {
     return { error: FACILITY_VALIDATION_ERROR };
   }
 
   const client = await getSupabaseServerClient();
+
+  const { data: currentFacility } = await getFacilityById({ id, client });
+
   const { data, error } = await updateFacility(id, parsed.data, client);
   if (error) {
     return { error: error.message ?? GENERIC_ERROR };
+  }
+
+  if (data && currentFacility) {
+    const changes: Record<string, unknown> = {};
+    const inputData = parsed.data;
+
+    if (inputData.name !== undefined && inputData.name !== currentFacility.name) {
+      changes.name = { from: currentFacility.name, to: inputData.name };
+    }
+    if (inputData.code !== undefined && inputData.code !== currentFacility.code) {
+      changes.code = { from: currentFacility.code, to: inputData.code };
+    }
+    if (inputData.description !== undefined && inputData.description !== currentFacility.description) {
+      changes.description = { from: currentFacility.description, to: inputData.description };
+    }
+    if (inputData.category !== undefined && inputData.category !== currentFacility.category) {
+      changes.category = { from: currentFacility.category, to: inputData.category };
+    }
+    if (inputData.hasRooms !== undefined && inputData.hasRooms !== currentFacility.hasRooms) {
+      changes.hasRooms = { from: currentFacility.hasRooms, to: inputData.hasRooms };
+    }
+    if (inputData.imageUrl !== undefined && inputData.imageUrl !== currentFacility.imageUrl) {
+      changes.imageUrl = { from: currentFacility.imageUrl, to: inputData.imageUrl };
+    }
+    if (inputData.coordinates) {
+      const coordsMatch =
+        currentFacility.coordinates?.lat === inputData.coordinates.lat &&
+        currentFacility.coordinates?.lng === inputData.coordinates.lng;
+      if (!coordsMatch) {
+        changes.coordinates = { from: currentFacility.coordinates, to: inputData.coordinates };
+      }
+    }
+
+    if (Object.keys(changes).length > 0) {
+      await createSuggestion(
+        {
+          type: "EDIT_FACILITY",
+          targetId: id,
+          status: "APPROVED",
+          payload: { ...changes, source: "ADMIN" },
+        },
+        client
+      );
+
+      await pruneHistory({
+        targetId: id,
+        type: "EDIT_FACILITY",
+        limit: 5,
+        client,
+      });
+    }
   }
 
   revalidatePath("/admin/facilities");
@@ -76,6 +164,18 @@ export async function createRoomAction(input: unknown) {
     return { error: error.message ?? GENERIC_ERROR };
   }
 
+  if (data) {
+    await createSuggestion(
+      {
+        type: "ADD_ROOM",
+        targetId: data.facility_id,
+        status: "APPROVED",
+        payload: { ...parsed.data, roomId: data.id, roomCode: data.room_code, source: "ADMIN" },
+      },
+      client
+    );
+  }
+
   revalidatePath("/admin/facilities");
   return { data };
 }
@@ -87,9 +187,52 @@ export async function updateRoomAction(id: string, input: unknown) {
   }
 
   const client = await getSupabaseServerClient();
+
+  const { data: currentRoom } = await getRoomById({ id, client });
+
   const { data, error } = await updateRoom({ id, ...parsed.data }, client);
   if (error) {
     return { error: error.message ?? GENERIC_ERROR };
+  }
+
+  if (data && currentRoom && !("facility" in currentRoom)) {
+    const changes: Record<string, unknown> = {};
+    const inputData = parsed.data;
+
+    if (inputData.roomCode !== undefined && inputData.roomCode !== currentRoom.room_code) {
+      changes.roomCode = { from: currentRoom.room_code, to: inputData.roomCode };
+    }
+    if (inputData.name !== undefined && inputData.name !== currentRoom.name) {
+      changes.name = { from: currentRoom.name, to: inputData.name };
+    }
+    if (inputData.description !== undefined && inputData.description !== currentRoom.description) {
+      changes.description = { from: currentRoom.description, to: inputData.description };
+    }
+    if (inputData.floor !== undefined && inputData.floor !== currentRoom.floor) {
+      changes.floor = { from: currentRoom.floor, to: inputData.floor };
+    }
+    if (inputData.facilityId !== undefined && inputData.facilityId !== currentRoom.facility_id) {
+      changes.facilityId = { from: currentRoom.facility_id, to: inputData.facilityId };
+    }
+
+    if (Object.keys(changes).length > 0) {
+      await createSuggestion(
+        {
+          type: "EDIT_ROOM",
+          targetId: data.facility_id,
+          status: "APPROVED",
+          payload: { ...changes, roomId: id, roomCode: data.room_code, source: "ADMIN" },
+        },
+        client
+      );
+
+      await pruneHistory({
+        targetId: data.facility_id,
+        type: "EDIT_ROOM",
+        limit: 5,
+        client,
+      });
+    }
   }
 
   revalidatePath("/admin/facilities");
