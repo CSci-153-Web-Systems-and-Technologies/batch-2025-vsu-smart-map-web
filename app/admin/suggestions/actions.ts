@@ -9,6 +9,8 @@ import { createRoom, updateRoom } from "@/lib/supabase/queries/rooms";
 import { getSuggestionById, updateSuggestion } from "@/lib/supabase/queries/suggestions";
 import { getSupabaseAdminClient } from "@/lib/supabase/server-client";
 import type { FacilityCategory, FacilityInsert, FacilityUpdate } from "@/lib/types/facility";
+import { deleteImage } from "@/lib/supabase/storage";
+import { getFacilityById } from "@/lib/supabase/queries/facilities";
 
 const GENERIC_ERROR = "Unable to process suggestion. Please try again.";
 
@@ -156,6 +158,29 @@ export async function rejectSuggestion(id: string, reason?: string) {
 
   if (suggestion.status !== "PENDING") {
     return { error: "Suggestion already processed." };
+  }
+
+  // Cleanup orphaned images if they were uploaded with the suggestion
+  if (suggestion.type === "ADD_FACILITY") {
+    const payload = suggestion.payload as unknown as FacilityInsert;
+    if (payload.imageUrl) {
+      await deleteImage(payload.imageUrl, true);
+    }
+  } else if (suggestion.type === "EDIT_FACILITY") {
+    const payload = suggestion.payload as unknown as FacilityUpdate;
+    // Only delete if the image was changed (uploaded new)
+    if (payload.imageUrl && suggestion.targetId) {
+      // We need to check if this is a NEW image, not the existing one
+      // Fetch current facility to compare
+      const { data: currentFacility } = await getFacilityById({
+        id: suggestion.targetId,
+        client,
+      });
+
+      if (currentFacility && currentFacility.imageUrl !== payload.imageUrl) {
+        await deleteImage(payload.imageUrl, true);
+      }
+    }
   }
 
   await updateSuggestion(
