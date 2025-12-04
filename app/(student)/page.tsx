@@ -1,9 +1,11 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { MapContainerClient } from "@/components/map/map-container";
 import { MapSearchPanel } from "@/components/map/map-search-panel";
+import { MapSelectionCard } from "@/components/map/selection-card";
 import type { Facility } from "@/lib/types/facility";
 import { getFacilities } from "@/lib/supabase/queries/facilities";
 import { useApp } from "@/lib/context/app-context";
@@ -147,6 +149,8 @@ function MapView({
   onClearSelection: () => void;
   onResultsChange: (items: Facility[]) => void;
 }) {
+  const router = useRouter();
+  const { selectedFacility } = useApp();
   const hasResults = filtered.length > 0;
 
   return (
@@ -185,38 +189,13 @@ function MapView({
         </div>
       )}
 
-      {selectedId && (
-        <SelectedNotice items={items} selectedId={selectedId} onClear={onClearSelection} />
+      {selectedFacility && (
+        <MapSelectionCard
+          facility={selectedFacility}
+          onClear={onClearSelection}
+          onViewDetails={() => router.push(`/directory?facility=${selectedFacility.id}`)}
+        />
       )}
-    </div>
-  );
-}
-
-function SelectedNotice({
-  items,
-  selectedId,
-  onClear,
-}: {
-  items: readonly Facility[];
-  selectedId: string;
-  onClear: () => void;
-}) {
-  const selected = useMemo(() => items.find((m) => m.id === selectedId), [items, selectedId]);
-  if (!selected) return null;
-
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm">
-      <span className="text-foreground">
-        Selected: <strong>{selected.name}</strong>
-        {selected.code ? ` (${selected.code})` : null}
-      </span>
-      <button
-        type="button"
-        onClick={onClear}
-        className="text-xs font-medium text-primary underline underline-offset-2"
-      >
-        Clear selection
-      </button>
     </div>
   );
 }
