@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { AdminSubmission } from "@/lib/admin/dashboard";
+import { cn } from "@/lib/utils";
 
 interface RecentSubmissionsProps {
   submissions: AdminSubmission[];
@@ -34,9 +35,12 @@ export function RecentActivity({ submissions }: RecentSubmissionsProps) {
               <Link
                 key={submission.id}
                 href={`/admin/suggestions/${submission.id}`}
-                className={`flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50 ${
-                  isAdmin ? "bg-slate-50 border-slate-200 dark:bg-slate-900/50 dark:border-slate-800" : "bg-blue-50/50 border-blue-100 dark:bg-blue-900/20 dark:border-blue-800"
-                }`}
+                className={cn(
+                  "flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50",
+                  isAdmin
+                    ? "bg-slate-50 border-slate-200 dark:bg-slate-900/50 dark:border-slate-800"
+                    : "bg-blue-50/50 border-blue-100 dark:bg-blue-900/20 dark:border-blue-800"
+                )}
               >
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center gap-2">

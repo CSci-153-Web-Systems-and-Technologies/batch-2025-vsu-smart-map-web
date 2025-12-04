@@ -39,11 +39,18 @@ const mapFacilityUpdate = (input: FacilityUpdate): FacilityUpdate => {
 };
 
 export async function approveSuggestion(id: string, overridePayload?: unknown) {
-  const admin = await getSupabaseAdminClient({ requireServiceRole: true }).catch(() => null);
-  if (!admin?.isServiceRole) {
+  let client;
+  try {
+    const admin = await getSupabaseAdminClient({ requireServiceRole: true });
+    if (!admin.isServiceRole) {
+      return { error: "Service role key is required to approve suggestions. Set SUPABASE_SERVICE_ROLE_KEY in .env.local." };
+    }
+    client = admin.client;
+  } catch (error) {
+    console.error("Failed to get admin client for approval:", error);
     return { error: "Service role key is required to approve suggestions. Set SUPABASE_SERVICE_ROLE_KEY in .env.local." };
   }
-  const client = admin.client;
+
   const { data: suggestion, error } = await getSuggestionById(id, client);
 
   if (error || !suggestion) {
@@ -145,11 +152,18 @@ export async function approveSuggestion(id: string, overridePayload?: unknown) {
 }
 
 export async function rejectSuggestion(id: string, reason?: string) {
-  const admin = await getSupabaseAdminClient({ requireServiceRole: true }).catch(() => null);
-  if (!admin?.isServiceRole) {
+  let client;
+  try {
+    const admin = await getSupabaseAdminClient({ requireServiceRole: true });
+    if (!admin.isServiceRole) {
+      return { error: "Service role key is required to reject suggestions. Set SUPABASE_SERVICE_ROLE_KEY in .env.local." };
+    }
+    client = admin.client;
+  } catch (error) {
+    console.error("Failed to get admin client for rejection:", error);
     return { error: "Service role key is required to reject suggestions. Set SUPABASE_SERVICE_ROLE_KEY in .env.local." };
   }
-  const client = admin.client;
+
   const { data: suggestion, error } = await getSuggestionById(id, client);
 
   if (error || !suggestion) {
@@ -163,15 +177,13 @@ export async function rejectSuggestion(id: string, reason?: string) {
   // Cleanup orphaned images if they were uploaded with the suggestion
   if (suggestion.type === "ADD_FACILITY") {
     const payload = suggestion.payload as unknown as FacilityInsert;
-    if (payload.imageUrl) {
+    if (typeof payload.imageUrl === "string" && payload.imageUrl) {
       await deleteImage(payload.imageUrl, true);
     }
   } else if (suggestion.type === "EDIT_FACILITY") {
     const payload = suggestion.payload as unknown as FacilityUpdate;
     // Only delete if the image was changed (uploaded new)
-    if (payload.imageUrl && suggestion.targetId) {
-      // We need to check if this is a NEW image, not the existing one
-      // Fetch current facility to compare
+    if (typeof payload.imageUrl === "string" && payload.imageUrl && suggestion.targetId) {
       const { data: currentFacility } = await getFacilityById({
         id: suggestion.targetId,
         client,

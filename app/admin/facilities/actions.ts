@@ -18,6 +18,14 @@ import {
   getRoomById,
 } from "@/lib/supabase/queries/rooms";
 import { getSupabaseServerClient, getSupabaseAdminClient } from "@/lib/supabase/server-client";
+import type { Facility } from "@/lib/types/facility";
+
+const MAX_HISTORY_ITEMS = 5;
+
+function getFacilityValue(facility: Facility, key: string): unknown {
+  const facilityRecord = facility as unknown as Record<string, unknown>;
+  return facilityRecord[key];
+}
 
 export async function getFacilityHistory(facilityId: string) {
   const { client } = await getSupabaseAdminClient({ requireServiceRole: true });
@@ -89,29 +97,25 @@ export async function updateFacilityAction(id: string, input: unknown) {
   if (currentFacility) {
     const inputData = parsed.data as Record<string, unknown>;
     Object.keys(inputData).forEach((key) => {
-      const k = key as keyof typeof inputData;
-      const newValue = inputData[k];
-      // @ts-expect-error - Dynamic access to facility properties
-      const currentValue = currentFacility[k];
+      const newValue = inputData[key];
+      const currentValue = getFacilityValue(currentFacility, key);
 
-      if (k === "coordinates" && newValue && typeof newValue === "object") {
+      if (key === "coordinates" && newValue && typeof newValue === "object") {
         const newCoords = newValue as { lat: number; lng: number };
         const currentCoords = currentFacility.coordinates;
         if (
           newCoords.lat !== currentCoords.lat ||
           newCoords.lng !== currentCoords.lng
         ) {
-          changes[k] = { from: currentCoords, to: newCoords };
+          changes[key] = { from: currentCoords, to: newCoords };
         }
       } else if (!isDeepEqual(newValue, currentValue)) {
-        // Use deep equality check to avoid false positives with object key order
         if (newValue !== undefined) {
-          changes[k] = { from: currentValue, to: newValue };
+          changes[key] = { from: currentValue, to: newValue };
         }
       }
     });
   } else {
-    // Fallback if current facility not found (shouldn't happen)
     Object.assign(changes, parsed.data);
   }
 
@@ -127,11 +131,10 @@ export async function updateFacilityAction(id: string, input: unknown) {
       client
     );
 
-    // Prune history to keep only last 5 edits
     await pruneHistory({
       targetId: id,
       type: "EDIT_FACILITY",
-      limit: 5,
+      limit: MAX_HISTORY_ITEMS,
       client,
     });
   }
@@ -195,6 +198,8 @@ export async function updateRoomAction(id: string, input: unknown) {
     return { error: error.message ?? GENERIC_ERROR };
   }
 
+  // Room queries return a basic room type without the 'facility' property
+  // (vs. getRoomsForFacility which joins with facilities table)
   if (data && currentRoom && !("facility" in currentRoom)) {
     const changes: Record<string, unknown> = {};
     const inputData = parsed.data;
@@ -226,16 +231,14 @@ export async function updateRoomAction(id: string, input: unknown) {
         client
       );
 
-      // Prune history to keep only last 5 room edits
       await pruneHistory({
         targetId: data.facility_id,
         type: "EDIT_ROOM",
-        limit: 5,
+        limit: MAX_HISTORY_ITEMS,
         client,
       });
     }
   } else if (data) {
-    // Fallback
     await createSuggestion(
       {
         type: "EDIT_ROOM",
@@ -246,11 +249,10 @@ export async function updateRoomAction(id: string, input: unknown) {
       client
     );
 
-    // Prune history to keep only last 5 room edits
     await pruneHistory({
       targetId: data.facility_id,
       type: "EDIT_ROOM",
-      limit: 5,
+      limit: MAX_HISTORY_ITEMS,
       client,
     });
   }

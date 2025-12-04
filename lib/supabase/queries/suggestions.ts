@@ -155,10 +155,24 @@ export async function pruneHistory(params: {
 
   const idsToKeep = keepIds.map((row) => row.id);
 
-  await supabase
+  // Delete old entries that are not in the keep list
+  // Using filter instead of .not() to avoid SQL injection risk with string interpolation
+  const { data: allEntries } = await supabase
     .from("suggestions")
-    .delete()
+    .select("id")
     .eq("target_id", params.targetId)
-    .in("type", types)
-    .not("id", "in", `(${idsToKeep.join(",")})`);
+    .in("type", types);
+
+  if (!allEntries) return;
+
+  const idsToDelete = allEntries
+    .map((row) => row.id)
+    .filter((id) => !idsToKeep.includes(id));
+
+  if (idsToDelete.length > 0) {
+    await supabase
+      .from("suggestions")
+      .delete()
+      .in("id", idsToDelete);
+  }
 }

@@ -49,7 +49,7 @@ const fieldLabels: Record<FieldKey, string> = {
 const formatValue = (key: FieldKey, value: unknown) => {
   if (value === undefined || value === null) return "—";
   if (key === "hasRooms") return value ? "Building (has rooms)" : "POI (no rooms)";
-  if (key === "coordinates" && typeof value === "object" && value) {
+  if (key === "coordinates" && typeof value === "object") {
     const coords = value as { lat?: number; lng?: number };
     return coords.lat !== undefined && coords.lng !== undefined
       ? `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`
@@ -57,6 +57,8 @@ const formatValue = (key: FieldKey, value: unknown) => {
   }
   return String(value);
 };
+
+const COORD_EPSILON = 1e-6;
 
 const hasDifference = (
   key: FieldKey,
@@ -73,10 +75,13 @@ const hasDifference = (
     const currentCoords = currentValue as { lat?: number; lng?: number } | undefined;
     const nextCoords = nextValue as { lat?: number; lng?: number } | undefined;
     if (!currentCoords || !nextCoords) return !!nextCoords;
-    return (
-      currentCoords.lat?.toFixed(5) !== nextCoords.lat?.toFixed(5) ||
-      currentCoords.lng?.toFixed(5) !== nextCoords.lng?.toFixed(5)
-    );
+    const latDiff = typeof currentCoords.lat === "number" && typeof nextCoords.lat === "number"
+      ? Math.abs(currentCoords.lat - nextCoords.lat) > COORD_EPSILON
+      : currentCoords.lat !== nextCoords.lat;
+    const lngDiff = typeof currentCoords.lng === "number" && typeof nextCoords.lng === "number"
+      ? Math.abs(currentCoords.lng - nextCoords.lng) > COORD_EPSILON
+      : currentCoords.lng !== nextCoords.lng;
+    return latDiff || lngDiff;
   }
 
   return JSON.stringify(currentValue) !== JSON.stringify(nextValue);
@@ -170,13 +175,21 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
     setIsEditing(false);
   };
 
-  const dialogFacility = {
-    ...currentFacility,
-    ...editedPayload,
+  // Build a Facility-like object for the dialog
+  // Required fields are provided with defaults when missing
+  const dialogFacility: Facility = {
     id: currentFacility?.id ?? "temp-id",
+    code: editedPayload.code ?? currentFacility?.code,
+    slug: editedPayload.slug ?? currentFacility?.slug ?? "",
+    name: editedPayload.name ?? currentFacility?.name ?? "New Facility",
+    description: editedPayload.description ?? currentFacility?.description,
+    category: editedPayload.category ?? currentFacility?.category ?? "landmark",
+    coordinates: editedPayload.coordinates ?? currentFacility?.coordinates ?? { lat: 0, lng: 0 },
+    imageUrl: editedPayload.imageUrl ?? currentFacility?.imageUrl,
+    hasRooms: editedPayload.hasRooms ?? currentFacility?.hasRooms ?? false,
     createdAt: currentFacility?.createdAt ?? new Date().toISOString(),
     updatedAt: currentFacility?.updatedAt ?? new Date().toISOString(),
-  } as unknown as Facility;
+  };
 
   return (
     <div className="space-y-6">

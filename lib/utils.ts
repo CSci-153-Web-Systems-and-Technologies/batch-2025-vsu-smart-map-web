@@ -22,6 +22,18 @@ export function isDeepEqual(obj1: unknown, obj2: unknown): boolean {
     return false;
   }
 
+  const isArray1 = Array.isArray(obj1);
+  const isArray2 = Array.isArray(obj2);
+  if (isArray1 !== isArray2) return false;
+
+  if (isArray1 && isArray2) {
+    if (obj1.length !== obj2.length) return false;
+    for (let i = 0; i < obj1.length; i++) {
+      if (!isDeepEqual(obj1[i], obj2[i])) return false;
+    }
+    return true;
+  }
+
   const keys1 = Object.keys(obj1);
   const keys2 = Object.keys(obj2);
 
