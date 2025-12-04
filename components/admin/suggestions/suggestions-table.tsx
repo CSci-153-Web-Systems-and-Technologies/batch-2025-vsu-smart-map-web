@@ -45,12 +45,24 @@ export function SuggestionsTable({ suggestions, facilityNames }: SuggestionsTabl
         </thead>
         <tbody>
           {suggestions.map((suggestion) => {
-            const targetName =
-              suggestion.targetId && facilityNames[suggestion.targetId]
-                ? facilityNames[suggestion.targetId]
-                : typeof suggestion.payload?.name === "string"
-                ? (suggestion.payload.name as string)
-                : "New facility";
+            let targetName = "New facility";
+            const payload = suggestion.payload as Record<string, unknown>;
+
+            if (suggestion.targetId && facilityNames[suggestion.targetId]) {
+              targetName = facilityNames[suggestion.targetId];
+            } else if (typeof payload.name === "string" && payload.name) {
+              targetName = payload.name;
+            }
+
+            if (suggestion.type === "ADD_ROOM" || suggestion.type === "EDIT_ROOM") {
+              if (payload.roomCode) {
+                targetName = `Room ${payload.roomCode}`;
+              } else if (payload.name) {
+                targetName = String(payload.name);
+              } else {
+                targetName = "Room";
+              }
+            }
 
             return (
               <tr

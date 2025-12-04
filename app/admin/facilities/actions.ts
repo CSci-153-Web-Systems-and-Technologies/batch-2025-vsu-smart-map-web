@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { unifiedFacilitySchema, partialFacilitySchema } from "@/lib/validation/facility";
 import { roomSchema } from "@/lib/validation/room";
+import { isDeepEqual } from "@/lib/utils";
 import {
   createFacility,
   deleteFacility as deleteFacilityQuery,
@@ -102,9 +103,8 @@ export async function updateFacilityAction(id: string, input: unknown) {
         ) {
           changes[k] = { from: currentCoords, to: newCoords };
         }
-      } else if (JSON.stringify(newValue) !== JSON.stringify(currentValue)) {
-        // Simple equality check might fail for objects/arrays, using JSON.stringify for safety
-        // Also handles the case where newValue is explicitly null/empty string vs undefined
+      } else if (!isDeepEqual(newValue, currentValue)) {
+        // Use deep equality check to avoid false positives with object key order
         if (newValue !== undefined) {
           changes[k] = { from: currentValue, to: newValue };
         }
