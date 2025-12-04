@@ -24,7 +24,7 @@ CREATE POLICY "Public can submit suggestions"
   ON suggestions
   FOR INSERT
   TO public
-  WITH CHECK (true);
+  WITH CHECK (status = 'PENDING' AND admin_note IS NULL);
 
 CREATE POLICY "Authenticated users can view suggestions"
   ON suggestions
