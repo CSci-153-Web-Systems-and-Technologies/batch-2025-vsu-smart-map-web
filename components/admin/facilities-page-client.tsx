@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import type { Facility } from '@/lib/types/facility';
 import { FacilitiesTable } from './facilities-table';
 import { FacilityDialog } from './facility-dialog';
+import { FacilityHistoryDialog } from './facility-history-dialog';
 import { RoomManagerDialog } from './room-manager-dialog';
 import type { UnifiedFacilityFormValues } from '@/lib/validation/facility';
 import {
@@ -27,6 +28,7 @@ export function FacilitiesPageClient({ facilities }: FacilitiesPageClientProps) 
   const [selected, setSelected] = useState<Facility | undefined>();
   const [isPending, startTransition] = useTransition();
   const [roomsOpen, setRoomsOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Facility | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const router = useRouter();
@@ -46,6 +48,11 @@ export function FacilitiesPageClient({ facilities }: FacilitiesPageClientProps) 
   const handleManageRooms = (facility: Facility) => {
     setSelected(facility);
     setRoomsOpen(true);
+  };
+
+  const handleViewHistory = (facility: Facility) => {
+    setSelected(facility);
+    setHistoryOpen(true);
   };
 
   const syncImage = async (facility: Facility, file?: File | null, clearImage?: boolean) => {
@@ -178,6 +185,7 @@ export function FacilitiesPageClient({ facilities }: FacilitiesPageClientProps) 
         onEdit={handleEdit}
         onManageRooms={handleManageRooms}
         onDelete={handleDelete}
+        onViewHistory={handleViewHistory}
         disabled={isPending}
       />
       {message && (
@@ -198,6 +206,14 @@ export function FacilitiesPageClient({ facilities }: FacilitiesPageClientProps) 
         facility={dialogFacility}
         onOpenChange={setRoomsOpen}
       />
+      {dialogFacility && (
+        <FacilityHistoryDialog
+          facilityId={dialogFacility.id}
+          facilityName={dialogFacility.name}
+          open={historyOpen}
+          onOpenChange={setHistoryOpen}
+        />
+      )}
       <ConfirmDialog
         open={Boolean(pendingDelete)}
         title="Delete facility"
