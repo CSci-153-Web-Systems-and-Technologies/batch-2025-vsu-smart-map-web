@@ -13,6 +13,17 @@ import { approveSuggestion, rejectSuggestion } from "@/app/admin/suggestions/act
 import { FacilityDialog } from "@/components/admin/facility-dialog";
 import { uploadFacilityHeroClient } from "@/lib/supabase/storage-client";
 import { Pencil } from "lucide-react";
+import { ConfirmDialog } from "@/components/admin/confirm-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 interface SuggestionDiffViewProps {
   suggestion: Suggestion;
@@ -74,15 +85,15 @@ const hasDifference = (
 export function SuggestionDiffView({ suggestion, payload, currentFacility }: SuggestionDiffViewProps) {
   const currentValues: Partial<UnifiedFacilityFormValues> | null = currentFacility
     ? {
-        code: currentFacility.code ?? "",
-        name: currentFacility.name,
-        description: currentFacility.description ?? "",
-        category: currentFacility.category,
-        hasRooms: currentFacility.hasRooms,
-        coordinates: currentFacility.coordinates,
-        imageUrl: currentFacility.imageUrl ?? "",
-        slug: currentFacility.slug,
-      }
+      code: currentFacility.code ?? "",
+      name: currentFacility.name,
+      description: currentFacility.description ?? "",
+      category: currentFacility.category,
+      hasRooms: currentFacility.hasRooms,
+      coordinates: currentFacility.coordinates,
+      imageUrl: currentFacility.imageUrl ?? "",
+      slug: currentFacility.slug,
+    }
     : null;
 
   const [editedPayload, setEditedPayload] = useState<Partial<UnifiedFacilityFormValues>>(payload);
@@ -90,18 +101,22 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const [showApproveDialog, setShowApproveDialog] = useState(false);
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+
   const router = useRouter();
   const disabled = pending || suggestion.status !== "PENDING";
 
-  const handleApprove = () => {
+  const handleApproveClick = () => {
     setError(null);
     setMessage(null);
+    setShowApproveDialog(true);
+  };
 
-    const confirmed = window.confirm(
-      "Approve this suggestion? This will update the live data immediately.",
-    );
-    if (!confirmed) return;
-
+  const executeApprove = () => {
+    setShowApproveDialog(false);
     startTransition(async () => {
       const result = await approveSuggestion(suggestion.id, editedPayload);
       if (result?.error) {
@@ -113,13 +128,17 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
     });
   };
 
-  const handleReject = () => {
+  const handleRejectClick = () => {
     setError(null);
     setMessage(null);
+    setRejectionReason("");
+    setShowRejectDialog(true);
+  };
 
-    const reason = window.prompt("Optional: add a rejection note for the submitter.");
+  const executeReject = () => {
+    setShowRejectDialog(false);
     startTransition(async () => {
-      const result = await rejectSuggestion(suggestion.id, reason ?? undefined);
+      const result = await rejectSuggestion(suggestion.id, rejectionReason || undefined);
       if (result?.error) {
         setError(result.error);
         return;
@@ -273,13 +292,54 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
       </div>
 
       <div className="flex flex-wrap gap-3">
-        <Button onClick={handleApprove} disabled={disabled}>
+        <Button onClick={handleApproveClick} disabled={disabled}>
           {pending ? "Working..." : "Approve"}
         </Button>
-        <Button onClick={handleReject} disabled={disabled} variant="outline">
+        <Button onClick={handleRejectClick} disabled={disabled} variant="outline">
           Reject
         </Button>
       </div>
+
+      <ConfirmDialog
+        open={showApproveDialog}
+        title="Approve Suggestion"
+        description="Are you sure you want to approve this suggestion? This will update the live data immediately."
+        confirmLabel="Approve"
+        confirmVariant="default"
+        onConfirm={executeApprove}
+        onCancel={() => setShowApproveDialog(false)}
+        loading={pending}
+      />
+
+      <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject Suggestion</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to reject this suggestion? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="reason">Rejection Reason (Optional)</Label>
+              <Textarea
+                id="reason"
+                placeholder="Explain why this suggestion is being rejected..."
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowRejectDialog(false)} disabled={pending}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={executeReject} disabled={pending}>
+              {pending ? "Rejecting..." : "Reject Suggestion"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <FacilityDialog
         open={isEditing}
