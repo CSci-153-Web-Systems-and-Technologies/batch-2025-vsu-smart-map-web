@@ -44,7 +44,7 @@ export function StudentTabs({
 
       if (nextIndex !== index) {
         event.preventDefault();
-        setActiveTab(tabs[nextIndex].id as TabId);
+        setActiveTab(tabs[nextIndex].id as TabId, { clearSelection: true });
       }
     },
     [tabs, setActiveTab],
@@ -78,7 +78,7 @@ export function StudentTabs({
               aria-controls={`${tab.id}-panel`}
               tabIndex={tabIndex}
               type="button"
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => setActiveTab(tab.id, { clearSelection: true })}
               onKeyDown={(event) => handleKeyDown(event, index)}
               className={cn(
                 "group relative flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition",

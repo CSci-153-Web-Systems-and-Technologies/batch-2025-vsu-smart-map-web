@@ -28,7 +28,7 @@ interface AppContextValue extends AppState {
   resolvePendingFacility: (facility: Facility) => void;
   setSearchQuery: (query: string) => void;
   setCategory: (category: FacilityCategory | null) => void;
-  setActiveTab: (tab: AppState["activeTab"]) => void;
+  setActiveTab: (tab: AppState["activeTab"], options?: { clearSelection?: boolean }) => void;
   clearFilters: () => void;
 }
 
@@ -156,7 +156,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSelectedCategory(null);
   }, []);
 
-  const setActiveTab = useCallback((tab: AppState["activeTab"]) => {
+  const setActiveTab = useCallback((tab: AppState["activeTab"], options?: { clearSelection?: boolean }) => {
+    if (options?.clearSelection) {
+      setSelectedFacility(null);
+      setPendingFacilityId(null);
+    }
     setActiveTabState(tab);
     const routes = { map: "/", directory: "/directory", chat: "/chat" } as const;
     router.push(routes[tab], { scroll: false });
