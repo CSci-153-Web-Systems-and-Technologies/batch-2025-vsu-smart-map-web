@@ -17,7 +17,7 @@ const codeSchema = z.preprocess((value) => {
   .max(VALIDATION_LIMITS.facility.code.max)
   .optional());
 
-const baseFacilitySchema = z.object({
+export const baseFacilitySchema = z.object({
   code: codeSchema,
   name: z.string().min(VALIDATION_LIMITS.facility.name.min).max(VALIDATION_LIMITS.facility.name.max),
   slug: z.string().min(1).max(100).optional(),
@@ -52,6 +52,11 @@ export const unifiedFacilitySchema = z.discriminatedUnion("hasRooms", [
   facilityPOISchema,
 ]);
 
+export const partialFacilitySchema = baseFacilitySchema
+  .extend({ hasRooms: z.boolean() })
+  .partial();
+
 export type UnifiedFacilityFormValues = z.infer<typeof unifiedFacilitySchema>;
 export type FacilityWithRoomsFormValues = z.infer<typeof facilityWithRoomsSchema>;
 export type FacilityPOIFormValues = z.infer<typeof facilityPOISchema>;
+export type PartialFacilityFormValues = z.infer<typeof partialFacilitySchema>;

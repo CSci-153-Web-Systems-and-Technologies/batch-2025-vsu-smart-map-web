@@ -34,7 +34,7 @@ export function StatsCards({ stats }: StatsCardsProps) {
     },
     {
       key: 'pendingSubmissions',
-      label: 'Pending Submissions',
+      label: 'Pending suggestions',
       value: stats.pendingSubmissions,
       icon: ICONS.pendingSubmissions,
     },

@@ -33,27 +33,29 @@ function MapCenterUpdater({ value }: { value: LatLng }) {
 
 export function CoordinatePickerMap({ value, onChange }: CoordinatePickerMapProps) {
   return (
-    <MapContainer
-      center={[value.lat, value.lng]}
-      zoom={17}
-      minZoom={MAP_MIN_ZOOM}
-      maxZoom={MAP_MAX_ZOOM}
-      className="h-full w-full"
-      scrollWheelZoom
-    >
-      <TileLayer
-        attribution={MAP_TILES.attribution}
-        url={MAP_TILES.url}
-        maxZoom={MAP_MAX_ZOOM}
-        maxNativeZoom={MAP_TILES.maxNativeZoom ?? MAP_MAX_ZOOM}
-      />
-      <MapCenterUpdater value={value} />
-      <ClickCapture onChange={onChange} />
-      <CircleMarker
+    <div className="coordinate-picker h-full w-full">
+      <MapContainer
         center={[value.lat, value.lng]}
-        radius={10}
-        pathOptions={{ color: '#2563eb', fillColor: '#2563eb', fillOpacity: 0.5 }}
-      />
-    </MapContainer>
+        zoom={17}
+        minZoom={MAP_MIN_ZOOM}
+        maxZoom={MAP_MAX_ZOOM}
+        className="h-full w-full"
+        scrollWheelZoom
+      >
+        <TileLayer
+          attribution={MAP_TILES.attribution}
+          url={MAP_TILES.url}
+          maxZoom={MAP_MAX_ZOOM}
+          maxNativeZoom={MAP_TILES.maxNativeZoom ?? MAP_MAX_ZOOM}
+        />
+        <MapCenterUpdater value={value} />
+        <ClickCapture onChange={onChange} />
+        <CircleMarker
+          center={[value.lat, value.lng]}
+          radius={10}
+          pathOptions={{ color: '#2563eb', fillColor: '#2563eb', fillOpacity: 0.5 }}
+        />
+      </MapContainer>
+    </div>
   );
 }

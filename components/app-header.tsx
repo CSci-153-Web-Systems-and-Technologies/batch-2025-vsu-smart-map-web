@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { Menu, MapPinned } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { MapPinned } from "lucide-react";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
@@ -56,23 +55,6 @@ export function AppHeader({ tabsSlot }: AppHeaderProps) {
 
         <div className="flex items-center gap-2">
           <ThemeSwitcher />
-          <Button
-            size="sm"
-            variant="secondary"
-            className="hidden sm:inline-flex"
-            type="button"
-          >
-            Submit a location
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="md:hidden"
-            type="button"
-            aria-label="Open menu"
-          >
-            <Menu className="h-5 w-5" aria-hidden />
-          </Button>
         </div>
       </div>
     </header>

@@ -35,7 +35,7 @@ export function ChatView() {
                 message.role === "assistant" && index === messages.length - 1;
 
               return (
-                <div key={message.id} className="space-y-2">
+                <div key={`${message.id}-${index}`} className="space-y-2">
                   <ChatMessage
                     message={message}
                     onRetry={

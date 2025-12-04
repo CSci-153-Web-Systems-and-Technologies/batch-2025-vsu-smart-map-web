@@ -20,9 +20,9 @@ export function QuickActions() {
           </Link>
         </Button>
         <Button asChild variant="outline" className="w-full justify-start gap-2">
-          <Link href="/admin/submissions">
+          <Link href="/admin/suggestions">
             <ClipboardList className="mr-2 h-4 w-4" />
-            Review submissions
+            Review suggestions
           </Link>
         </Button>
       </CardContent>

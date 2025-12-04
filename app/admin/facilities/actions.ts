@@ -1,19 +1,46 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { unifiedFacilitySchema } from "@/lib/validation/facility";
+import { unifiedFacilitySchema, partialFacilitySchema } from "@/lib/validation/facility";
 import { roomSchema } from "@/lib/validation/room";
+import { isDeepEqual } from "@/lib/utils";
 import {
   createFacility,
   deleteFacility as deleteFacilityQuery,
   updateFacility,
+  getFacilityById,
 } from "@/lib/supabase/queries/facilities";
+import { getSuggestions, createSuggestion, pruneHistory } from "@/lib/supabase/queries/suggestions";
 import {
   createRoom,
   deleteRoom as deleteRoomQuery,
   updateRoom,
+  getRoomById,
 } from "@/lib/supabase/queries/rooms";
-import { getSupabaseServerClient } from "@/lib/supabase/server-client";
+import { getSupabaseServerClient, getSupabaseAdminClient } from "@/lib/supabase/server-client";
+import type { Facility } from "@/lib/types/facility";
+
+const MAX_HISTORY_ITEMS = 5;
+
+function getFacilityValue(facility: Facility, key: string): unknown {
+  const facilityRecord = facility as unknown as Record<string, unknown>;
+  return facilityRecord[key];
+}
+
+export async function getFacilityHistory(facilityId: string) {
+  const { client } = await getSupabaseAdminClient({ requireServiceRole: true });
+  const { data, error } = await getSuggestions({
+    targetId: facilityId,
+    status: "APPROVED",
+    client,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  return { data };
+}
 
 const FACILITY_VALIDATION_ERROR =
   "Invalid facility data. Please check your entries and try again.";
@@ -33,20 +60,83 @@ export async function createFacilityAction(input: unknown) {
     return { error: error.message ?? GENERIC_ERROR };
   }
 
+  if (data) {
+    await createSuggestion(
+      {
+        type: "ADD_FACILITY",
+        targetId: data.id,
+        status: "APPROVED",
+        payload: { ...parsed.data, source: "ADMIN" },
+      },
+      client
+    );
+  }
+
   revalidatePath("/admin/facilities");
   return { data };
 }
 
 export async function updateFacilityAction(id: string, input: unknown) {
-  const parsed = unifiedFacilitySchema.partial().safeParse(input);
+  const parsed = partialFacilitySchema.safeParse(input);
   if (!parsed.success) {
     return { error: FACILITY_VALIDATION_ERROR };
   }
 
   const client = await getSupabaseServerClient();
+
+  // Fetch current facility state for diffing
+  const { data: currentFacility } = await getFacilityById({ id, client });
+
   const { data, error } = await updateFacility(id, parsed.data, client);
   if (error) {
     return { error: error.message ?? GENERIC_ERROR };
+  }
+
+  // Calculate changes
+  const changes: Record<string, unknown> = {};
+  if (currentFacility) {
+    const inputData = parsed.data as Record<string, unknown>;
+    Object.keys(inputData).forEach((key) => {
+      const newValue = inputData[key];
+      const currentValue = getFacilityValue(currentFacility, key);
+
+      if (key === "coordinates" && newValue && typeof newValue === "object") {
+        const newCoords = newValue as { lat: number; lng: number };
+        const currentCoords = currentFacility.coordinates;
+        if (
+          newCoords.lat !== currentCoords.lat ||
+          newCoords.lng !== currentCoords.lng
+        ) {
+          changes[key] = { from: currentCoords, to: newCoords };
+        }
+      } else if (!isDeepEqual(newValue, currentValue)) {
+        if (newValue !== undefined) {
+          changes[key] = { from: currentValue, to: newValue };
+        }
+      }
+    });
+  } else {
+    Object.assign(changes, parsed.data);
+  }
+
+  // Only create suggestion if there are actual changes
+  if (Object.keys(changes).length > 0) {
+    await createSuggestion(
+      {
+        type: "EDIT_FACILITY",
+        targetId: id,
+        status: "APPROVED",
+        payload: { ...changes, source: "ADMIN" },
+      },
+      client
+    );
+
+    await pruneHistory({
+      targetId: id,
+      type: "EDIT_FACILITY",
+      limit: MAX_HISTORY_ITEMS,
+      client,
+    });
   }
 
   revalidatePath("/admin/facilities");
@@ -76,6 +166,18 @@ export async function createRoomAction(input: unknown) {
     return { error: error.message ?? GENERIC_ERROR };
   }
 
+  if (data) {
+    await createSuggestion(
+      {
+        type: "ADD_ROOM",
+        targetId: data.facility_id,
+        status: "APPROVED",
+        payload: { ...parsed.data, roomId: data.id, roomCode: data.room_code, source: "ADMIN" },
+      },
+      client
+    );
+  }
+
   revalidatePath("/admin/facilities");
   return { data };
 }
@@ -87,9 +189,72 @@ export async function updateRoomAction(id: string, input: unknown) {
   }
 
   const client = await getSupabaseServerClient();
+
+  // Fetch current room state for diffing
+  const { data: currentRoom } = await getRoomById({ id, client });
+
   const { data, error } = await updateRoom({ id, ...parsed.data }, client);
   if (error) {
     return { error: error.message ?? GENERIC_ERROR };
+  }
+
+  // Room queries return a basic room type without the 'facility' property
+  // (vs. getRoomsForFacility which joins with facilities table)
+  if (data && currentRoom && !("facility" in currentRoom)) {
+    const changes: Record<string, unknown> = {};
+    const inputData = parsed.data;
+
+    if (inputData.roomCode !== undefined && inputData.roomCode !== currentRoom.room_code) {
+      changes.roomCode = { from: currentRoom.room_code, to: inputData.roomCode };
+    }
+    if (inputData.name !== undefined && inputData.name !== currentRoom.name) {
+      changes.name = { from: currentRoom.name, to: inputData.name };
+    }
+    if (inputData.description !== undefined && inputData.description !== currentRoom.description) {
+      changes.description = { from: currentRoom.description, to: inputData.description };
+    }
+    if (inputData.floor !== undefined && inputData.floor !== currentRoom.floor) {
+      changes.floor = { from: currentRoom.floor, to: inputData.floor };
+    }
+    if (inputData.facilityId !== undefined && inputData.facilityId !== currentRoom.facility_id) {
+      changes.facilityId = { from: currentRoom.facility_id, to: inputData.facilityId };
+    }
+
+    if (Object.keys(changes).length > 0) {
+      await createSuggestion(
+        {
+          type: "EDIT_ROOM",
+          targetId: data.facility_id,
+          status: "APPROVED",
+          payload: { ...changes, roomId: id, roomCode: data.room_code, source: "ADMIN" },
+        },
+        client
+      );
+
+      await pruneHistory({
+        targetId: data.facility_id,
+        type: "EDIT_ROOM",
+        limit: MAX_HISTORY_ITEMS,
+        client,
+      });
+    }
+  } else if (data) {
+    await createSuggestion(
+      {
+        type: "EDIT_ROOM",
+        targetId: data.facility_id,
+        status: "APPROVED",
+        payload: { ...parsed.data, roomId: id, roomCode: data.room_code, source: "ADMIN" },
+      },
+      client
+    );
+
+    await pruneHistory({
+      targetId: data.facility_id,
+      type: "EDIT_ROOM",
+      limit: MAX_HISTORY_ITEMS,
+      client,
+    });
   }
 
   revalidatePath("/admin/facilities");
