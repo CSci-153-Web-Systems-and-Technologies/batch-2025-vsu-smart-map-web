@@ -74,11 +74,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const currentFacilityId = selectedFacility?.id ?? pendingFacilityId ?? null;
 
-
+  // Track the target pathname during programmatic navigation to prevent URL sync conflicts.
+  // When setActiveTab triggers router.push, we skip one URL sync cycle to avoid the effect
+  // from overwriting the navigation with stale query params.
+  const navigationTargetRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (isNavigating.current) {
+    // If we just completed a programmatic navigation (pathname matches target), reset the flag.
+    if (navigationTargetRef.current && pathname === navigationTargetRef.current) {
+      navigationTargetRef.current = null;
       isNavigating.current = false;
+    }
+  }, [pathname]);
+
+  useEffect(() => {
+    // Skip URL sync if we're in the middle of a programmatic navigation.
+    if (isNavigating.current) {
       return;
     }
 
@@ -170,10 +181,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setPendingFacilityId(null);
     }
 
-    isNavigating.current = true;
-    setActiveTabState(tab);
     const routes = { map: "/", directory: "/directory", chat: "/chat" } as const;
-    router.push(routes[tab], { scroll: false });
+    const targetRoute = routes[tab];
+    
+    // Set navigation flags before pushing to prevent URL sync from interfering
+    isNavigating.current = true;
+    navigationTargetRef.current = targetRoute;
+    
+    setActiveTabState(tab);
+    router.push(targetRoute, { scroll: false });
   }, [router]);
 
   const value = useMemo<AppContextValue>(() => ({

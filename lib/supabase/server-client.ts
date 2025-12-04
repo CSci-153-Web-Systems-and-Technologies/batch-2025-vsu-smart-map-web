@@ -64,9 +64,12 @@ export const getSupabaseAdminClient = async (options?: { requireServiceRole?: bo
   try {
     return { client: getSupabaseServiceRoleClient(), isServiceRole: true };
   } catch (error) {
+    // Log the error for debugging - helps diagnose missing env vars vs other issues
+    console.error("[getSupabaseAdminClient] Service role client unavailable:", error instanceof Error ? error.message : error);
     if (options?.requireServiceRole) {
       throw error;
     }
+    // Fallback to regular server client (cookie-based auth)
     const client = await getSupabaseServerClient();
     return { client, isServiceRole: false };
   }

@@ -67,7 +67,9 @@
   }
 }
 
-/* Leaflet map z-index override to prevent overlapping with modals and menus */
-.leaflet-container {
+/* Leaflet map z-index override to prevent overlapping with modals and menus.
+   Scoped to containers with the map-wrapper class for targeted control. */
+.map-wrapper .leaflet-container,
+.coordinate-picker .leaflet-container {
   z-index: 0;
 }
