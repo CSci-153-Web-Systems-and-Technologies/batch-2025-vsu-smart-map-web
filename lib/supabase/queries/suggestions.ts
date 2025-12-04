@@ -126,3 +126,34 @@ export async function updateSuggestion(
   const row = data as SuggestionRow | null;
   return { data: row ? toSuggestion(row) : null, error: normalizeError(error) };
 }
+
+export async function pruneHistory(params: {
+  targetId: string;
+  type: SuggestionType | SuggestionType[];
+  limit: number;
+  client?: MaybeClient;
+}): Promise<void> {
+  const supabase = await resolveClient(params.client);
+  const types = Array.isArray(params.type) ? params.type : [params.type];
+
+  const { data: keepIds } = await supabase
+    .from("suggestions")
+    .select("id")
+    .eq("target_id", params.targetId)
+    .in("type", types)
+    .order("created_at", { ascending: false })
+    .limit(params.limit);
+
+  if (!keepIds || keepIds.length < params.limit) {
+    return;
+  }
+
+  const idsToKeep = keepIds.map((row) => row.id);
+
+  await supabase
+    .from("suggestions")
+    .delete()
+    .eq("target_id", params.targetId)
+    .in("type", types)
+    .not("id", "in", `(${idsToKeep.join(",")})`);
+}
