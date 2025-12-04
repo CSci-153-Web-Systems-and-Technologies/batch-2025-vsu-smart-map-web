@@ -53,7 +53,7 @@ export function StudentTabs({
   const isInline = placement === "inline";
   const wrapperClasses = isInline
     ? "hidden md:block border-b border-border/80 bg-card/90 backdrop-blur"
-    : "md:hidden fixed inset-x-0 bottom-0 border-t border-border/80 bg-card/95 backdrop-blur pb-[calc(16px+env(safe-area-inset-bottom,0px))] pt-2";
+    : "md:hidden fixed inset-x-0 bottom-0 z-20 border-t border-border/80 bg-card/95 backdrop-blur pb-[calc(16px+env(safe-area-inset-bottom,0px))] pt-2";
   const innerClasses = isInline
     ? "mx-auto flex max-w-6xl items-stretch justify-center gap-2 px-4 py-2 md:px-6"
     : "flex items-center justify-around px-4";

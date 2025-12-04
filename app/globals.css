@@ -66,3 +66,8 @@
     @apply bg-background text-foreground font-sans;
   }
 }
+
+/* Leaflet map z-index override to prevent overlapping with modals and menus */
+.leaflet-container {
+  z-index: 0;
+}
