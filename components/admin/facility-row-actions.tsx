@@ -1,6 +1,6 @@
 'use client';
 
-import { MoreHorizontal, Pencil, Trash2, Home } from 'lucide-react';
+import { MoreHorizontal, Pencil, Trash2, Home, History } from 'lucide-react';
 import type { Facility } from '@/lib/types/facility';
 import {
   DropdownMenu,
@@ -16,6 +16,7 @@ interface FacilityRowActionsProps {
   onEdit?: (facility: Facility) => void;
   onManageRooms?: (facility: Facility) => void;
   onDelete?: (facility: Facility) => void;
+  onViewHistory?: (facility: Facility) => void;
   disabled?: boolean;
 }
 
@@ -24,11 +25,13 @@ export function FacilityRowActions({
   onEdit,
   onManageRooms,
   onDelete,
+  onViewHistory,
   disabled,
 }: FacilityRowActionsProps) {
   const handleEdit = () => onEdit?.(facility);
   const handleRooms = () => onManageRooms?.(facility);
   const handleDelete = () => onDelete?.(facility);
+  const handleHistory = () => onViewHistory?.(facility);
 
   return (
     <DropdownMenu>
@@ -49,6 +52,10 @@ export function FacilityRowActions({
             Manage Rooms
           </DropdownMenuItem>
         )}
+        <DropdownMenuItem onSelect={handleHistory} disabled={disabled || !onViewHistory}>
+          <History className="h-4 w-4" />
+          View History
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className="text-destructive focus:text-destructive"
