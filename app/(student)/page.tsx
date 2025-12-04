@@ -7,6 +7,9 @@ import { MapSearchPanel } from "@/components/map/map-search-panel";
 import type { Facility } from "@/lib/types/facility";
 import { getFacilities } from "@/lib/supabase/queries/facilities";
 import { useApp } from "@/lib/context/app-context";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import { SuggestAddModal } from "@/components/suggestions/suggest-add-modal";
 
 const MapSelectionLayer = dynamic(
   () => import("@/components/map/map-selection-layer").then((m) => m.MapSelectionLayer),
@@ -43,6 +46,7 @@ function MapTab() {
   const [filtered, setFiltered] = useState<readonly Facility[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [suggestOpen, setSuggestOpen] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -89,6 +93,16 @@ function MapTab() {
           <p className="text-sm uppercase tracking-wide text-muted-foreground">Map</p>
           <h1 className="mt-1 text-2xl font-bold text-foreground">Explore the campus map</h1>
         </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="gap-2"
+          onClick={() => setSuggestOpen(true)}
+        >
+          <Plus className="h-4 w-4" />
+          Submit a location
+        </Button>
       </div>
 
       <MapView
@@ -103,6 +117,12 @@ function MapTab() {
         }}
         onClearSelection={() => selectFacility(null)}
         onResultsChange={(results) => setFiltered(results as Facility[])}
+      />
+
+      <SuggestAddModal
+        open={suggestOpen}
+        onOpenChange={setSuggestOpen}
+        onSuccess={() => setSuggestOpen(false)}
       />
     </section>
   );
