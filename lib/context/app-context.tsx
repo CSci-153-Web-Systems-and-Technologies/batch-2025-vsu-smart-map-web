@@ -74,12 +74,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const currentFacilityId = selectedFacility?.id ?? pendingFacilityId ?? null;
 
-  useEffect(() => {
-    isNavigating.current = false;
-  }, [pathname]);
+
 
   useEffect(() => {
-    if (isNavigating.current) return;
+    if (isNavigating.current) {
+      isNavigating.current = false;
+      return;
+    }
 
     const params = new URLSearchParams(searchParams.toString());
 
