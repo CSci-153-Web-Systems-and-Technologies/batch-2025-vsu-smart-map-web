@@ -59,3 +59,15 @@ export const getSupabaseServiceRoleClient = () => {
   });
   return serviceClient;
 };
+
+export const getSupabaseAdminClient = async (options?: { requireServiceRole?: boolean }) => {
+  try {
+    return { client: getSupabaseServiceRoleClient(), isServiceRole: true };
+  } catch (error) {
+    if (options?.requireServiceRole) {
+      throw error;
+    }
+    const client = await getSupabaseServerClient();
+    return { client, isServiceRole: false };
+  }
+};
