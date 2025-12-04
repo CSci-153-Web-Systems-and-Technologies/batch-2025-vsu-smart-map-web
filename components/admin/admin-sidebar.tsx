@@ -2,14 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Building, FileText, Map as MapIcon } from 'lucide-react';
+import { LayoutDashboard, Building, Lightbulb, Map as MapIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 
 const NAV_ITEMS = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/facilities', label: 'Facilities', icon: Building },
-  { href: '/admin/submissions', label: 'Submissions', icon: FileText },
+  { href: '/admin/suggestions', label: 'Suggestions', icon: Lightbulb },
 ];
 
 interface AdminSidebarProps {
