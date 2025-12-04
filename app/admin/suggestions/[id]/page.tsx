@@ -1,53 +1,40 @@
 import { notFound } from "next/navigation";
 import { AdminBreadcrumbs } from "@/components/admin/admin-breadcrumbs";
-import { SuggestionActions } from "@/components/admin/suggestions/suggestion-actions";
 import { SuggestionDiffView } from "@/components/admin/suggestions/suggestion-diff-view";
 import { getFacilityById } from "@/lib/supabase/queries/facilities";
 import { getSuggestionById } from "@/lib/supabase/queries/suggestions";
 import { getSupabaseAdminClient } from "@/lib/supabase/server-client";
-import type { UnifiedFacilityFormValues } from "@/lib/validation/facility";
+import { baseFacilitySchema } from "@/lib/validation/facility";
+import { z } from "zod";
 
-interface SuggestionDetailPageProps {
-  params: Promise<{ id: string }>;
-}
+export default async function SuggestionDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const { client } = await getSupabaseAdminClient({ requireServiceRole: true });
+  const { data: suggestion } = await getSuggestionById(params.id, client);
 
-export default async function SuggestionDetailPage({ params }: SuggestionDetailPageProps) {
-  const { id } = await params;
-
-  const { client } = await getSupabaseAdminClient({ requireServiceRole: true }).catch(
-    (error) => {
-      throw new Error(
-        "SUPABASE_SERVICE_ROLE_KEY is required. Add it to .env.local and restart dev server.",
-        { cause: error },
-      );
-    },
-  );
-
-  const { data: suggestion, error } = await getSuggestionById(id, client);
-
-  if (error || !suggestion) {
+  if (!suggestion) {
     notFound();
   }
 
-  const currentFacility = suggestion.targetId
-    ? (await getFacilityById({ id: suggestion.targetId, client })).data
-    : null;
+  const currentFacility =
+    suggestion.targetId && suggestion.type === "EDIT_FACILITY"
+      ? (await getFacilityById({ id: suggestion.targetId, client })).data ?? null
+      : null;
 
-  const payload = suggestion.payload as Partial<UnifiedFacilityFormValues>;
-  const isPending = suggestion.status === "PENDING";
+  const partialSchema = baseFacilitySchema.extend({ hasRooms: z.boolean().optional() }).partial();
+  const parsedPayload = partialSchema.safeParse(suggestion.payload);
+  const payload = parsedPayload.success ? parsedPayload.data : {};
 
   return (
     <div className="space-y-6">
       <AdminBreadcrumbs />
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-bold">Review Suggestion</h1>
-          <p className="text-muted-foreground">
-            Compare the proposed changes against current data.
-          </p>
-        </div>
-        {isPending && <SuggestionActions suggestionId={id} />}
+      <div className="space-y-2">
+        <p className="text-sm text-muted-foreground">Suggestion ID: {suggestion.id}</p>
+        <h1 className="text-3xl font-bold">Suggestion Review</h1>
+        <p className="text-muted-foreground">
+          Type: {suggestion.type.replace("_", " ")} · Status: {suggestion.status}
+        </p>
       </div>
 
       <SuggestionDiffView
@@ -55,19 +42,6 @@ export default async function SuggestionDetailPage({ params }: SuggestionDetailP
         payload={payload}
         currentFacility={currentFacility}
       />
-
-      {!isPending && (
-        <div className="rounded-lg border border-border bg-muted/30 p-4">
-          <p className="text-sm text-muted-foreground">
-            This suggestion has been <strong className="text-foreground">{suggestion.status.toLowerCase()}</strong>.
-            {suggestion.adminNote && (
-              <span className="block mt-2">
-                <strong className="text-foreground">Note:</strong> {suggestion.adminNote}
-              </span>
-            )}
-          </p>
-        </div>
-      )}
     </div>
   );
 }

@@ -9,11 +9,7 @@ import {
   updateFacility,
   getFacilityById,
 } from "@/lib/supabase/queries/facilities";
-import {
-  getSuggestions,
-  createSuggestion,
-  pruneHistory,
-} from "@/lib/supabase/queries/suggestions";
+import { getSuggestions, createSuggestion, pruneHistory } from "@/lib/supabase/queries/suggestions";
 import {
   createRoom,
   deleteRoom as deleteRoomQuery,
@@ -79,6 +75,7 @@ export async function updateFacilityAction(id: string, input: unknown) {
 
   const client = await getSupabaseServerClient();
 
+  // Fetch current facility state for diffing
   const { data: currentFacility } = await getFacilityById({ id, client });
 
   const { data, error } = await updateFacility(id, parsed.data, client);
@@ -86,55 +83,57 @@ export async function updateFacilityAction(id: string, input: unknown) {
     return { error: error.message ?? GENERIC_ERROR };
   }
 
-  if (data && currentFacility) {
-    const changes: Record<string, unknown> = {};
-    const inputData = parsed.data;
+  // Calculate changes
+  const changes: Record<string, unknown> = {};
+  if (currentFacility) {
+    const inputData = parsed.data as Record<string, unknown>;
+    Object.keys(inputData).forEach((key) => {
+      const k = key as keyof typeof inputData;
+      const newValue = inputData[k];
+      // @ts-expect-error - Dynamic access to facility properties
+      const currentValue = currentFacility[k];
 
-    if (inputData.name !== undefined && inputData.name !== currentFacility.name) {
-      changes.name = { from: currentFacility.name, to: inputData.name };
-    }
-    if (inputData.code !== undefined && inputData.code !== currentFacility.code) {
-      changes.code = { from: currentFacility.code, to: inputData.code };
-    }
-    if (inputData.description !== undefined && inputData.description !== currentFacility.description) {
-      changes.description = { from: currentFacility.description, to: inputData.description };
-    }
-    if (inputData.category !== undefined && inputData.category !== currentFacility.category) {
-      changes.category = { from: currentFacility.category, to: inputData.category };
-    }
-    if (inputData.hasRooms !== undefined && inputData.hasRooms !== currentFacility.hasRooms) {
-      changes.hasRooms = { from: currentFacility.hasRooms, to: inputData.hasRooms };
-    }
-    if (inputData.imageUrl !== undefined && inputData.imageUrl !== currentFacility.imageUrl) {
-      changes.imageUrl = { from: currentFacility.imageUrl, to: inputData.imageUrl };
-    }
-    if (inputData.coordinates) {
-      const coordsMatch =
-        currentFacility.coordinates?.lat === inputData.coordinates.lat &&
-        currentFacility.coordinates?.lng === inputData.coordinates.lng;
-      if (!coordsMatch) {
-        changes.coordinates = { from: currentFacility.coordinates, to: inputData.coordinates };
+      if (k === "coordinates" && newValue && typeof newValue === "object") {
+        const newCoords = newValue as { lat: number; lng: number };
+        const currentCoords = currentFacility.coordinates;
+        if (
+          newCoords.lat !== currentCoords.lat ||
+          newCoords.lng !== currentCoords.lng
+        ) {
+          changes[k] = { from: currentCoords, to: newCoords };
+        }
+      } else if (JSON.stringify(newValue) !== JSON.stringify(currentValue)) {
+        // Simple equality check might fail for objects/arrays, using JSON.stringify for safety
+        // Also handles the case where newValue is explicitly null/empty string vs undefined
+        if (newValue !== undefined) {
+          changes[k] = { from: currentValue, to: newValue };
+        }
       }
-    }
+    });
+  } else {
+    // Fallback if current facility not found (shouldn't happen)
+    Object.assign(changes, parsed.data);
+  }
 
-    if (Object.keys(changes).length > 0) {
-      await createSuggestion(
-        {
-          type: "EDIT_FACILITY",
-          targetId: id,
-          status: "APPROVED",
-          payload: { ...changes, source: "ADMIN" },
-        },
-        client
-      );
-
-      await pruneHistory({
-        targetId: id,
+  // Only create suggestion if there are actual changes
+  if (Object.keys(changes).length > 0) {
+    await createSuggestion(
+      {
         type: "EDIT_FACILITY",
-        limit: 5,
-        client,
-      });
-    }
+        targetId: id,
+        status: "APPROVED",
+        payload: { ...changes, source: "ADMIN" },
+      },
+      client
+    );
+
+    // Prune history to keep only last 5 edits
+    await pruneHistory({
+      targetId: id,
+      type: "EDIT_FACILITY",
+      limit: 5,
+      client,
+    });
   }
 
   revalidatePath("/admin/facilities");
@@ -188,6 +187,7 @@ export async function updateRoomAction(id: string, input: unknown) {
 
   const client = await getSupabaseServerClient();
 
+  // Fetch current room state for diffing
   const { data: currentRoom } = await getRoomById({ id, client });
 
   const { data, error } = await updateRoom({ id, ...parsed.data }, client);
@@ -226,6 +226,7 @@ export async function updateRoomAction(id: string, input: unknown) {
         client
       );
 
+      // Prune history to keep only last 5 room edits
       await pruneHistory({
         targetId: data.facility_id,
         type: "EDIT_ROOM",
@@ -233,6 +234,25 @@ export async function updateRoomAction(id: string, input: unknown) {
         client,
       });
     }
+  } else if (data) {
+    // Fallback
+    await createSuggestion(
+      {
+        type: "EDIT_ROOM",
+        targetId: data.facility_id,
+        status: "APPROVED",
+        payload: { ...parsed.data, roomId: id, roomCode: data.room_code, source: "ADMIN" },
+      },
+      client
+    );
+
+    // Prune history to keep only last 5 room edits
+    await pruneHistory({
+      targetId: data.facility_id,
+      type: "EDIT_ROOM",
+      limit: 5,
+      client,
+    });
   }
 
   revalidatePath("/admin/facilities");

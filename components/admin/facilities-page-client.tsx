@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import type { Facility } from '@/lib/types/facility';
 import { FacilitiesTable } from './facilities-table';
 import { FacilityDialog } from './facility-dialog';
-import { FacilityHistoryDialog } from './facility-history-dialog';
 import { RoomManagerDialog } from './room-manager-dialog';
 import type { UnifiedFacilityFormValues } from '@/lib/validation/facility';
 import {
@@ -28,7 +27,6 @@ export function FacilitiesPageClient({ facilities }: FacilitiesPageClientProps) 
   const [selected, setSelected] = useState<Facility | undefined>();
   const [isPending, startTransition] = useTransition();
   const [roomsOpen, setRoomsOpen] = useState(false);
-  const [historyOpen, setHistoryOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Facility | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const router = useRouter();
@@ -50,18 +48,13 @@ export function FacilitiesPageClient({ facilities }: FacilitiesPageClientProps) 
     setRoomsOpen(true);
   };
 
-  const handleViewHistory = (facility: Facility) => {
-    setSelected(facility);
-    setHistoryOpen(true);
-  };
-
-  const syncImage = async (facility: Facility, file?: File | null, clearImage?: boolean) => {
+  const syncImage = async (facility: Facility, file?: File | null, clearImage?: boolean): Promise<Facility> => {
     if (clearImage && !file) {
       const result = await updateFacilityAction(facility.id, { imageUrl: null });
       if (result.error) {
         throw new Error(result.error);
       }
-      return result.data ? (result.data as Facility) : { ...facility, imageUrl: null };
+      return result.data ? (result.data as Facility) : { ...facility, imageUrl: undefined } as Facility;
     }
 
     if (!file) {
@@ -73,7 +66,7 @@ export function FacilitiesPageClient({ facilities }: FacilitiesPageClientProps) 
       throw new Error(upload.error.message);
     }
 
-    const publicUrl = upload.data?.publicUrl ?? null;
+    const publicUrl = upload.data?.publicUrl ?? undefined;
     const updateResult = await updateFacilityAction(facility.id, { imageUrl: publicUrl });
     if (updateResult.error) {
       throw new Error(updateResult.error);
@@ -83,7 +76,7 @@ export function FacilitiesPageClient({ facilities }: FacilitiesPageClientProps) 
       return updateResult.data as Facility;
     }
 
-    return publicUrl ? { ...facility, imageUrl: publicUrl } : facility;
+    return publicUrl ? { ...facility, imageUrl: publicUrl } as Facility : facility;
   };
 
   const handleSubmit = async (
@@ -116,15 +109,15 @@ export function FacilitiesPageClient({ facilities }: FacilitiesPageClientProps) 
       }
 
       const basePayload =
-        clearImage && !file ? { ...values, imageUrl: null } : values;
+        clearImage && !file ? { ...values, imageUrl: undefined } : values;
       const updateResult = await updateFacilityAction(selected.id, basePayload);
       if (updateResult.error) {
         throw new Error(updateResult.error);
       }
 
-      let updated =
+      let updated: Facility =
         (updateResult.data as Facility | undefined) ??
-        { ...selected, ...values, ...(clearImage && !file ? { imageUrl: null } : {}) };
+        ({ ...selected, ...values, ...(clearImage && !file ? { imageUrl: undefined } : {}) } as Facility);
 
       updated = await syncImage(updated, file, false);
 
@@ -185,7 +178,6 @@ export function FacilitiesPageClient({ facilities }: FacilitiesPageClientProps) 
         onEdit={handleEdit}
         onManageRooms={handleManageRooms}
         onDelete={handleDelete}
-        onViewHistory={handleViewHistory}
         disabled={isPending}
       />
       {message && (
@@ -206,14 +198,6 @@ export function FacilitiesPageClient({ facilities }: FacilitiesPageClientProps) 
         facility={dialogFacility}
         onOpenChange={setRoomsOpen}
       />
-      {dialogFacility && (
-        <FacilityHistoryDialog
-          facilityId={dialogFacility.id}
-          facilityName={dialogFacility.name}
-          open={historyOpen}
-          onOpenChange={setHistoryOpen}
-        />
-      )}
       <ConfirmDialog
         open={Boolean(pendingDelete)}
         title="Delete facility"

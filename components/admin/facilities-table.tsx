@@ -22,7 +22,6 @@ interface FacilitiesTableProps {
   onEdit?: (facility: Facility) => void;
   onManageRooms?: (facility: Facility) => void;
   onDelete?: (facility: Facility) => void;
-  onViewHistory?: (facility: Facility) => void;
   disabled?: boolean;
 }
 
@@ -39,7 +38,6 @@ export function FacilitiesTable({
   onEdit,
   onManageRooms,
   onDelete,
-  onViewHistory,
   disabled,
 }: FacilitiesTableProps) {
   const [filters, setFilters] = useState<FacilitiesFiltersState>(defaultFilters);
@@ -139,7 +137,6 @@ export function FacilitiesTable({
                       onEdit={onEdit}
                       onManageRooms={onManageRooms}
                       onDelete={onDelete}
-                      onViewHistory={onViewHistory}
                       disabled={disabled}
                     />
                   </td>

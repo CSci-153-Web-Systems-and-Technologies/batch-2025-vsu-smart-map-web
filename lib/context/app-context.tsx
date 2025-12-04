@@ -46,9 +46,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  
+
   const lastSyncedFacilityId = useRef<string | null>(null);
   const isUserClosing = useRef(false);
+  const isNavigating = useRef(false);
 
   const initialSearch = searchParams.get("q") ?? "";
   const initialFacilityId = searchParams.get("facility") ?? null;
@@ -74,6 +75,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const currentFacilityId = selectedFacility?.id ?? pendingFacilityId ?? null;
 
   useEffect(() => {
+    isNavigating.current = false;
+  }, [pathname]);
+
+  useEffect(() => {
+    if (isNavigating.current) return;
+
     const params = new URLSearchParams(searchParams.toString());
 
     if (debouncedQuery.trim()) {
@@ -161,6 +168,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setSelectedFacility(null);
       setPendingFacilityId(null);
     }
+
+    isNavigating.current = true;
     setActiveTabState(tab);
     const routes = { map: "/", directory: "/directory", chat: "/chat" } as const;
     router.push(routes[tab], { scroll: false });

@@ -88,7 +88,7 @@ export function SuggestionHistory({ suggestions, facilityNames, currentId }: Sug
                       </div>
                       {suggestion.adminNote && (
                         <p className="mt-2 text-xs text-muted-foreground border-l-2 border-muted pl-2 italic">
-                          "{suggestion.adminNote}"
+                          &ldquo;{suggestion.adminNote}&rdquo;
                         </p>
                       )}
                     </div>
