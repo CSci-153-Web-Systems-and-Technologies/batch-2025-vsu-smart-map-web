@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { DirectoryList } from "./directory-list";
 import { DirectorySearch } from "./directory-search";
 import { DirectoryCategoryFilters } from "./directory-category-filters";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import type { Facility } from "@/lib/types/facility";
 import { X } from "lucide-react";
 import { useApp } from "@/lib/context/app-context";
+import { SuggestEditModal } from "@/components/suggestions/suggest-edit-modal";
 
 export interface DirectoryContainerProps {
   facilities: Facility[];
@@ -24,6 +25,7 @@ export function DirectoryContainer({ facilities }: DirectoryContainerProps) {
     clearFilters,
     selectFacility,
   } = useApp();
+  const [suggestFacility, setSuggestFacility] = useState<Facility | null>(null);
 
   const filteredFacilities = useMemo(() => {
     return facilities.filter((facility) => {
@@ -48,8 +50,13 @@ export function DirectoryContainer({ facilities }: DirectoryContainerProps) {
     router.push(`/?facility=${facility.id}`, { scroll: false });
   };
 
+  const handleSuggestEdit = (facility: Facility) => {
+    setSuggestFacility(facility);
+  };
+
   return (
-    <div className="space-y-6">
+    <>
+      <div className="space-y-6">
       <div className="space-y-4">
         <DirectorySearch
           value={searchQuery}
@@ -100,8 +107,18 @@ export function DirectoryContainer({ facilities }: DirectoryContainerProps) {
           facilities={filteredFacilities}
           onFacilityClick={selectFacility}
           onViewOnMap={handleViewOnMap}
+          onSuggestEdit={handleSuggestEdit}
         />
       )}
-    </div>
+      </div>
+
+      <SuggestEditModal
+        facility={suggestFacility}
+        open={Boolean(suggestFacility)}
+        onOpenChange={(open) => {
+          if (!open) setSuggestFacility(null);
+        }}
+      />
+    </>
   );
 }

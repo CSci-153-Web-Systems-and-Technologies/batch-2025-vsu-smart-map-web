@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { MapPinned } from "lucide-react";
+import { MapPinned, Pencil } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,10 +13,17 @@ export interface FacilityCardProps {
   facility: Facility;
   onClick?: (facility: Facility) => void;
   onViewOnMap?: (facility: Facility) => void;
+  onSuggestEdit?: (facility: Facility) => void;
   className?: string;
 }
 
-export function FacilityCard({ facility, onClick, onViewOnMap, className }: FacilityCardProps) {
+export function FacilityCard({
+  facility,
+  onClick,
+  onViewOnMap,
+  onSuggestEdit,
+  className,
+}: FacilityCardProps) {
   const meta = getCategoryMeta(facility.category);
   const hasCoordinates = facility.coordinates?.lat && facility.coordinates?.lng;
   
@@ -34,6 +41,11 @@ export function FacilityCard({ facility, onClick, onViewOnMap, className }: Faci
   const handleViewOnMap = (e: React.MouseEvent) => {
     e.stopPropagation();
     onViewOnMap?.(facility);
+  };
+
+  const handleSuggestEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onSuggestEdit?.(facility);
   };
 
   return (
@@ -102,6 +114,19 @@ export function FacilityCard({ facility, onClick, onViewOnMap, className }: Faci
             </Button>
           )}
         </div>
+
+        {onSuggestEdit && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="mt-3 h-8 gap-2 text-xs text-muted-foreground hover:text-foreground"
+            onClick={handleSuggestEdit}
+          >
+            <Pencil className="h-3.5 w-3.5" />
+            Suggest Edit
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

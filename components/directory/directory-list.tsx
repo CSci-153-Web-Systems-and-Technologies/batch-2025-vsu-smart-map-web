@@ -11,6 +11,7 @@ export interface DirectoryListProps {
   facilities: Facility[];
   onFacilityClick?: (facility: Facility) => void;
   onViewOnMap?: (facility: Facility) => void;
+  onSuggestEdit?: (facility: Facility) => void;
   className?: string;
 }
 
@@ -41,6 +42,7 @@ export function DirectoryList({
   facilities,
   onFacilityClick,
   onViewOnMap,
+  onSuggestEdit,
   className,
 }: DirectoryListProps) {
   const groupedFacilities = useMemo(
@@ -90,6 +92,7 @@ export function DirectoryList({
                   facility={facility}
                   onClick={onFacilityClick}
                   onViewOnMap={onViewOnMap}
+                  onSuggestEdit={onSuggestEdit}
                 />
               ))}
             </div>
