@@ -1,11 +1,11 @@
 import { AdminBreadcrumbs } from '@/components/admin/admin-breadcrumbs';
 import { QuickActions } from '@/components/admin/quick-actions';
-import { RecentSubmissions } from '@/components/admin/recent-submissions';
+import { RecentActivity } from '@/components/admin/recent-activity';
 import { StatsCards } from '@/components/admin/stats-cards';
 import { getAdminStats, getRecentSubmissions } from '@/lib/admin/dashboard';
 
 export default async function AdminDashboard() {
-  const [stats, submissions] = await Promise.all([getAdminStats(), getRecentSubmissions(5)]);
+  const [stats, submissions] = await Promise.all([getAdminStats(), getRecentSubmissions(10)]);
 
   return (
     <div className="space-y-6">
@@ -23,7 +23,7 @@ export default async function AdminDashboard() {
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
-          <RecentSubmissions submissions={submissions} />
+          <RecentActivity submissions={submissions} />
         </div>
         <QuickActions />
       </div>
