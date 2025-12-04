@@ -46,9 +46,14 @@ export async function createSuggestion(
   const supabase = await resolveClient(client);
   const insertPayload = mapInsertPayload(input);
 
-  const { error } = await supabase.from("suggestions").insert(insertPayload);
+  const { data, error } = await supabase
+    .from("suggestions")
+    .insert(insertPayload)
+    .select(selectBase)
+    .single();
 
-  return { data: null, error: normalizeError(error) };
+  const row = data as SuggestionRow | null;
+  return { data: row ? toSuggestion(row) : null, error: normalizeError(error) };
 }
 
 export async function getSuggestions(params?: {

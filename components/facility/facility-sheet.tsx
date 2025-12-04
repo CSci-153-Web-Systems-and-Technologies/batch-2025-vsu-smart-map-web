@@ -34,6 +34,8 @@ export function FacilitySheet() {
   }, [open]);
 
   const isMapPage = pathname === "/";
+  // On the map page, we use the MapSelectionCard instead of the sheet to show facility details.
+  // This prevents double UI (Sheet + Card) for the same selection.
   if (isMapPage) {
     return null;
   }
