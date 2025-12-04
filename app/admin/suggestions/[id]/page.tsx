@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { AdminBreadcrumbs } from "@/components/admin/admin-breadcrumbs";
+import { SuggestionActions } from "@/components/admin/suggestions/suggestion-actions";
 import { SuggestionDiffView } from "@/components/admin/suggestions/suggestion-diff-view";
 import { getFacilityById } from "@/lib/supabase/queries/facilities";
 import { getSuggestionById } from "@/lib/supabase/queries/suggestions";
@@ -33,6 +34,7 @@ export default async function SuggestionDetailPage({ params }: SuggestionDetailP
     : null;
 
   const payload = suggestion.payload as Partial<UnifiedFacilityFormValues>;
+  const isPending = suggestion.status === "PENDING";
 
   return (
     <div className="space-y-6">
@@ -45,6 +47,7 @@ export default async function SuggestionDetailPage({ params }: SuggestionDetailP
             Compare the proposed changes against current data.
           </p>
         </div>
+        {isPending && <SuggestionActions suggestionId={id} />}
       </div>
 
       <SuggestionDiffView
@@ -52,6 +55,19 @@ export default async function SuggestionDetailPage({ params }: SuggestionDetailP
         payload={payload}
         currentFacility={currentFacility}
       />
+
+      {!isPending && (
+        <div className="rounded-lg border border-border bg-muted/30 p-4">
+          <p className="text-sm text-muted-foreground">
+            This suggestion has been <strong className="text-foreground">{suggestion.status.toLowerCase()}</strong>.
+            {suggestion.adminNote && (
+              <span className="block mt-2">
+                <strong className="text-foreground">Note:</strong> {suggestion.adminNote}
+              </span>
+            )}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
