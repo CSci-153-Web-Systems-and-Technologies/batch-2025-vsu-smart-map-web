@@ -1,5 +1,6 @@
-const CACHE_NAME = 'vsu-smartmap-v1';
+const CACHE_NAME = 'vsu-smartmap-v2';
 const TILE_CACHE_NAME = 'map-tiles-v1';
+const API_CACHE_NAME = 'api-cache-v1';
 
 const STATIC_ASSETS = [
   '/',
@@ -19,11 +20,12 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
+  const keepCaches = [CACHE_NAME, TILE_CACHE_NAME, API_CACHE_NAME];
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames
-          .filter((name) => name !== CACHE_NAME && name !== TILE_CACHE_NAME)
+          .filter((name) => !keepCaches.includes(name))
           .map((name) => caches.delete(name))
       );
     })
@@ -57,11 +59,46 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  if (url.href.includes('supabase.co') && request.method === 'GET') {
+    event.respondWith(
+      caches.open(API_CACHE_NAME).then((cache) => {
+        return fetch(request)
+          .then((networkResponse) => {
+            if (networkResponse.ok) {
+              cache.put(request, networkResponse.clone());
+            }
+            return networkResponse;
+          })
+          .catch(() => {
+            return cache.match(request).then((cachedResponse) => {
+              if (cachedResponse) {
+                return cachedResponse;
+              }
+              return new Response(JSON.stringify({ error: 'Offline' }), {
+                status: 503,
+                headers: { 'Content-Type': 'application/json' }
+              });
+            });
+          });
+      })
+    );
+    return;
+  }
+
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request).catch(() => {
-        return caches.match('/offline');
-      })
+      fetch(request)
+        .then((response) => {
+          return response;
+        })
+        .catch(() => {
+          return caches.match('/offline').then((cachedPage) => {
+            if (cachedPage) {
+              return cachedPage;
+            }
+            return new Response('Offline', { status: 503 });
+          });
+        })
     );
     return;
   }
