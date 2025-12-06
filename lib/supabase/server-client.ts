@@ -36,12 +36,10 @@ export const getSupabaseServerClient = async () => {
       setAll(cookiesToSet) {
         try {
           cookiesToSet.forEach(({ name, value, options }) => {
-            // In server components, cookies() returns a read-only store; ignore if setting is unsupported.
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (cookieStore as any).set?.(name, value, options);
           });
         } catch {
-          // swallow errors in read-only contexts
         }
       },
     },
@@ -64,12 +62,10 @@ export const getSupabaseAdminClient = async (options?: { requireServiceRole?: bo
   try {
     return { client: getSupabaseServiceRoleClient(), isServiceRole: true };
   } catch (error) {
-    // Log the error for debugging - helps diagnose missing env vars vs other issues
     console.error("[getSupabaseAdminClient] Service role client unavailable:", error instanceof Error ? error.message : error);
     if (options?.requireServiceRole) {
       throw error;
     }
-    // Fallback to regular server client (cookie-based auth)
     const client = await getSupabaseServerClient();
     return { client, isServiceRole: false };
   }

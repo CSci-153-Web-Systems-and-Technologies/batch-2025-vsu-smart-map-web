@@ -75,7 +75,7 @@ export interface FacilityPOI extends BaseFacility {
  */
 export type Facility = FacilityWithRooms | FacilityPOI;
 
-// ============ Type Guards ============
+
 
 export function isFacilityWithRooms(facility: Facility): facility is FacilityWithRooms {
   return facility.hasRooms === true;
@@ -89,7 +89,7 @@ export function isBuildingCategory(category: FacilityCategory): boolean {
   return (BUILDING_FACILITY_CATEGORIES as readonly string[]).includes(category);
 }
 
-// ============ Helper Types ============
+
 
 export type FacilitySummary = Pick<
   Facility,
@@ -105,7 +105,7 @@ export interface FacilityMarkerPayload {
   readonly hasRooms: boolean;
 }
 
-// ============ Database Types ============
+
 
 export interface FacilityRow {
   id: string;
@@ -122,7 +122,7 @@ export interface FacilityRow {
   updated_at: string;
 }
 
-// ============ Insert/Update Types ============
+
 
 export interface FacilityInsert {
   code?: string;

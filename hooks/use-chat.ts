@@ -48,7 +48,6 @@ function clearMessagesFromStorage() {
   try {
     localStorage.removeItem(CHAT_STORAGE_KEY);
   } catch {
-    // Storage unavailable
   }
 }
 

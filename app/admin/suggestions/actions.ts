@@ -174,7 +174,6 @@ export async function rejectSuggestion(id: string, reason?: string) {
     return { error: "Suggestion already processed." };
   }
 
-  // Cleanup orphaned images if they were uploaded with the suggestion
   if (suggestion.type === "ADD_FACILITY") {
     const payload = suggestion.payload as unknown as FacilityInsert;
     if (typeof payload.imageUrl === "string" && payload.imageUrl) {
@@ -182,7 +181,6 @@ export async function rejectSuggestion(id: string, reason?: string) {
     }
   } else if (suggestion.type === "EDIT_FACILITY") {
     const payload = suggestion.payload as unknown as FacilityUpdate;
-    // Only delete if the image was changed (uploaded new)
     if (typeof payload.imageUrl === "string" && payload.imageUrl && suggestion.targetId) {
       const { data: currentFacility } = await getFacilityById({
         id: suggestion.targetId,

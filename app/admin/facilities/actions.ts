@@ -84,7 +84,6 @@ export async function updateFacilityAction(id: string, input: unknown) {
 
   const client = await getSupabaseServerClient();
 
-  // Fetch current facility state for diffing
   const { data: currentFacility } = await getFacilityById({ id, client });
 
   const { data, error } = await updateFacility(id, parsed.data, client);
@@ -92,7 +91,6 @@ export async function updateFacilityAction(id: string, input: unknown) {
     return { error: error.message ?? GENERIC_ERROR };
   }
 
-  // Calculate changes
   const changes: Record<string, unknown> = {};
   if (currentFacility) {
     const inputData = parsed.data as Record<string, unknown>;
@@ -119,7 +117,6 @@ export async function updateFacilityAction(id: string, input: unknown) {
     Object.assign(changes, parsed.data);
   }
 
-  // Only create suggestion if there are actual changes
   if (Object.keys(changes).length > 0) {
     await createSuggestion(
       {
@@ -190,7 +187,6 @@ export async function updateRoomAction(id: string, input: unknown) {
 
   const client = await getSupabaseServerClient();
 
-  // Fetch current room state for diffing
   const { data: currentRoom } = await getRoomById({ id, client });
 
   const { data, error } = await updateRoom({ id, ...parsed.data }, client);
@@ -198,8 +194,6 @@ export async function updateRoomAction(id: string, input: unknown) {
     return { error: error.message ?? GENERIC_ERROR };
   }
 
-  // Room queries return a basic room type without the 'facility' property
-  // (vs. getRoomsForFacility which joins with facilities table)
   if (data && currentRoom && !("facility" in currentRoom)) {
     const changes: Record<string, unknown> = {};
     const inputData = parsed.data;
