@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Building, Lightbulb, Map as MapIcon } from 'lucide-react';
+import { LayoutDashboard, Building, Lightbulb } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 
@@ -23,9 +24,13 @@ function SidebarContent({ pathname, onClose }: { pathname: string; onClose: () =
       {/* Brand Section */}
       <div className="flex items-center px-6 py-6">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-md shadow-primary/20">
-            <MapIcon className="h-5 w-5" aria-hidden />
-          </div>
+          <Image
+            src="/icons/icon-192x192.png"
+            alt="VSU SmartMap"
+            width={40}
+            height={40}
+            className="rounded-lg"
+          />
           <div className="space-y-0.5">
             <h1 className="text-lg font-bold tracking-tight">SmartMap</h1>
             <p className="text-xs font-medium text-muted-foreground">Admin Workspace</p>

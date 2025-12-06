@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MapPinned } from "lucide-react";
+import Image from "next/image";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
@@ -23,9 +23,13 @@ export function AppHeader({ tabsSlot }: AppHeaderProps) {
           className="flex items-center gap-3 rounded-lg px-2 py-1 transition hover:bg-muted"
           aria-label="VSU SmartMap home"
         >
-          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-card">
-            <MapPinned className="h-5 w-5" aria-hidden />
-          </span>
+          <Image
+            src="/icons/icon-192x192.png"
+            alt="VSU SmartMap"
+            width={40}
+            height={40}
+            className="rounded-lg"
+          />
           <div className="flex flex-col leading-tight">
             <span className="text-sm font-semibold text-primary">VSU</span>
             <span className="text-base font-bold text-foreground">SmartMap</span>
