@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
 import { ptSans, sourceCodePro } from "@/lib/typography";
+import { SkipLink } from "@/components/skip-link";
 import "./globals.css";
-
-
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -11,8 +10,12 @@ const defaultUrl = process.env.VERCEL_URL
 
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "Next.js and Supabase Starter Kit",
-  description: "The fastest way to build apps with Next.js and Supabase",
+  title: {
+    default: "VSU SmartMap",
+    template: "%s | VSU SmartMap",
+  },
+  description:
+    "Interactive campus map for Visayas State University. Find buildings, facilities, and get directions with AI-powered assistance.",
 };
 
 export default function RootLayout({
@@ -22,13 +25,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${ptSans.variable} ${sourceCodePro.variable} antialiased`}>
+      <body className={`${ptSans.variable} ${sourceCodePro.variable} antialiased`} suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
+          <SkipLink />
           {children}
         </ThemeProvider>
       </body>
