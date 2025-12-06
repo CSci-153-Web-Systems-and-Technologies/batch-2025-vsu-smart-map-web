@@ -16,6 +16,27 @@ export const metadata: Metadata = {
   },
   description:
     "Interactive campus map for Visayas State University. Find buildings, facilities, and get directions with AI-powered assistance.",
+  manifest: "/manifest.json",
+  themeColor: "#166534",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "VSU SmartMap",
+  },
+  icons: {
+    icon: [
+      { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/icons/apple-touch-icon.png",
+  },
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+    viewportFit: "cover",
+  },
 };
 
 export default function RootLayout({
