@@ -12,6 +12,7 @@ import { useApp } from "@/lib/context/app-context";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { SuggestAddModal } from "@/components/suggestions/suggest-add-modal";
+import { getCachedFacilities, setCachedFacilities } from "@/lib/cache/facilities-cache";
 
 const MapSelectionLayer = dynamic(
   () => import("@/components/map/map-selection-layer").then((m) => m.MapSelectionLayer),
@@ -53,16 +54,28 @@ function MapTab() {
   useEffect(() => {
     const load = async () => {
       setIsLoading(true);
+
+      const cached = getCachedFacilities();
+      if (cached && cached.length > 0) {
+        setItems(cached);
+        setFiltered(cached);
+      }
+
       const { data, error: fetchError } = await getFacilities();
 
       if (fetchError || !data) {
-        setError("Unable to load map data. Please try again later.");
-        setItems([]);
-        setFiltered([]);
+        if (cached && cached.length > 0) {
+          setError(null);
+        } else {
+          setError("Unable to load map data. Please try again later.");
+          setItems([]);
+          setFiltered([]);
+        }
         setIsLoading(false);
         return;
       }
 
+      setCachedFacilities(data as Facility[]);
       setItems(data);
       setFiltered(data);
       setError(null);
