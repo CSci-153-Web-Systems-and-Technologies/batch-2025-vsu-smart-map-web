@@ -69,7 +69,7 @@ export function LoginForm({
                 />
               </div>
               <div className="grid gap-2">
-                                  <Label htmlFor="password">Password</Label>                <Input
+                <Label htmlFor="password">Password</Label>                <Input
                   id="password"
                   type="password"
                   required
@@ -77,7 +77,11 @@ export function LoginForm({
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
-              {error && <p className="text-sm text-red-500">{error}</p>}
+              {error && (
+                <p className="text-sm text-destructive" role="alert" aria-live="assertive">
+                  {error}
+                </p>
+              )}
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Logging in..." : "Login"}
               </Button>
