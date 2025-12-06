@@ -1,8 +1,10 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
 import { prepareHistoryForContext, truncateHistory } from "@/lib/ai/history";
 import type { ChatMessage, ChatState, FacilityMatch } from "@/lib/types";
+
+const CHAT_STORAGE_KEY = "vsu-smartmap-chat";
 
 function createMessageId() {
   return typeof crypto !== "undefined" && crypto.randomUUID
@@ -12,6 +14,40 @@ function createMessageId() {
 
 function applyTruncation(messages: ChatMessage[]) {
   return truncateHistory(messages).messages;
+}
+
+function loadMessagesFromStorage(): ChatMessage[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const stored = localStorage.getItem(CHAT_STORAGE_KEY);
+    if (!stored) return [];
+    const parsed = JSON.parse(stored);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((msg: ChatMessage) => ({
+      ...msg,
+      timestamp: new Date(msg.timestamp),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+function saveMessagesToStorage(messages: ChatMessage[]) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
+  } catch {
+    // Storage full or unavailable
+  }
+}
+
+function clearMessagesFromStorage() {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(CHAT_STORAGE_KEY);
+  } catch {
+    // Storage unavailable
+  }
 }
 
 interface UseChatOptions {
@@ -25,6 +61,23 @@ export function useChat({ streaming = true }: UseChatOptions = {}) {
     error: null,
   });
   const abortControllerRef = useRef<AbortController | null>(null);
+  const initialized = useRef(false);
+
+  useEffect(() => {
+    if (!initialized.current) {
+      const storedMessages = loadMessagesFromStorage();
+      if (storedMessages.length > 0) {
+        setState((prev) => ({ ...prev, messages: storedMessages }));
+      }
+      initialized.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (initialized.current) {
+      saveMessagesToStorage(state.messages);
+    }
+  }, [state.messages]);
 
   const executeRequest = useCallback(
     async (
@@ -169,11 +222,11 @@ export function useChat({ streaming = true }: UseChatOptions = {}) {
             messages: prev.messages.map((message) =>
               message.id === assistantId
                 ? {
-                    ...message,
-                    content: fullContent || message.content,
-                    facilities,
-                    followUp,
-                  }
+                  ...message,
+                  content: fullContent || message.content,
+                  facilities,
+                  followUp,
+                }
                 : message
             ),
           }));
@@ -255,6 +308,7 @@ export function useChat({ streaming = true }: UseChatOptions = {}) {
 
   const clearMessages = useCallback(() => {
     abortControllerRef.current?.abort();
+    clearMessagesFromStorage();
     setState({
       messages: [],
       isLoading: false,

@@ -1,9 +1,11 @@
-const CACHE_NAME = 'vsu-smartmap-v2';
+const CACHE_NAME = 'vsu-smartmap-v3';
 const TILE_CACHE_NAME = 'map-tiles-v1';
 const API_CACHE_NAME = 'api-cache-v1';
 
 const STATIC_ASSETS = [
   '/',
+  '/directory',
+  '/chat',
   '/offline',
   '/manifest.json',
   '/icons/icon-192x192.png',
