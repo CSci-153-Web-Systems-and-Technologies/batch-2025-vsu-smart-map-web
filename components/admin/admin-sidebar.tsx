@@ -24,7 +24,7 @@ function SidebarContent({ pathname, onClose }: { pathname: string; onClose: () =
       <div className="flex items-center px-6 py-6">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-md shadow-primary/20">
-            <MapIcon className="h-5 w-5" />
+            <MapIcon className="h-5 w-5" aria-hidden />
           </div>
           <div className="space-y-0.5">
             <h1 className="text-lg font-bold tracking-tight">SmartMap</h1>
@@ -38,7 +38,7 @@ function SidebarContent({ pathname, onClose }: { pathname: string; onClose: () =
         <div className="mb-2 px-2">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">Main Menu</p>
         </div>
-        <nav className="space-y-2">
+        <nav className="space-y-2" aria-label="Admin navigation">
           {NAV_ITEMS.map((item) => {
             const isActive = pathname === item.href;
             return (
@@ -58,6 +58,7 @@ function SidebarContent({ pathname, onClose }: { pathname: string; onClose: () =
                     'h-5 w-5 transition-colors',
                     isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
                   )}
+                  aria-hidden
                 />
                 <span className="flex-1">{item.label}</span>
               </Link>

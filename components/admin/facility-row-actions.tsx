@@ -38,23 +38,23 @@ export function FacilityRowActions({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="h-8 w-8" disabled={disabled}>
-            <MoreHorizontal className="h-4 w-4" />
+            <MoreHorizontal className="h-4 w-4" aria-hidden />
             <span className="sr-only">Open row actions</span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-44">
           <DropdownMenuItem onSelect={handleEdit} disabled={disabled || !onEdit}>
-            <Pencil className="h-4 w-4" />
+            <Pencil className="h-4 w-4" aria-hidden />
             Edit
           </DropdownMenuItem>
           {facility.hasRooms && (
             <DropdownMenuItem onSelect={handleRooms} disabled={disabled || !onManageRooms}>
-              <Home className="h-4 w-4" />
+              <Home className="h-4 w-4" aria-hidden />
               Manage Rooms
             </DropdownMenuItem>
           )}
           <DropdownMenuItem onSelect={() => setShowHistory(true)}>
-            <History className="h-4 w-4" />
+            <History className="h-4 w-4" aria-hidden />
             History
           </DropdownMenuItem>
           <DropdownMenuSeparator />
@@ -63,7 +63,7 @@ export function FacilityRowActions({
             onSelect={handleDelete}
             disabled={disabled || !onDelete}
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-4 w-4" aria-hidden />
             Delete
           </DropdownMenuItem>
         </DropdownMenuContent>

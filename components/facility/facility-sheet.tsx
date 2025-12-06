@@ -65,7 +65,7 @@ export function FacilitySheet() {
                   className="gap-2"
                   onClick={() => setSuggestOpen(true)}
                 >
-                  <Pencil className="h-4 w-4" />
+                  <Pencil className="h-4 w-4" aria-hidden />
                   Suggest Edit
                 </Button>
                 {!selectedFacility.imageUrl && (
@@ -76,7 +76,7 @@ export function FacilitySheet() {
                     className="gap-2"
                     onClick={() => setSuggestOpen(true)}
                   >
-                    <ImagePlus className="h-4 w-4" />
+                    <ImagePlus className="h-4 w-4" aria-hidden />
                     Add Photo
                   </Button>
                 )}

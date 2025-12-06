@@ -27,27 +27,33 @@ const ThemeSwitcher = () => {
 
   const ICON_SIZE = 16;
 
+  const currentThemeLabel =
+    theme === "light" ? "Light" : theme === "dark" ? "Dark" : "System";
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size={"sm"}>
+        <Button variant="ghost" size={"sm"} aria-label={`Switch theme, current: ${currentThemeLabel}`}>
           {theme === "light" ? (
             <Sun
               key="light"
               size={ICON_SIZE}
               className={"text-muted-foreground"}
+              aria-hidden
             />
           ) : theme === "dark" ? (
             <Moon
               key="dark"
               size={ICON_SIZE}
               className={"text-muted-foreground"}
+              aria-hidden
             />
           ) : (
             <Laptop
               key="system"
               size={ICON_SIZE}
               className={"text-muted-foreground"}
+              aria-hidden
             />
           )}
         </Button>
@@ -58,15 +64,15 @@ const ThemeSwitcher = () => {
           onValueChange={(e) => setTheme(e)}
         >
           <DropdownMenuRadioItem className="flex gap-2" value="light">
-            <Sun size={ICON_SIZE} className="text-muted-foreground" />{" "}
+            <Sun size={ICON_SIZE} className="text-muted-foreground" aria-hidden />{" "}
             <span>Light</span>
           </DropdownMenuRadioItem>
           <DropdownMenuRadioItem className="flex gap-2" value="dark">
-            <Moon size={ICON_SIZE} className="text-muted-foreground" />{" "}
+            <Moon size={ICON_SIZE} className="text-muted-foreground" aria-hidden />{" "}
             <span>Dark</span>
           </DropdownMenuRadioItem>
           <DropdownMenuRadioItem className="flex gap-2" value="system">
-            <Laptop size={ICON_SIZE} className="text-muted-foreground" />{" "}
+            <Laptop size={ICON_SIZE} className="text-muted-foreground" aria-hidden />{" "}
             <span>System</span>
           </DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>

@@ -20,7 +20,7 @@ export function ChatHeader({ onClear, hasMessages }: ChatHeaderProps) {
 
       {hasMessages && (
         <Button variant="ghost" size="sm" onClick={onClear}>
-          <Trash2 className="mr-2 h-4 w-4" />
+          <Trash2 className="mr-2 h-4 w-4" aria-hidden />
           Clear chat
         </Button>
       )}
