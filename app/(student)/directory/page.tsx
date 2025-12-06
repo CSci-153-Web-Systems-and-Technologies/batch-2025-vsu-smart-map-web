@@ -1,12 +1,10 @@
-import { Suspense } from "react";
-import { getFacilities } from "@/lib/supabase/queries/facilities";
-import { createClient } from "@/lib/supabase/server-client";
-import { DirectoryContainer } from "@/components/directory";
+"use client";
 
-export const metadata = {
-  title: "Directory | VSU SmartMap",
-  description: "Browse all campus facilities and points of interest",
-};
+import { useEffect, useState } from "react";
+import { getFacilities } from "@/lib/supabase/queries/facilities";
+import { DirectoryContainer } from "@/components/directory";
+import { getCachedFacilities, setCachedFacilities } from "@/lib/cache/facilities-cache";
+import type { Facility } from "@/lib/types";
 
 function DirectorySkeleton() {
   return (
@@ -26,17 +24,46 @@ function DirectorySkeleton() {
   );
 }
 
-export default async function DirectoryPage() {
-  const client = await createClient();
-  const { data: facilities, error } = await getFacilities({ client });
+export default function DirectoryPage() {
+  const [facilities, setFacilities] = useState<Facility[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (error) {
-    console.error("Failed to fetch facilities:", error);
+  useEffect(() => {
+    const load = async () => {
+      setIsLoading(true);
+
+      const cached = getCachedFacilities();
+      if (cached && cached.length > 0) {
+        setFacilities(cached);
+      }
+
+      const { data, error: fetchError } = await getFacilities();
+
+      if (fetchError || !data) {
+        if (cached && cached.length > 0) {
+          setError(null);
+        } else {
+          setError("Failed to load facilities. Please try again later.");
+          setFacilities([]);
+        }
+        setIsLoading(false);
+        return;
+      }
+
+      setCachedFacilities(data as Facility[]);
+      setFacilities(data as Facility[]);
+      setError(null);
+      setIsLoading(false);
+    };
+
+    void load();
+  }, []);
+
+  if (error && facilities.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
-        <p className="text-lg text-destructive">
-          Failed to load facilities. Please try again later.
-        </p>
+        <p className="text-lg text-destructive">{error}</p>
       </div>
     );
   }
@@ -52,9 +79,11 @@ export default async function DirectoryPage() {
         </p>
       </header>
 
-      <Suspense fallback={<DirectorySkeleton />}>
-        <DirectoryContainer facilities={facilities ?? []} />
-      </Suspense>
+      {isLoading && facilities.length === 0 ? (
+        <DirectorySkeleton />
+      ) : (
+        <DirectoryContainer facilities={facilities} />
+      )}
     </main>
   );
 }
