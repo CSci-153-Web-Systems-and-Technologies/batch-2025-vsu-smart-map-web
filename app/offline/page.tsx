@@ -1,5 +1,6 @@
 import { WifiOff } from "lucide-react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { RetryButton } from "@/components/retry-button";
 import type { Metadata } from "next";
 
@@ -12,7 +13,7 @@ export default function OfflinePage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-background to-muted p-6 text-center">
       <div className="flex h-24 w-24 items-center justify-center rounded-full bg-muted">
-        <WifiOff className="h-12 w-12 text-muted-foreground" aria-hidden />
+        <WifiOff className="h-12 w-12 text-muted-foreground" aria-hidden={true} />
       </div>
 
       <h1 className="mt-8 text-2xl font-bold text-foreground">
@@ -26,12 +27,9 @@ export default function OfflinePage() {
       </p>
 
       <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-        <Link
-          href="/"
-          className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
-        >
-          View Cached Map
-        </Link>
+        <Button asChild>
+          <Link href="/">View Cached Map</Link>
+        </Button>
         <RetryButton />
       </div>
 

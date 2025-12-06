@@ -36,8 +36,10 @@ function saveMessagesToStorage(messages: ChatMessage[]) {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
-  } catch {
-    // Storage full or unavailable
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "QuotaExceededError") {
+      console.warn("Chat history storage quota exceeded");
+    }
   }
 }
 
@@ -74,10 +76,10 @@ export function useChat({ streaming = true }: UseChatOptions = {}) {
   }, []);
 
   useEffect(() => {
-    if (initialized.current) {
+    if (initialized.current && !state.isLoading) {
       saveMessagesToStorage(state.messages);
     }
-  }, [state.messages]);
+  }, [state.messages, state.isLoading]);
 
   const executeRequest = useCallback(
     async (

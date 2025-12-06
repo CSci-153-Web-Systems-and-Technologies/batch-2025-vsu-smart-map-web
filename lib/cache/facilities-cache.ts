@@ -41,7 +41,10 @@ export function setCachedFacilities(facilities: Facility[]): void {
       timestamp: Date.now(),
     };
     localStorage.setItem(FACILITIES_STORAGE_KEY, JSON.stringify(cached));
-  } catch {
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "QuotaExceededError") {
+      console.warn("Facilities cache storage quota exceeded");
+    }
   }
 }
 

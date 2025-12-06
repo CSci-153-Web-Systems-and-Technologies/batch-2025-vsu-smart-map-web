@@ -1,16 +1,33 @@
-const CACHE_NAME = 'vsu-smartmap-v4';
+const CACHE_NAME = 'vsu-smartmap-v5';
 const TILE_CACHE_NAME = 'map-tiles-v1';
 const API_CACHE_NAME = 'api-cache-v1';
 
 const STATIC_ASSETS = [
-  '/',
-  '/directory',
-  '/chat',
   '/offline',
   '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
 ];
+
+// Only cache these public Supabase endpoints (facilities data)
+const CACHEABLE_API_PATTERNS = [
+  '/rest/v1/facilities',
+  '/rest/v1/rooms',
+];
+
+function isMapTileRequest(url) {
+  return url.hostname === 'tile.openstreetmap.org' ||
+    url.hostname.endsWith('.openstreetmap.org') ||
+    url.hostname === 'basemaps.cartocdn.com' ||
+    url.hostname.endsWith('.cartocdn.com');
+}
+
+function isCacheableApiRequest(url, request) {
+  if (request.method !== 'GET') return false;
+  if (!url.hostname.includes('supabase.co')) return false;
+  if (request.headers.get('Authorization')) return false;
+  return CACHEABLE_API_PATTERNS.some(pattern => url.pathname.includes(pattern));
+}
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -39,7 +56,7 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Cache-first for Next.js static assets (versioned and immutable)
+  // Cache-first for Next.js static assets (versioned/immutable)
   if (url.pathname.startsWith('/_next/static/')) {
     event.respondWith(
       caches.open(CACHE_NAME).then((cache) =>
@@ -57,8 +74,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Cache-first for map tiles
-  if (url.href.includes('tile.openstreetmap.org') ||
-    url.href.includes('basemaps.cartocdn.com')) {
+  if (isMapTileRequest(url)) {
     event.respondWith(
       caches.open(TILE_CACHE_NAME).then((cache) => {
         return cache.match(request).then((cachedResponse) => {
@@ -79,7 +95,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (url.href.includes('supabase.co') && request.method === 'GET') {
+  // Network-first for cacheable API endpoints only (public facility data)
+  if (isCacheableApiRequest(url, request)) {
     event.respondWith(
       caches.open(API_CACHE_NAME).then((cache) => {
         return fetch(request)
@@ -105,6 +122,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Network-first for navigation with offline fallback
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
@@ -123,6 +141,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Cache-first with network fallback for other assets
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
       if (cachedResponse) {

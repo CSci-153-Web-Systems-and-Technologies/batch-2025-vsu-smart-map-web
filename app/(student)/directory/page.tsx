@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { getFacilities } from "@/lib/supabase/queries/facilities";
 import { DirectoryContainer } from "@/components/directory";
 import { getCachedFacilities, setCachedFacilities } from "@/lib/cache/facilities-cache";
-import type { Facility } from "@/lib/types/facility";
+import type { Facility } from "@/lib/types";
 
 function DirectorySkeleton() {
   return (
