@@ -1,6 +1,5 @@
 import "leaflet/dist/leaflet.css";
 
-import { useEffect } from "react";
 import { MapContainer, TileLayer } from "react-leaflet";
 import { MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM, MAP_MIN_ZOOM, MAP_MAX_ZOOM, MAP_TILES } from "@/lib/constants/map";
 
@@ -10,9 +9,6 @@ type MapWrapperProps = {
 };
 
 export function MapWrapper({ children, className }: MapWrapperProps) {
-  useEffect(() => {
-    // Leaflet reads these from the global L; this ensures CSS is loaded once.
-  }, []);
 
   return (
     <div className="map-wrapper h-full w-full">
