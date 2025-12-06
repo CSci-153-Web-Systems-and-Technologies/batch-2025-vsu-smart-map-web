@@ -29,7 +29,13 @@ export function ChatView() {
         {!hasMessages ? (
           <ChatWelcome onSuggestionSelect={sendMessage} disabled={isLoading} />
         ) : (
-          <div className="space-y-4 p-4">
+          <div
+            className="space-y-4 p-4"
+            role="log"
+            aria-live="polite"
+            aria-busy={isLoading}
+            aria-label="Chat messages"
+          >
             {messages.map((message, index) => {
               const isLastAssistant =
                 message.role === "assistant" && index === messages.length - 1;

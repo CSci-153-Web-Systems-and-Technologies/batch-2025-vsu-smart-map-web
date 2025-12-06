@@ -48,7 +48,7 @@ export function MapSelectionCard({ facility, onClear, onViewDetails }: MapSelect
             Clear
           </Button>
           <Button size="sm" className="gap-2" onClick={onViewDetails}>
-            <Info className="h-4 w-4" />
+            <Info className="h-4 w-4" aria-hidden />
             Show more info
           </Button>
         </div>

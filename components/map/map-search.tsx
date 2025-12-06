@@ -32,7 +32,7 @@ export function MapSearch({
         className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
       />
       {matchCount !== undefined && (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-muted-foreground" aria-live="polite">
           {noMatches ? "No matches found" : `${matchCount} result${matchCount === 1 ? "" : "s"}`}
         </p>
       )}

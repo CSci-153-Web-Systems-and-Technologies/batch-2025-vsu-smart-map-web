@@ -17,7 +17,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           )}
         >
           <AdminHeader onMenuClick={() => setSidebarOpen((prev) => !prev)} />
-          <main className="flex-1 px-4 py-6 sm:px-6 lg:px-10">
+          <main id="main-content" tabIndex={-1} className="flex-1 px-4 py-6 sm:px-6 lg:px-10 outline-none">
             <div className="mx-auto w-full max-w-7xl space-y-6">
               {children}
             </div>

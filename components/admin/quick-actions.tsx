@@ -15,13 +15,13 @@ export function QuickActions() {
       <CardContent className="space-y-2">
         <Button asChild className="w-full justify-start gap-2">
           <Link href="/admin/facilities">
-            <Plus className="mr-2 h-4 w-4" />
+            <Plus className="mr-2 h-4 w-4" aria-hidden />
             Add facility
           </Link>
         </Button>
         <Button asChild variant="outline" className="w-full justify-start gap-2">
           <Link href="/admin/suggestions">
-            <ClipboardList className="mr-2 h-4 w-4" />
+            <ClipboardList className="mr-2 h-4 w-4" aria-hidden />
             Review suggestions
           </Link>
         </Button>

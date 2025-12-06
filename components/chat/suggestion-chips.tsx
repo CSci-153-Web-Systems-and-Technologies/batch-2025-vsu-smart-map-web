@@ -20,7 +20,7 @@ export function SuggestionChips({
   disabled = false,
 }: SuggestionChipsProps) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-2" role="region" aria-label="Suggested questions">
       {suggestions.map((suggestion) => (
         <button
           key={suggestion}

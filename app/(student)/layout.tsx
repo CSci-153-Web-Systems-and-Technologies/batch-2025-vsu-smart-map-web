@@ -14,7 +14,9 @@ export default function StudentLayout({
       <AppProvider>
         <AppHeader tabsSlot={<StudentTabs placement="inline" />} />
         <StudentTabs placement="bottom" />
-        {children}
+        <main id="main-content" tabIndex={-1} className="outline-none">
+          {children}
+        </main>
         <FacilitySheet />
       </AppProvider>
     </Suspense>
