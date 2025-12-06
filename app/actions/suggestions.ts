@@ -31,7 +31,6 @@ export async function createSuggestionAction(input: unknown) {
   const client = await getSupabaseServerClient();
   const { data, error } = await createSuggestion(parsed.data, client);
   if (error) {
-    // If creation fails, check if there was an image uploaded and delete it
     const payload = parsed.data.payload;
     if (typeof payload.imageUrl === "string" && payload.imageUrl) {
       const { deleteImage } = await import("@/lib/supabase/storage");

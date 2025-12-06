@@ -30,6 +30,7 @@ function SidebarContent({ pathname, onClose }: { pathname: string; onClose: () =
             width={40}
             height={40}
             className="rounded-lg"
+            priority
           />
           <div className="space-y-0.5">
             <h1 className="text-lg font-bold tracking-tight">SmartMap</h1>

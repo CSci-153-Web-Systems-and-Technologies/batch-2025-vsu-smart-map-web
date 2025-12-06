@@ -175,8 +175,6 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
     setIsEditing(false);
   };
 
-  // Build a Facility-like object for the dialog
-  // Required fields are provided with defaults when missing
   const dialogFacility: Facility = {
     id: currentFacility?.id ?? "temp-id",
     code: editedPayload.code ?? currentFacility?.code,

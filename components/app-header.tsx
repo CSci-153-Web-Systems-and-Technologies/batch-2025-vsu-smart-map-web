@@ -29,6 +29,7 @@ export function AppHeader({ tabsSlot }: AppHeaderProps) {
             width={40}
             height={40}
             className="rounded-lg"
+            priority
           />
           <div className="flex flex-col leading-tight">
             <span className="text-sm font-semibold text-primary">VSU</span>

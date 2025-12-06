@@ -155,8 +155,6 @@ export async function pruneHistory(params: {
 
   const idsToKeep = keepIds.map((row) => row.id);
 
-  // Delete old entries that are not in the keep list
-  // Using filter instead of .not() to avoid SQL injection risk with string interpolation
   const { data: allEntries } = await supabase
     .from("suggestions")
     .select("id")

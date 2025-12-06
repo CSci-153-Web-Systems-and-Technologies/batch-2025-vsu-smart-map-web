@@ -178,8 +178,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const routes = { map: "/", directory: "/directory", chat: "/chat" } as const;
     const targetRoute = routes[tab];
-    
-    // Build URL with existing query params to preserve filters during tab switch
+
     const params = new URLSearchParams();
     if (debouncedQuery.trim()) {
       params.set("q", debouncedQuery.trim());
@@ -191,14 +190,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (facilityId && !options?.clearSelection) {
       params.set("facility", facilityId);
     }
-    
+
     const queryString = params.toString();
     const fullUrl = queryString ? `${targetRoute}?${queryString}` : targetRoute;
-    
-    // Set navigation flags before pushing to prevent URL sync from interfering
+
     isNavigating.current = true;
     navigationTargetRef.current = targetRoute;
-    
+
     setActiveTabState(tab);
     router.push(fullUrl, { scroll: false });
   }, [router, debouncedQuery, selectedCategory, selectedFacility?.id, pendingFacilityId]);
