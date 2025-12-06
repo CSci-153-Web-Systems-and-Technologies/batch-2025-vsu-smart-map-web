@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vsu-smartmap-v3';
+const CACHE_NAME = 'vsu-smartmap-v4';
 const TILE_CACHE_NAME = 'map-tiles-v1';
 const API_CACHE_NAME = 'api-cache-v1';
 
@@ -39,6 +39,24 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
+  // Cache-first for Next.js static assets (versioned and immutable)
+  if (url.pathname.startsWith('/_next/static/')) {
+    event.respondWith(
+      caches.open(CACHE_NAME).then((cache) =>
+        cache.match(request).then((cached) =>
+          cached || fetch(request).then((response) => {
+            if (response.ok) {
+              cache.put(request, response.clone());
+            }
+            return response;
+          }).catch(() => new Response('', { status: 503 }))
+        )
+      )
+    );
+    return;
+  }
+
+  // Cache-first for map tiles
   if (url.href.includes('tile.openstreetmap.org') ||
     url.href.includes('basemaps.cartocdn.com')) {
     event.respondWith(
