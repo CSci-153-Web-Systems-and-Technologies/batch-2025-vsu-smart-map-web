@@ -1,4 +1,5 @@
 import { WifiOff } from "lucide-react";
+import Link from "next/link";
 import { RetryButton } from "@/components/retry-button";
 import type { Metadata } from "next";
 
@@ -24,7 +25,15 @@ export default function OfflinePage() {
         previously cached map areas.
       </p>
 
-      <RetryButton />
+      <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+        <Link
+          href="/"
+          className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
+        >
+          View Cached Map
+        </Link>
+        <RetryButton />
+      </div>
 
       <p className="mt-8 text-sm text-muted-foreground">
         Tip: Map tiles you&apos;ve viewed before are saved for offline use.
