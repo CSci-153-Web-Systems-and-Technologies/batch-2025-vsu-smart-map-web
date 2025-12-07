@@ -3,6 +3,7 @@ import { ThemeProvider } from "next-themes";
 import { ptSans, sourceCodePro } from "@/lib/typography";
 import { SkipLink } from "@/components/skip-link";
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
+import { NavigationProgress } from "@/components/navigation-progress";
 import "./globals.css";
 
 const defaultUrl = process.env.VERCEL_URL
@@ -55,6 +56,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <NavigationProgress />
           <ServiceWorkerRegistration />
           <SkipLink />
           {children}
