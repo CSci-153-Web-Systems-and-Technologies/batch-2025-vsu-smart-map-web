@@ -14,6 +14,7 @@ export const roomSchema = z.object({
     .optional()
     .or(z.literal("")),
   floor: z.number().int().optional(),
+  imageUrl: z.string().url().optional().or(z.literal("")),
 });
 
 export type RoomFormValues = z.infer<typeof roomSchema>;

@@ -9,6 +9,7 @@ type RoomRow = {
   name: string | null;
   description: string | null;
   floor: number | null;
+  image_url: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -27,7 +28,7 @@ type BaseResult<T> = { data: T | null; error: PostgrestError | null };
 type MaybeClient = SupabaseClient | Promise<SupabaseClient>;
 
 const selectBase = () =>
-  "id, facility_id, room_code, name, description, floor, created_at, updated_at";
+  "id, facility_id, room_code, name, description, floor, image_url, created_at, updated_at";
 const selectWithFacility = () =>
   `${selectBase()}, facility:facilities(id, name, slug)`;
 
@@ -53,6 +54,7 @@ const mapInsert = (payload: unknown) => {
     name: parsed.name || null,
     description: parsed.description || null,
     floor: parsed.floor ?? null,
+    image_url: parsed.imageUrl || null,
   };
 };
 
@@ -65,6 +67,7 @@ const mapUpdate = (payload: unknown) => {
   if (parsed.name !== undefined) patch.name = parsed.name || null;
   if (parsed.description !== undefined) patch.description = parsed.description || null;
   if (parsed.floor !== undefined) patch.floor = parsed.floor;
+  if (parsed.imageUrl !== undefined) patch.image_url = parsed.imageUrl || null;
 
   return patch;
 };
