@@ -9,6 +9,7 @@ export const STORAGE_PATHS = {
     `${STORAGE_BUCKETS.facilityImages}/${facilityId}/rooms/${roomId}`,
   suggestionImage: (tempId: string) =>
     `${STORAGE_BUCKETS.facilityImages}/suggestions/${tempId}`,
+  bugReportScreenshot: (reportId: string) => `${STORAGE_BUCKETS.facilityImages}/bug-reports/${reportId}/screenshot.jpg`,
 } as const;
 
 export const STORAGE_LIMITS = {
