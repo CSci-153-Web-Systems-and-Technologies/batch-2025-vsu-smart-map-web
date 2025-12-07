@@ -7,7 +7,6 @@ import { DirectoryList } from "./directory-list";
 import { CategoryFilters } from "../map/category-filters";
 import { Button } from "@/components/ui/button";
 import type { Facility } from "@/lib/types/facility";
-import { X } from "lucide-react";
 import { useApp } from "@/lib/context/app-context";
 
 
@@ -53,7 +52,7 @@ export function DirectoryContainer({ facilities }: DirectoryContainerProps) {
 
   return (
     <>
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-4 flex-1 min-w-0">
 
@@ -66,21 +65,9 @@ export function DirectoryContainer({ facilities }: DirectoryContainerProps) {
         </div>
 
         {hasActiveFilters && (
-          <div className="flex items-center gap-4">
-            <p className="text-sm text-muted-foreground">
-              Showing {filteredFacilities.length} of {facilities.length} facilities
-            </p>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={clearFilters}
-              className="h-7 gap-1 px-2 text-xs"
-            >
-              <X className="h-3 w-3" />
-              Clear all filters
-            </Button>
-          </div>
+          <p className="text-sm text-muted-foreground">
+            Showing {filteredFacilities.length} of {facilities.length} facilities
+          </p>
         )}
 
         {filteredFacilities.length === 0 && hasActiveFilters ? (
