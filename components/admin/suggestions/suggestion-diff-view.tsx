@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { approveSuggestion, rejectSuggestion } from "@/app/admin/suggestions/actions";
 import { FacilityDialog } from "@/components/admin/facility-dialog";
 import { uploadFacilityHeroClient } from "@/lib/supabase/storage-client";
+import { ImageZoomDialog } from "@/components/ui/image-zoom-dialog";
 import { Pencil } from "lucide-react";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 import {
@@ -113,6 +114,7 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
+  const [zoomImage, setZoomImage] = useState<{ src: string; alt: string } | null>(null);
 
   const router = useRouter();
   const disabled = pending || suggestion.status !== "PENDING";
@@ -226,7 +228,11 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
                 <div key={key} className="space-y-1 rounded-md border border-border/60 bg-background px-3 py-2">
                   <p className="text-xs font-medium text-muted-foreground">{fieldLabels[key]}</p>
                   {key === "imageUrl" && currentValues.imageUrl ? (
-                    <div className="relative h-32 w-full overflow-hidden rounded-md border">
+                    <button
+                      type="button"
+                      className="relative h-32 w-full overflow-hidden rounded-md border cursor-zoom-in hover:ring-2 hover:ring-primary/50 transition-shadow"
+                      onClick={() => setZoomImage({ src: currentValues.imageUrl!, alt: "Current image" })}
+                    >
                       <Image
                         src={currentValues.imageUrl}
                         alt="Current image"
@@ -234,7 +240,7 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
                         className="object-cover"
                         sizes="(max-width: 768px) 100vw, 50vw"
                       />
-                    </div>
+                    </button>
                   ) : (
                     <p className="text-sm text-foreground">{formatValue(key, currentValues[key])}</p>
                   )}
@@ -281,7 +287,11 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
                 >
                   <p className="text-xs font-medium text-muted-foreground">{fieldLabels[key]}</p>
                   {key === "imageUrl" && typeof value === "string" && value ? (
-                    <div className="relative h-32 w-full overflow-hidden rounded-md border">
+                    <button
+                      type="button"
+                      className="relative h-32 w-full overflow-hidden rounded-md border cursor-zoom-in hover:ring-2 hover:ring-primary/50 transition-shadow"
+                      onClick={() => setZoomImage({ src: value, alt: "Proposed image" })}
+                    >
                       <Image
                         src={value}
                         alt="Proposed image"
@@ -289,7 +299,7 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
                         className="object-cover"
                         sizes="(max-width: 768px) 100vw, 50vw"
                       />
-                    </div>
+                    </button>
                   ) : (
                     <p className="text-sm text-foreground">{formatValue(key, value)}</p>
                   )}
@@ -372,6 +382,15 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
         description="Modify the proposed details before approving."
         submitLabel="Update Proposal"
       />
+
+      {zoomImage && (
+        <ImageZoomDialog
+          open={!!zoomImage}
+          onOpenChange={(open) => !open && setZoomImage(null)}
+          src={zoomImage.src}
+          alt={zoomImage.alt}
+        />
+      )}
     </div>
   );
 }
