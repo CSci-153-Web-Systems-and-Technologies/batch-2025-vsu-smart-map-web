@@ -69,21 +69,23 @@ export default function DirectoryPage() {
   }
 
   return (
-    <main className="container mx-auto px-4 py-6 pb-24 md:pb-6">
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground md:text-3xl">
-          Campus Directory
-        </h1>
-        <p className="mt-1 text-muted-foreground">
-          Browse all buildings and points of interest
-        </p>
-      </header>
+    <div className="h-full w-full overflow-y-auto bg-background">
+      <div className="container mx-auto px-4 py-6 pb-24 md:pb-6">
+        <header className="mb-6">
+          <h1 className="text-2xl font-bold text-foreground md:text-3xl">
+            Campus Directory
+          </h1>
+          <p className="mt-1 text-muted-foreground">
+            Browse all buildings and points of interest
+          </p>
+        </header>
 
-      {isLoading && facilities.length === 0 ? (
-        <DirectorySkeleton />
-      ) : (
-        <DirectoryContainer facilities={facilities} />
-      )}
-    </main>
+        {isLoading && facilities.length === 0 ? (
+          <DirectorySkeleton />
+        ) : (
+          <DirectoryContainer facilities={facilities} />
+        )}
+      </div>
+    </div>
   );
 }
