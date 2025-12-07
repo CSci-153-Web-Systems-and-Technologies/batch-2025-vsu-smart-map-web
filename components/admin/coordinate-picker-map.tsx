@@ -3,6 +3,7 @@
 import "leaflet/dist/leaflet.css";
 
 import { useEffect } from "react";
+import { useTheme } from "next-themes";
 import { MapContainer, TileLayer, useMap, useMapEvents, CircleMarker } from "react-leaflet";
 import type { LatLng } from "@/lib/types/common";
 import { MAP_MAX_ZOOM, MAP_MIN_ZOOM, MAP_TILES } from "@/lib/constants/map";
@@ -32,6 +33,8 @@ function MapCenterUpdater({ value }: { value: LatLng }) {
 }
 
 export function CoordinatePickerMap({ value, onChange }: CoordinatePickerMapProps) {
+  const { resolvedTheme } = useTheme();
+
   return (
     <div className="coordinate-picker h-full w-full">
       <MapContainer
@@ -44,7 +47,7 @@ export function CoordinatePickerMap({ value, onChange }: CoordinatePickerMapProp
       >
         <TileLayer
           attribution={MAP_TILES.attribution}
-          url={MAP_TILES.url}
+          url={resolvedTheme === 'dark' ? MAP_TILES.darkUrl : MAP_TILES.url}
           maxZoom={MAP_MAX_ZOOM}
           maxNativeZoom={MAP_TILES.maxNativeZoom ?? MAP_MAX_ZOOM}
         />
