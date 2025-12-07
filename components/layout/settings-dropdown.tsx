@@ -44,7 +44,7 @@ export function SettingsDropdown() {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="w-9 h-9" aria-label="Settings">
-            <Settings className="h-[1.2rem] w-[1.2rem] transition-transform hover:rotate-90 duration-500" />
+            <Settings className="h-[1.2rem] w-[1.2rem] transition-transform duration-500" />
             <span className="sr-only">Settings</span>
           </Button>
         </DropdownMenuTrigger>
