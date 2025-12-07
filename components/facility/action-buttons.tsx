@@ -1,8 +1,9 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import type { Facility } from "@/lib/types/facility";
-import { Share2, Map, Check } from "lucide-react";
+import { Share2, Navigation, Check } from "lucide-react";
 import { useState } from "react";
 
 interface ActionButtonsProps {
@@ -11,6 +12,7 @@ interface ActionButtonsProps {
 }
 
 export function ActionButtons({ facility, className }: ActionButtonsProps) {
+    const router = useRouter();
     const [copied, setCopied] = useState(false);
 
     const handleShare = async () => {
@@ -25,9 +27,7 @@ export function ActionButtons({ facility, className }: ActionButtonsProps) {
     };
 
     const handleDirections = () => {
-        const { lat, lng } = facility.coordinates;
-        const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
-        window.open(url, "_blank", "noopener,noreferrer");
+        router.push(`/?facility=${facility.id}`);
     };
 
     return (
@@ -46,10 +46,11 @@ export function ActionButtons({ facility, className }: ActionButtonsProps) {
                     {copied ? "Copied" : "Share"}
                 </Button>
                 <Button className="w-full gap-2" onClick={handleDirections}>
-                    <Map className="h-4 w-4" />
+                    <Navigation className="h-4 w-4" />
                     Directions
                 </Button>
             </div>
         </div>
     );
 }
+
