@@ -177,7 +177,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       lastSyncedFacilityId.current = urlFacilityId;
     }
-  }, [searchParams]);
+  }, [searchParams, searchQuery, debouncedQuery, selectedCategory, selectedFacility]);
 
   useEffect(() => {
     if (pathname.startsWith("/directory")) setActiveTabState("directory");
