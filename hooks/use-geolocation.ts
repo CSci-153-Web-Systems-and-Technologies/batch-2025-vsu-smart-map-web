@@ -100,7 +100,9 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
               window.addEventListener("deviceorientation", handleOrientation, true);
             }
           })
-          .catch(() => { });
+          .catch((err) => {
+            console.warn("DeviceOrientationEvent permission denied:", err);
+          });
       } else {
         window.addEventListener("deviceorientation", handleOrientation, true);
       }

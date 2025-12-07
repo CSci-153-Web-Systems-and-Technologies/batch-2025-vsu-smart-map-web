@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useId } from "react";
 import { useMap } from "react-leaflet";
 import L from "leaflet";
 
@@ -13,6 +13,7 @@ export function UserLocationMarker({ position, heading }: UserLocationMarkerProp
   const map = useMap();
   const markerRef = useRef<L.Marker | null>(null);
   const accuracyCircleRef = useRef<L.Circle | null>(null);
+  const gradientId = useId().replace(/:/g, "");
 
   useEffect(() => {
     const lat = position.coords.latitude;
@@ -29,12 +30,12 @@ export function UserLocationMarker({ position, heading }: UserLocationMarkerProp
           <div class="user-location-cone" style="transform: rotate(${headingRotation}deg)">
             <svg viewBox="0 0 100 100" width="80" height="80">
               <defs>
-                <linearGradient id="coneGradient" x1="50%" y1="0%" x2="50%" y2="100%">
+                <linearGradient id="coneGradient-${gradientId}" x1="50%" y1="0%" x2="50%" y2="100%">
                   <stop offset="0%" style="stop-color: rgba(66, 133, 244, 0.4)" />
                   <stop offset="100%" style="stop-color: rgba(66, 133, 244, 0)" />
                 </linearGradient>
               </defs>
-              <path d="M50,50 L30,5 Q50,-5 70,5 Z" fill="url(#coneGradient)" />
+              <path d="M50,50 L30,5 Q50,-5 70,5 Z" fill="url(#coneGradient-${gradientId})" />
             </svg>
           </div>
         ` : ""}
@@ -70,7 +71,9 @@ export function UserLocationMarker({ position, heading }: UserLocationMarkerProp
         fillOpacity: 0.15,
       }).addTo(map);
     }
+  }, [map, position, heading, gradientId]);
 
+  useEffect(() => {
     return () => {
       if (markerRef.current) {
         markerRef.current.remove();
@@ -81,7 +84,7 @@ export function UserLocationMarker({ position, heading }: UserLocationMarkerProp
         accuracyCircleRef.current = null;
       }
     };
-  }, [map, position, heading]);
+  }, []);
 
   return null;
 }
