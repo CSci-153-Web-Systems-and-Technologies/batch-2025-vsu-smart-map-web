@@ -15,7 +15,7 @@ export const VALIDATION_LIMITS = {
     notes: { max: 500 },
   },
   storage: {
-    imageMaxMB: 5,
+    inputMaxMB: 5,
     acceptedTypes: ["image/png", "image/jpeg", "image/webp"] as const,
   },
 } as const;

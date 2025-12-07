@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { ImageZoomDialog } from '@/components/ui/image-zoom-dialog';
 import { cn } from '@/lib/utils';
 import { CoordinatePicker } from './coordinate-picker';
 import { MAP_DEFAULT_CENTER } from '@/lib/constants/map';
@@ -81,6 +82,7 @@ export function FacilityDialog({
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(facility?.imageUrl ?? null);
   const [clearImage, setClearImage] = useState(false);
+  const [zoomOpen, setZoomOpen] = useState(false);
 
   const resolvedTitle =
     title ?? (mode === 'create' ? 'Add facility' : 'Edit facility');
@@ -136,191 +138,210 @@ export function FacilityDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl max-h-[85dvh] p-0 flex flex-col gap-0 overflow-hidden">
-        <DialogHeader className="p-6 pb-2 shrink-0">
-          <DialogTitle>{resolvedTitle}</DialogTitle>
-          <DialogDescription>
-            {resolvedDescription}
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-3xl max-h-[85dvh] p-0 flex flex-col gap-0 overflow-hidden">
+          <DialogHeader className="p-6 pb-2 shrink-0">
+            <DialogTitle>{resolvedTitle}</DialogTitle>
+            <DialogDescription>
+              {resolvedDescription}
+            </DialogDescription>
+          </DialogHeader>
 
-        <form className="flex flex-col flex-1 min-h-0" onSubmit={handleSubmit}>
-          <div className="flex-1 overflow-y-auto px-6 py-2">
-            <div className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label htmlFor="code">Code (optional)</Label>
-                  <Input
-                    id="code"
-                    value={values.code ?? ''}
-                    onChange={(event) => setValues({ ...values, code: event.target.value })}
-                    placeholder="e.g., ICT, CAS, DALL"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="name">Name</Label>
-                  <Input
-                    id="name"
-                    value={values.name}
-                    onChange={(event) => setValues({ ...values, name: event.target.value })}
-                    required
-                  />
-                </div>
+          <form className="flex flex-col flex-1 min-h-0" onSubmit={handleSubmit}>
+            <div className="flex-1 overflow-y-auto px-6 py-2">
+              <div className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="code">Code (optional)</Label>
+                    <Input
+                      id="code"
+                      value={values.code ?? ''}
+                      onChange={(event) => setValues({ ...values, code: event.target.value })}
+                      placeholder="e.g., ICT, CAS, DALL"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="name">Name</Label>
+                    <Input
+                      id="name"
+                      value={values.name}
+                      onChange={(event) => setValues({ ...values, name: event.target.value })}
+                      required
+                    />
+                  </div>
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="category">Category</Label>
-                  <Select
-                    value={values.category}
-                    onValueChange={(value) =>
-                      setValues({
-                        ...values,
-                        category: value as typeof values.category,
-                      })
-                    }
-                  >
-                    <SelectTrigger id="category">
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {FACILITY_CATEGORIES.map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {category}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label id="facility-type-label">Type</Label>
-                  <div
-                    className="flex rounded-lg border bg-muted/40 p-1"
-                    role="radiogroup"
-                    aria-labelledby="facility-type-label"
-                  >
-                    <button
-                      type="button"
-                      role="radio"
-                      aria-checked={values.hasRooms}
-                      className={cn(
-                        'flex-1 px-3 py-1 text-sm rounded-md transition',
-                        values.hasRooms ? 'bg-background shadow-sm' : 'text-muted-foreground'
-                      )}
-                      onClick={() => setValues({ ...values, hasRooms: true })}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="category">Category</Label>
+                    <Select
+                      value={values.category}
+                      onValueChange={(value) =>
+                        setValues({
+                          ...values,
+                          category: value as typeof values.category,
+                        })
+                      }
                     >
-                      Building
-                    </button>
-                    <button
-                      type="button"
-                      role="radio"
-                      aria-checked={!values.hasRooms}
-                      className={cn(
-                        'flex-1 px-3 py-1 text-sm rounded-md transition',
-                        !values.hasRooms ? 'bg-background shadow-sm' : 'text-muted-foreground'
-                      )}
-                      onClick={() => setValues({ ...values, hasRooms: false })}
+                      <SelectTrigger id="category">
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {FACILITY_CATEGORIES.map((category) => (
+                          <SelectItem key={category} value={category}>
+                            {category}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label id="facility-type-label">Type</Label>
+                    <div
+                      className="flex rounded-lg border bg-muted/40 p-1"
+                      role="radiogroup"
+                      aria-labelledby="facility-type-label"
                     >
-                      POI
-                    </button>
+                      <button
+                        type="button"
+                        role="radio"
+                        aria-checked={values.hasRooms}
+                        className={cn(
+                          'flex-1 px-3 py-1 text-sm rounded-md transition',
+                          values.hasRooms ? 'bg-background shadow-sm' : 'text-muted-foreground'
+                        )}
+                        onClick={() => setValues({ ...values, hasRooms: true })}
+                      >
+                        Building
+                      </button>
+                      <button
+                        type="button"
+                        role="radio"
+                        aria-checked={!values.hasRooms}
+                        className={cn(
+                          'flex-1 px-3 py-1 text-sm rounded-md transition',
+                          !values.hasRooms ? 'bg-background shadow-sm' : 'text-muted-foreground'
+                        )}
+                        onClick={() => setValues({ ...values, hasRooms: false })}
+                      >
+                        POI
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={values.description ?? ''}
-                  onChange={(event) => setValues({ ...values, description: event.target.value })}
-                  placeholder="Add context or directions for this facility"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Location</Label>
-                <CoordinatePicker
-                  value={values.coordinates}
-                  onChange={(coords) => setValues({ ...values, coordinates: coords })}
-                />
-              </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    value={values.description ?? ''}
+                    onChange={(event) => setValues({ ...values, description: event.target.value })}
+                    placeholder="Add context or directions for this facility"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Location</Label>
+                  <CoordinatePicker
+                    value={values.coordinates}
+                    onChange={(coords) => setValues({ ...values, coordinates: coords })}
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="image">Hero image</Label>
-                {preview && (
-                  <div className="rounded-lg border p-3 flex items-center gap-3">
-                    <Image
-                      src={preview}
-                      alt="Facility hero"
-                      width={64}
-                      height={64}
-                      className="h-16 w-16 rounded-md object-cover border"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={() => {
+                <div className="space-y-2">
+                  <Label htmlFor="image">Hero image</Label>
+                  {preview && (
+                    <div className="rounded-lg border p-3 flex items-center gap-3">
+                      <button
+                        type="button"
+                        className="cursor-zoom-in hover:ring-2 hover:ring-primary/50 rounded-md transition-shadow"
+                        onClick={() => setZoomOpen(true)}
+                      >
+                        <Image
+                          src={preview}
+                          alt="Facility hero"
+                          width={64}
+                          height={64}
+                          className="h-16 w-16 rounded-md object-cover border"
+                        />
+                      </button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => {
+                          if (preview && preview.startsWith('blob:')) {
+                            URL.revokeObjectURL(preview);
+                          }
+                          setPreview(null);
+                          setFile(null);
+                          setClearImage(true);
+                          setValues({ ...values, imageUrl: '' });
+                        }}
+                      >
+                        Remove image
+                      </Button>
+                    </div>
+                  )}
+                  <Input
+                    id="image"
+                    type="file"
+                    accept={STORAGE_LIMITS.acceptedTypes.join(',')}
+                    onChange={(event) => {
+                      const nextFile = event.target.files?.[0];
+                      if (nextFile) {
                         if (preview && preview.startsWith('blob:')) {
                           URL.revokeObjectURL(preview);
                         }
-                        setPreview(null);
-                        setFile(null);
-                        setClearImage(true);
-                        setValues({ ...values, imageUrl: '' });
-                      }}
-                    >
-                      Remove image
-                    </Button>
+                        setFile(nextFile);
+                        setPreview(URL.createObjectURL(nextFile));
+                        setClearImage(false);
+                      }
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Max {STORAGE_LIMITS.inputMaxMB}MB. Types: {STORAGE_LIMITS.acceptedTypes.join(', ')}.
+                  </p>
+                </div>
+
+                {error && (
+                  <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                    {error}
                   </div>
                 )}
-                <Input
-                  id="image"
-                  type="file"
-                  accept={STORAGE_LIMITS.acceptedTypes.join(',')}
-                  onChange={(event) => {
-                    const nextFile = event.target.files?.[0];
-                    if (nextFile) {
-                      if (preview && preview.startsWith('blob:')) {
-                        URL.revokeObjectURL(preview);
-                      }
-                      setFile(nextFile);
-                      setPreview(URL.createObjectURL(nextFile));
-                      setClearImage(false);
-                    }
-                  }}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Max {STORAGE_LIMITS.imageMaxMB}MB. Types: {STORAGE_LIMITS.acceptedTypes.join(', ')}.
-                </p>
+                {children}
               </div>
+            </div>
 
-              {error && (
-                <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                  {error}
+            <DialogFooter className="p-6 pt-2 shrink-0 gap-2 sm:gap-0">
+              {mode === 'edit' && values.hasRooms && onManageRooms && (
+                <div className="flex-1 flex justify-start">
+                  <Button type="button" variant="outline" onClick={onManageRooms}>
+                    Manage Rooms
+                  </Button>
                 </div>
               )}
-              {children}
-            </div>
-          </div>
-
-          <DialogFooter className="p-6 pt-2 shrink-0 gap-2 sm:gap-0">
-            {mode === 'edit' && values.hasRooms && onManageRooms && (
-              <div className="flex-1 flex justify-start">
-                <Button type="button" variant="outline" onClick={onManageRooms}>
-                  Manage Rooms
+              <div className="flex gap-2">
+                <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={submitting}>
+                  {submitting ? resolvedSubmitting : resolvedSubmit}
                 </Button>
               </div>
-            )}
-            <div className="flex gap-2">
-              <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={submitting}>
-                {submitting ? resolvedSubmitting : resolvedSubmit}
-              </Button>
-            </div>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {
+        preview && (
+          <ImageZoomDialog
+            open={zoomOpen}
+            onOpenChange={setZoomOpen}
+            src={preview}
+            alt="Facility hero"
+          />
+        )
+      }
+    </>
   );
 }

@@ -12,7 +12,7 @@ type StorageResult<T> = {
 };
 
 const BUCKET = STORAGE_BUCKETS.facilityImages;
-const MAX_BYTES = STORAGE_LIMITS.imageMaxMB * 1024 * 1024;
+const MAX_INPUT_BYTES = STORAGE_LIMITS.inputMaxMB * 1024 * 1024;
 const ACCEPTED = new Set<string>(STORAGE_LIMITS.acceptedTypes);
 
 const stripBucket = (path: string) =>
@@ -30,8 +30,8 @@ const validateFile = (file: File | Blob) => {
   if (type && !ACCEPTED.has(type)) {
     return `Unsupported file type: ${type}`;
   }
-  if (file.size > MAX_BYTES) {
-    return `File too large: ${(file.size / 1024 / 1024).toFixed(2)} MB (max ${STORAGE_LIMITS.imageMaxMB} MB)`;
+  if (file.size > MAX_INPUT_BYTES) {
+    return `File too large: ${(file.size / 1024 / 1024).toFixed(2)} MB (max ${STORAGE_LIMITS.inputMaxMB} MB)`;
   }
   return null;
 };

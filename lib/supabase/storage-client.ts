@@ -1,4 +1,5 @@
 import { STORAGE_BUCKETS, STORAGE_LIMITS, STORAGE_PATHS } from "@/lib/constants/storage";
+import { compressImage } from "@/lib/utils/image-compression";
 import { getSupabaseBrowserClient } from "./browser-client";
 
 type StorageResult<T> = {
@@ -7,7 +8,8 @@ type StorageResult<T> = {
 };
 
 const BUCKET = STORAGE_BUCKETS.facilityImages;
-const MAX_BYTES = STORAGE_LIMITS.imageMaxMB * 1024 * 1024;
+const MAX_INPUT_BYTES = STORAGE_LIMITS.inputMaxMB * 1024 * 1024;
+const MAX_COMPRESSED_BYTES = STORAGE_LIMITS.compressedMaxMB * 1024 * 1024;
 const ACCEPTED = new Set<string>(STORAGE_LIMITS.acceptedTypes);
 const BUCKET_REGEX = new RegExp(`^${BUCKET}/?`);
 
@@ -26,30 +28,58 @@ const validateFile = (file: File | Blob) => {
   if (!ACCEPTED.has(type)) {
     return `Unsupported file type: ${type}`;
   }
-  if (file.size > MAX_BYTES) {
-    return `File too large: ${(file.size / 1024 / 1024).toFixed(2)} MB (max ${STORAGE_LIMITS.imageMaxMB} MB)`;
+  if (file.size > MAX_INPUT_BYTES) {
+    return `File too large: ${(file.size / 1024 / 1024).toFixed(2)} MB (max ${STORAGE_LIMITS.inputMaxMB} MB)`;
   }
   return null;
 };
 
-/**
- * Upload a facility hero image to Supabase storage and return its public URL.
- * Uses upsert to overwrite existing hero images for the facility.
- */
+const compressAndValidate = async (
+  file: File
+): Promise<StorageResult<File>> => {
+  try {
+    const { file: compressedFile } = await compressImage(file);
+
+    if (compressedFile.size > MAX_COMPRESSED_BYTES) {
+      return {
+        data: null,
+        error: {
+          message: `Compressed file is still too large: ${(compressedFile.size / 1024 / 1024).toFixed(2)} MB (max ${STORAGE_LIMITS.compressedMaxMB} MB). Try a simpler image.`,
+        },
+      };
+    }
+
+    return { data: compressedFile, error: null };
+  } catch (error) {
+    return {
+      data: null,
+      error: {
+        message:
+          error instanceof Error ? error.message : "Image compression failed",
+      },
+    };
+  }
+};
+
 export const uploadFacilityHeroClient = async (
   facilityId: string,
   file: File,
-  filename: string,
 ): Promise<StorageResult<{ path: string; publicUrl: string | null }>> => {
   const validationError = validateFile(file);
   if (validationError) {
     return { data: null, error: { message: validationError } };
   }
 
+  const compressionResult = await compressAndValidate(file);
+  if (compressionResult.error) {
+    return { data: null, error: compressionResult.error };
+  }
+  const compressedFile = compressionResult.data!;
+
   const prefix = stripBucket(STORAGE_PATHS.facilityHero(facilityId));
-  const path = makePath(prefix, filename);
+  const path = makePath(prefix, compressedFile.name);
   const supabase = getSupabaseBrowserClient();
-  const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
+  const { error } = await supabase.storage.from(BUCKET).upload(path, compressedFile, {
     upsert: true,
   });
   if (error) return { data: null, error };
@@ -60,24 +90,25 @@ export const uploadFacilityHeroClient = async (
   return { data: { path, publicUrl }, error: null };
 };
 
-/**
- * Upload an image for a suggestion to a temporary path.
- * Uses a separate "suggestions/" folder with more permissive access for students.
- */
 export const uploadSuggestionImageClient = async (
   tempId: string,
   file: File,
-  filename: string,
 ): Promise<StorageResult<{ path: string; publicUrl: string | null }>> => {
   const validationError = validateFile(file);
   if (validationError) {
     return { data: null, error: { message: validationError } };
   }
 
+  const compressionResult = await compressAndValidate(file);
+  if (compressionResult.error) {
+    return { data: null, error: compressionResult.error };
+  }
+  const compressedFile = compressionResult.data!;
+
   const prefix = stripBucket(STORAGE_PATHS.suggestionImage(tempId));
-  const path = makePath(prefix, filename);
+  const path = makePath(prefix, compressedFile.name);
   const supabase = getSupabaseBrowserClient();
-  const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
+  const { error } = await supabase.storage.from(BUCKET).upload(path, compressedFile, {
     upsert: true,
   });
   if (error) return { data: null, error };
@@ -88,23 +119,25 @@ export const uploadSuggestionImageClient = async (
   return { data: { path, publicUrl }, error: null };
 };
 
-/**
- * Upload a screenshot for a bug report.
- */
 export const uploadBugScreenshotClient = async (
   reportId: string,
   file: File,
-  filename: string,
 ): Promise<StorageResult<{ path: string; publicUrl: string | null }>> => {
   const validationError = validateFile(file);
   if (validationError) {
     return { data: null, error: { message: validationError } };
   }
 
+  const compressionResult = await compressAndValidate(file);
+  if (compressionResult.error) {
+    return { data: null, error: compressionResult.error };
+  }
+  const compressedFile = compressionResult.data!;
+
   const prefix = stripBucket(STORAGE_PATHS.bugReportScreenshot(reportId));
-  const path = makePath(prefix, filename);
+  const path = makePath(prefix, compressedFile.name);
   const supabase = getSupabaseBrowserClient();
-  const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
+  const { error } = await supabase.storage.from(BUCKET).upload(path, compressedFile, {
     upsert: true,
   });
   if (error) return { data: null, error };

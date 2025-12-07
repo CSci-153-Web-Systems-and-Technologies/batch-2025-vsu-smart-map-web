@@ -9,10 +9,18 @@ export const STORAGE_PATHS = {
     `${STORAGE_BUCKETS.facilityImages}/${facilityId}/rooms/${roomId}`,
   suggestionImage: (tempId: string) =>
     `${STORAGE_BUCKETS.facilityImages}/suggestions/${tempId}`,
-  bugReportScreenshot: (reportId: string) => `${STORAGE_BUCKETS.facilityImages}/bug-reports/${reportId}`,
+  bugReportScreenshot: (reportId: string) =>
+    `${STORAGE_BUCKETS.facilityImages}/bug-reports/${reportId}`,
 } as const;
 
 export const STORAGE_LIMITS = {
-  imageMaxMB: 5,
+  inputMaxMB: 5,
+  compressedMaxMB: 1,
   acceptedTypes: ["image/png", "image/jpeg", "image/webp"] as const,
+  compression: {
+    quality: 0.8,
+    maxWidthOrHeight: 1920,
+    useWebWorker: true,
+    fileType: "image/webp" as const,
+  },
 } as const;
