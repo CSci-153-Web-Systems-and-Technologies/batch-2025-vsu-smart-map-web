@@ -17,6 +17,11 @@ const MapSelectionLayer = dynamic(
   { ssr: false },
 );
 
+const UserLocationControl = dynamic(
+  () => import("@/components/map/user-location-control").then((m) => m.UserLocationControl),
+  { ssr: false },
+);
+
 export default function HomePage() {
   return (
     <Suspense fallback={<HomePageSkeleton />}>
@@ -188,6 +193,7 @@ function MapView({
               onSelect={(item) => onSelect(item.id)}
               onClearSelection={onClearSelection}
             />
+            <UserLocationControl />
           </MapContainerClient>
           {!hasResults && !error && (
             <div className="pointer-events-none absolute bottom-12 left-1/2 -translate-x-1/2 z-10 rounded-full bg-background/90 px-4 py-2 shadow-md backdrop-blur">
