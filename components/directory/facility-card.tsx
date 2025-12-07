@@ -76,7 +76,7 @@ export function FacilityCard({
               alt={facility.name}
               fill
               className="object-cover transition-transform duration-300 group-hover:scale-105"
-              sizes="200px"
+              sizes="(max-width: 640px) 128px, 192px"
             />
           </button>
         )}
