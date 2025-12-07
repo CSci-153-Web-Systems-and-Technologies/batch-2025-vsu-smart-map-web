@@ -12,12 +12,14 @@ export default function StudentLayout({
   return (
     <Suspense>
       <AppProvider>
-        <AppHeader tabsSlot={<StudentTabs placement="inline" />} />
-        <StudentTabs placement="bottom" />
-        <main id="main-content" tabIndex={-1} className="outline-none">
-          {children}
-        </main>
-        <FacilitySheet />
+        <div className="flex h-[100dvh] flex-col overflow-hidden bg-background">
+          <AppHeader tabsSlot={<StudentTabs placement="inline" />} />
+          <main id="main-content" tabIndex={-1} className="flex-1 relative w-full overflow-hidden outline-none">
+            {children}
+          </main>
+          <StudentTabs placement="bottom" />
+          <FacilitySheet />
+        </div>
       </AppProvider>
     </Suspense>
   );
