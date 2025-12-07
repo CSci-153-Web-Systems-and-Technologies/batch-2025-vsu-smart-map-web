@@ -10,6 +10,7 @@ import type {
 } from "@/lib/types/facility";
 import { FACILITY_CATEGORIES } from "@/lib/types/facility";
 import { getSupabaseBrowserClient } from "../browser-client";
+import { unstable_cache, revalidateTag } from "next/cache";
 
 type BaseResult<T> = { data: T | null; error: PostgrestError | null };
 type MaybeClient = SupabaseClient | Promise<SupabaseClient>;
@@ -75,19 +76,28 @@ function mapUpdatePayload(input: FacilityUpdate) {
 
 type FacilityChatContext = Pick<Facility, "id" | "name" | "category" | "description" | "code">;
 
+const getCachedFacilitiesForChat = unstable_cache(
+  async () => {
+    const client = getSupabaseBrowserClient();
+    const { data, error } = await client
+      .from("facilities")
+      .select("id, name, code, category, description")
+      .order("name", { ascending: true });
+
+    return { data: data as FacilityChatContext[] | null, error: normalizeError(error) };
+  },
+  ['facilities-chat-context'],
+  {
+    tags: ['facilities'],
+    revalidate: 3600 // Cache for 1 hour, or until revalidated
+  }
+);
+
 export async function getFacilitiesForChat(
   client?: MaybeClient
 ): Promise<BaseResult<FacilityChatContext[]>> {
-  const resolved = await resolveClient(client);
-  const { data, error } = await resolved
-    .from("facilities")
-    .select("id, name, code, category, description")
-    .order("name", { ascending: true });
-
-  return {
-    data: data as FacilityChatContext[] | null,
-    error: normalizeError(error),
-  };
+  // Use cached version
+  return getCachedFacilitiesForChat();
 }
 
 export async function getFacilities(params?: {
@@ -185,6 +195,10 @@ export async function createFacility(
     .select(selectBase())
     .maybeSingle();
 
+  if (!error) {
+    revalidateTag('facilities');
+  }
+
   const row = data as FacilityRow | null;
   return { data: row ? toFacility(row) : null, error: normalizeError(error) };
 }
@@ -204,6 +218,10 @@ export async function updateFacility(
     .select(selectBase())
     .maybeSingle();
 
+  if (!error) {
+    revalidateTag('facilities');
+  }
+
   const row = data as FacilityRow | null;
   return { data: row ? toFacility(row) : null, error: normalizeError(error) };
 }
@@ -219,6 +237,10 @@ export async function deleteFacility(
     .eq("id", id)
     .select(selectBase())
     .maybeSingle();
+
+  if (!error) {
+    revalidateTag('facilities');
+  }
 
   const row = data as FacilityRow | null;
   return { data: row ? toFacility(row) : null, error: normalizeError(error) };
