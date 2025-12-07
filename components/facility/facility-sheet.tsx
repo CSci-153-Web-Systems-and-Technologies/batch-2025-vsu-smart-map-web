@@ -3,15 +3,13 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet";
-import { ScrollArea } from "@/components/ui/scroll-area";
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Pencil, ImagePlus } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { FacilityHeader } from "./facility-header";
 import { ContactInfo } from "./contact-info";
 import { RoomList } from "./room-list";
@@ -39,23 +37,17 @@ export function FacilitySheet() {
   }
 
   return (
-    <Sheet open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <SheetContent
-        side="bottom"
-        className="mx-auto h-[85vh] rounded-t-[20px] p-0 sm:max-w-md sm:rounded-none sm:border-l"
-      >
-        <SheetHeader className="px-6 pt-6">
+    <>
+      <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+        <DialogContent className="flex h-[100dvh] max-h-[100dvh] w-full max-w-full flex-col gap-0 p-0 sm:h-[90dvh] sm:max-h-[90dvh] sm:max-w-lg sm:rounded-lg">
           <VisuallyHidden>
-            <SheetTitle>{selectedFacility?.name ?? "Facility Details"}</SheetTitle>
-            <SheetDescription>Details for {selectedFacility?.name ?? "selected facility"}</SheetDescription>
+            <DialogTitle>{selectedFacility?.name ?? "Facility Details"}</DialogTitle>
+            <DialogDescription>Details for {selectedFacility?.name ?? "selected facility"}</DialogDescription>
           </VisuallyHidden>
-        </SheetHeader>
 
-        {selectedFacility && (
-          <ScrollArea className="h-full px-6 pb-6">
-            <div className="space-y-8 pb-8">
-              <FacilityHeader facility={selectedFacility} />
-              <div className="flex flex-wrap gap-2">
+          {selectedFacility && (
+            <>
+              <div className="flex shrink-0 items-center gap-2 px-6 pt-4">
                 <Button
                   type="button"
                   variant="ghost"
@@ -66,37 +58,30 @@ export function FacilitySheet() {
                   <Pencil className="h-4 w-4" aria-hidden />
                   Suggest Edit
                 </Button>
-                {!selectedFacility.imageUrl && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="gap-2"
-                    onClick={() => setSuggestOpen(true)}
-                  >
-                    <ImagePlus className="h-4 w-4" aria-hidden />
-                    Add Photo
-                  </Button>
-                )}
               </div>
-              <ActionButtons facility={selectedFacility} />
-              <ContactInfo address="Visayas State University, Baybay City, Leyte" />
+              <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6">
+                <div className="space-y-8 pb-8 pt-4">
+                  <FacilityHeader facility={selectedFacility} onAddPhoto={() => setSuggestOpen(true)} />
+                  <ActionButtons facility={selectedFacility} />
+                  <ContactInfo address="Visayas State University, Baybay City, Leyte" />
 
-              {selectedFacility.hasRooms && (
-                <>
-                  <div className="h-px bg-border" />
-                  <RoomList facilityId={selectedFacility.id} />
-                </>
-              )}
-            </div>
-          </ScrollArea>
-        )}
-      </SheetContent>
+                  {selectedFacility.hasRooms && (
+                    <>
+                      <div className="h-px bg-border" />
+                      <RoomList facilityId={selectedFacility.id} facilityName={selectedFacility.name} />
+                    </>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
       <SuggestEditModal
         facility={selectedFacility ?? null}
         open={suggestOpen}
         onOpenChange={(isOpen) => setSuggestOpen(isOpen)}
       />
-    </Sheet>
+    </>
   );
 }

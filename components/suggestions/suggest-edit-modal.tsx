@@ -5,12 +5,33 @@ import { FacilityDialog } from "@/components/admin/facility-dialog";
 import type { Facility } from "@/lib/types/facility";
 import type { UnifiedFacilityFormValues } from "@/lib/validation/facility";
 import { createSuggestionAction } from "@/app/actions/suggestions";
-import { uploadFacilityHeroClient } from "@/lib/supabase/storage-client";
+import { uploadSuggestionImageClient } from "@/lib/supabase/storage-client";
 
 interface SuggestEditModalProps {
   facility: Facility | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+}
+
+function hasChanges(
+  facility: Facility,
+  values: UnifiedFacilityFormValues,
+  options?: { file?: File | null; clearImage?: boolean },
+): boolean {
+  if (options?.file) return true;
+  if (options?.clearImage && facility.imageUrl) return true;
+
+  if ((values.code ?? "") !== (facility.code ?? "")) return true;
+  if (values.name !== facility.name) return true;
+  if ((values.description ?? "") !== (facility.description ?? "")) return true;
+  if (values.category !== facility.category) return true;
+  if (values.hasRooms !== facility.hasRooms) return true;
+  if (
+    values.coordinates.lat !== facility.coordinates.lat ||
+    values.coordinates.lng !== facility.coordinates.lng
+  ) return true;
+
+  return false;
 }
 
 export function SuggestEditModal({ facility, open, onOpenChange }: SuggestEditModalProps) {
@@ -29,6 +50,11 @@ export function SuggestEditModal({ facility, open, onOpenChange }: SuggestEditMo
     if (!facility) return;
     setMessage(null);
 
+    if (!hasChanges(facility, values, options)) {
+      setMessage("No changes detected. Please modify at least one field.");
+      return;
+    }
+
     const file = options?.file ?? null;
     const clearImage = options?.clearImage ?? false;
     let imageUrl = values.imageUrl ?? null;
@@ -39,7 +65,7 @@ export function SuggestEditModal({ facility, open, onOpenChange }: SuggestEditMo
 
     if (file) {
       const tempId = crypto.randomUUID();
-      const upload = await uploadFacilityHeroClient(tempId, file, file.name);
+      const upload = await uploadSuggestionImageClient(tempId, file, file.name);
       if (upload.error) {
         setMessage(upload.error.message);
         return;
