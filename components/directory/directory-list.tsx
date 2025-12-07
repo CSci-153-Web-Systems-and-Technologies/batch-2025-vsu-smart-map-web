@@ -11,7 +11,7 @@ export interface DirectoryListProps {
   facilities: Facility[];
   onFacilityClick?: (facility: Facility) => void;
   onViewOnMap?: (facility: Facility) => void;
-  onSuggestEdit?: (facility: Facility) => void;
+
   className?: string;
 }
 
@@ -19,7 +19,7 @@ function groupFacilitiesByCategory(
   facilities: Facility[]
 ): Map<FacilityCategory, Facility[]> {
   const grouped = new Map<FacilityCategory, Facility[]>();
-  
+
   for (const facility of facilities) {
     const existing = grouped.get(facility.category);
     if (existing) {
@@ -42,7 +42,7 @@ export function DirectoryList({
   facilities,
   onFacilityClick,
   onViewOnMap,
-  onSuggestEdit,
+
   className,
 }: DirectoryListProps) {
   const groupedFacilities = useMemo(
@@ -62,7 +62,7 @@ export function DirectoryList({
     <div className={cn("space-y-8", className)}>
       {[...groupedFacilities.entries()].map(([category, categoryFacilities]) => {
         const meta = getCategoryMeta(category);
-        
+
         return (
           <section key={category} aria-labelledby={`category-${category}`}>
             <div className="mb-4 flex items-center gap-2">
@@ -77,22 +77,13 @@ export function DirectoryList({
               </span>
             </div>
 
-            <div
-              className={cn(
-                "grid gap-4",
-                "grid-cols-1",
-                "sm:grid-cols-2",
-                "lg:grid-cols-3",
-                "xl:grid-cols-4"
-              )}
-            >
+            <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
               {categoryFacilities.map((facility) => (
                 <FacilityCard
                   key={facility.id}
                   facility={facility}
                   onClick={onFacilityClick}
                   onViewOnMap={onViewOnMap}
-                  onSuggestEdit={onSuggestEdit}
                 />
               ))}
             </div>
