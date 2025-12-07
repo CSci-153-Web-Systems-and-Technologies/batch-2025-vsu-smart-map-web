@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { CoordinatePicker } from './coordinate-picker';
@@ -171,20 +171,24 @@ export function FacilityDialog({
                 <div className="space-y-1.5">
                   <Label htmlFor="category">Category</Label>
                   <Select
-                    id="category"
                     value={values.category}
-                    onChange={(event) =>
+                    onValueChange={(value) =>
                       setValues({
                         ...values,
-                        category: event.target.value as typeof values.category,
+                        category: value as typeof values.category,
                       })
                     }
                   >
-                    {FACILITY_CATEGORIES.map((category) => (
-                      <option key={category} value={category}>
-                        {category}
-                      </option>
-                    ))}
+                    <SelectTrigger id="category">
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FACILITY_CATEGORIES.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                 </div>
 
