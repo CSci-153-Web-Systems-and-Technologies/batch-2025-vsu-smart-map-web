@@ -17,7 +17,7 @@ type MaybeClient = SupabaseClient | Promise<SupabaseClient>;
 const selectBase = () =>
   "id, code, name, slug, description, category, has_rooms, latitude, longitude, image_url, created_at, updated_at";
 
-const normalizeError = (error: PostgrestError | null) =>
+export const normalizeError = (error: PostgrestError | null) =>
   error ? { ...error, message: "Unable to complete facility request" } : null;
 
 const resolveClient = async (client?: MaybeClient) =>
@@ -73,7 +73,7 @@ function mapUpdatePayload(input: FacilityUpdate) {
   return patch;
 }
 
-type FacilityChatContext = Pick<Facility, "id" | "name" | "category" | "description" | "code">;
+export type FacilityChatContext = Pick<Facility, "id" | "name" | "category" | "description" | "code">;
 
 export async function getFacilitiesForChat(
   client?: MaybeClient

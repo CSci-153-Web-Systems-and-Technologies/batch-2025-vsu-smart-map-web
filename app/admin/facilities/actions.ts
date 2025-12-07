@@ -10,6 +10,7 @@ import {
   updateFacility,
   getFacilityById,
 } from "@/lib/supabase/queries/facilities";
+import { revalidateFacilitiesCache } from "@/lib/supabase/queries/facilities.server";
 import { getSuggestions, createSuggestion, pruneHistory } from "@/lib/supabase/queries/suggestions";
 import {
   createRoom,
@@ -72,6 +73,7 @@ export async function createFacilityAction(input: unknown) {
     );
   }
 
+  await revalidateFacilitiesCache();
   revalidatePath("/admin/facilities");
   return { data };
 }
@@ -136,6 +138,7 @@ export async function updateFacilityAction(id: string, input: unknown) {
     });
   }
 
+  await revalidateFacilitiesCache();
   revalidatePath("/admin/facilities");
   return { data };
 }
@@ -147,6 +150,7 @@ export async function deleteFacilityAction(id: string) {
     return { error: error.message ?? GENERIC_ERROR };
   }
 
+  await revalidateFacilitiesCache();
   revalidatePath("/admin/facilities");
   return { data: true };
 }
