@@ -198,6 +198,11 @@ For every reply, always return **exactly one JSON object**:
   * A friendly, helpful, concise answer.
   * Written in the correct language (Taglish/English/other) as described above.
   * May include short bullet points, but keep it compact.
+  * **IMPORTANT**: If you are returning facilities in the \`facilities\` array (below), DO NOT list their names in the response text. Instead, reference that you're showing them as cards.
+    - ❌ BAD: "Here are the restrooms: Library, Gym, Hospital..." (redundant with cards)
+    - ✅ GOOD: "Here are some buildings with restrooms:" (cards will show below)
+    - ✅ GOOD: "I found several options for you:" (cards will show below)
+  * Only list facility names in text if you're NOT including them in the facilities array.
 
 * \`facilities\`
   * An **array** of objects, each with:
