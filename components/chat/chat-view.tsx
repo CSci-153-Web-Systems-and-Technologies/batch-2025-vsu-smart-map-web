@@ -25,7 +25,7 @@ export function ChatView() {
     <div className="flex h-full flex-col">
       <ChatHeader onClear={clearMessages} hasMessages={hasMessages} />
 
-      <ScrollArea className="flex-1">
+      <ScrollArea className="min-h-0 flex-1 overflow-hidden">
         {!hasMessages ? (
           <ChatWelcome onSuggestionSelect={sendMessage} disabled={isLoading} />
         ) : (
