@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 
 export function QuickActions() {
   return (
-    <Card className="border bg-white shadow-sm">
+    <Card className="border shadow-sm">
       <CardHeader>
         <CardTitle className="text-base">Quick actions</CardTitle>
         <p className="text-sm text-muted-foreground">

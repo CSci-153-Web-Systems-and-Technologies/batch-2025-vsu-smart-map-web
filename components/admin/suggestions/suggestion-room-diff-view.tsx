@@ -1,19 +1,17 @@
 "use client";
 
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import type { Facility } from "@/lib/types/facility";
 import type { Suggestion } from "@/lib/types/suggestion";
-import type { UnifiedFacilityFormValues } from "@/lib/validation/facility";
+import type { RoomFormValues } from "@/lib/validation/room";
 import { cn } from "@/lib/utils";
 import { approveSuggestion, rejectSuggestion } from "@/app/admin/suggestions/actions";
-import { FacilityDialog } from "@/components/admin/facility-dialog";
-import { uploadFacilityHeroClient } from "@/lib/supabase/storage-client";
-import { Pencil } from "lucide-react";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
+import { Pencil } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -25,86 +23,63 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
-interface SuggestionDiffViewProps {
-  suggestion: Suggestion;
-  payload: Partial<UnifiedFacilityFormValues>;
-  currentFacility: Facility | null;
+interface RoomRow {
+  id: string;
+  facility_id: string;
+  room_code: string;
+  name: string | null;
+  description: string | null;
+  floor: number | null;
 }
 
-type FieldKey = keyof Pick<
-  UnifiedFacilityFormValues,
-  "name" | "code" | "description" | "category" | "hasRooms" | "coordinates" | "imageUrl"
->;
+interface SuggestionRoomDiffViewProps {
+  suggestion: Suggestion;
+  payload: Partial<RoomFormValues>;
+  currentRoom: RoomRow | null;
+  targetFacility: Facility | null;
+}
+
+type FieldKey = "roomCode" | "name" | "description" | "floor";
 
 const fieldLabels: Record<FieldKey, string> = {
+  roomCode: "Room Code",
   name: "Name",
-  code: "Code",
   description: "Description",
-  category: "Category",
-  hasRooms: "Has Rooms",
-  coordinates: "Coordinates",
-  imageUrl: "Image",
+  floor: "Floor",
 };
 
-const formatValue = (key: FieldKey, value: unknown) => {
-  if (value === undefined || value === null) return "—";
-  if (key === "hasRooms") return value ? "Building (has rooms)" : "POI (no rooms)";
-  if (key === "coordinates" && typeof value === "object") {
-    const coords = value as { lat?: number; lng?: number };
-    return coords.lat !== undefined && coords.lng !== undefined
-      ? `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`
-      : "—";
-  }
-  if (key === "imageUrl") {
-    return value ? "(image uploaded)" : "—";
-  }
+const formatValue = (value: unknown) => {
+  if (value === undefined || value === null || value === "") return "—";
   return String(value);
 };
 
-const COORD_EPSILON = 1e-6;
-
 const hasDifference = (
   key: FieldKey,
-  currentValues: Partial<UnifiedFacilityFormValues> | null,
-  payload: Partial<UnifiedFacilityFormValues>,
+  currentRoom: RoomRow | null,
+  payload: Partial<RoomFormValues>,
 ) => {
-  if (!currentValues) return true;
+  if (!currentRoom) return true;
   const nextValue = payload[key];
   if (nextValue === undefined) return false;
 
-  const currentValue = currentValues[key];
+  const keyMap: Record<FieldKey, keyof RoomRow> = {
+    roomCode: "room_code",
+    name: "name",
+    description: "description",
+    floor: "floor",
+  };
 
-  if (key === "coordinates") {
-    const currentCoords = currentValue as { lat?: number; lng?: number } | undefined;
-    const nextCoords = nextValue as { lat?: number; lng?: number } | undefined;
-    if (!currentCoords || !nextCoords) return !!nextCoords;
-    const latDiff = typeof currentCoords.lat === "number" && typeof nextCoords.lat === "number"
-      ? Math.abs(currentCoords.lat - nextCoords.lat) > COORD_EPSILON
-      : currentCoords.lat !== nextCoords.lat;
-    const lngDiff = typeof currentCoords.lng === "number" && typeof nextCoords.lng === "number"
-      ? Math.abs(currentCoords.lng - nextCoords.lng) > COORD_EPSILON
-      : currentCoords.lng !== nextCoords.lng;
-    return latDiff || lngDiff;
-  }
-
-  return JSON.stringify(currentValue) !== JSON.stringify(nextValue);
+  const currentValue = currentRoom[keyMap[key]];
+  return String(currentValue ?? "") !== String(nextValue ?? "");
 };
 
-export function SuggestionDiffView({ suggestion, payload, currentFacility }: SuggestionDiffViewProps) {
-  const currentValues: Partial<UnifiedFacilityFormValues> | null = currentFacility
-    ? {
-      code: currentFacility.code ?? "",
-      name: currentFacility.name,
-      description: currentFacility.description ?? "",
-      category: currentFacility.category,
-      hasRooms: currentFacility.hasRooms,
-      coordinates: currentFacility.coordinates,
-      imageUrl: currentFacility.imageUrl ?? "",
-      slug: currentFacility.slug,
-    }
-    : null;
-
-  const [editedPayload, setEditedPayload] = useState<Partial<UnifiedFacilityFormValues>>(payload);
+export function SuggestionRoomDiffView({
+  suggestion,
+  payload,
+  currentRoom,
+  targetFacility,
+}: SuggestionRoomDiffViewProps) {
+  const [editedPayload, setEditedPayload] = useState<Partial<RoomFormValues>>(payload);
   const [isEditing, setIsEditing] = useState(false);
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
@@ -131,7 +106,7 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
         setError(result.error);
         return;
       }
-      setMessage("Suggestion approved and applied.");
+      setMessage("Room suggestion approved and applied.");
       router.refresh();
     });
   };
@@ -151,46 +126,19 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
         setError(result.error);
         return;
       }
-      setMessage("Suggestion rejected.");
+      setMessage("Room suggestion rejected.");
       router.refresh();
     });
   };
 
-  const handleEditSubmit = async (
-    values: UnifiedFacilityFormValues,
-    options?: { file?: File | null; clearImage?: boolean },
-  ) => {
-    let imageUrl = values.imageUrl ?? editedPayload.imageUrl;
-
-    if (options?.file) {
-      const tempId = crypto.randomUUID();
-      const upload = await uploadFacilityHeroClient(tempId, options.file, options.file.name);
-      if (upload.error) {
-        setError(upload.error.message);
-        return;
-      }
-      imageUrl = upload.data?.publicUrl ?? imageUrl;
-    } else if (options?.clearImage) {
-      imageUrl = undefined;
+  const currentValues: Partial<RoomFormValues> | null = currentRoom
+    ? {
+      roomCode: currentRoom.room_code,
+      name: currentRoom.name ?? "",
+      description: currentRoom.description ?? "",
+      floor: currentRoom.floor ?? undefined,
     }
-
-    setEditedPayload({ ...values, imageUrl });
-    setIsEditing(false);
-  };
-
-  const dialogFacility: Facility = {
-    id: currentFacility?.id ?? "temp-id",
-    code: editedPayload.code ?? currentFacility?.code,
-    slug: editedPayload.slug ?? currentFacility?.slug ?? "",
-    name: editedPayload.name ?? currentFacility?.name ?? "New Facility",
-    description: editedPayload.description ?? currentFacility?.description,
-    category: editedPayload.category ?? currentFacility?.category ?? "landmark",
-    coordinates: editedPayload.coordinates ?? currentFacility?.coordinates ?? { lat: 0, lng: 0 },
-    imageUrl: editedPayload.imageUrl ?? currentFacility?.imageUrl,
-    hasRooms: editedPayload.hasRooms ?? currentFacility?.hasRooms ?? false,
-    createdAt: currentFacility?.createdAt ?? new Date().toISOString(),
-    updatedAt: currentFacility?.updatedAt ?? new Date().toISOString(),
-  };
+    : null;
 
   return (
     <div className="space-y-6">
@@ -202,8 +150,17 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
         </span>
       </div>
 
+      {targetFacility && (
+        <div className="rounded-md border border-border bg-muted/30 p-3">
+          <p className="text-sm">
+            <span className="text-muted-foreground">Target Building:</span>{" "}
+            <span className="font-medium">{targetFacility.name}</span>
+          </p>
+        </div>
+      )}
+
       {message && (
-        <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+        <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">
           {message}
         </div>
       )}
@@ -225,25 +182,13 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
               {(Object.keys(fieldLabels) as FieldKey[]).map((key) => (
                 <div key={key} className="space-y-1 rounded-md border border-border/60 bg-background px-3 py-2">
                   <p className="text-xs font-medium text-muted-foreground">{fieldLabels[key]}</p>
-                  {key === "imageUrl" && currentValues.imageUrl ? (
-                    <div className="relative h-32 w-full overflow-hidden rounded-md border">
-                      <Image
-                        src={currentValues.imageUrl}
-                        alt="Current image"
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 768px) 100vw, 50vw"
-                      />
-                    </div>
-                  ) : (
-                    <p className="text-sm text-foreground">{formatValue(key, currentValues[key])}</p>
-                  )}
+                  <p className="text-sm text-foreground">{formatValue(currentValues[key])}</p>
                 </div>
               ))}
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">
-              No existing record. This will create a new facility if approved.
+              No existing room. This will create a new room if approved.
             </p>
           )}
         </div>
@@ -268,7 +213,7 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
 
           <div className="space-y-3">
             {(Object.keys(fieldLabels) as FieldKey[]).map((key) => {
-              const changed = hasDifference(key, currentValues, editedPayload);
+              const changed = hasDifference(key, currentRoom, editedPayload);
               const value = editedPayload[key];
 
               return (
@@ -280,22 +225,10 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
                   )}
                 >
                   <p className="text-xs font-medium text-muted-foreground">{fieldLabels[key]}</p>
-                  {key === "imageUrl" && typeof value === "string" && value ? (
-                    <div className="relative h-32 w-full overflow-hidden rounded-md border">
-                      <Image
-                        src={value}
-                        alt="Proposed image"
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 768px) 100vw, 50vw"
-                      />
-                    </div>
-                  ) : (
-                    <p className="text-sm text-foreground">{formatValue(key, value)}</p>
-                  )}
+                  <p className="text-sm text-foreground">{formatValue(value)}</p>
                   {changed && currentValues && (
                     <p className="text-xs text-primary">
-                      Updated from {formatValue(key, currentValues[key])}
+                      Updated from {formatValue(currentValues[key])}
                     </p>
                   )}
                 </div>
@@ -323,8 +256,8 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
 
       <ConfirmDialog
         open={showApproveDialog}
-        title="Approve Suggestion"
-        description="Are you sure you want to approve this suggestion? This will update the live data immediately."
+        title="Approve Room Suggestion"
+        description="Are you sure you want to approve this room suggestion? This will add the room to the facility immediately."
         confirmLabel="Approve"
         confirmVariant="default"
         onConfirm={executeApprove}
@@ -335,9 +268,9 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
       <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reject Suggestion</DialogTitle>
+            <DialogTitle>Reject Room Suggestion</DialogTitle>
             <DialogDescription>
-              Are you sure you want to reject this suggestion? This action cannot be undone.
+              Are you sure you want to reject this room suggestion? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -362,16 +295,73 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
         </DialogContent>
       </Dialog>
 
-      <FacilityDialog
-        open={isEditing}
-        mode={suggestion.type === "ADD_FACILITY" ? "create" : "edit"}
-        facility={dialogFacility}
-        onOpenChange={setIsEditing}
-        onSubmit={handleEditSubmit}
-        title="Edit Suggestion"
-        description="Modify the proposed details before approving."
-        submitLabel="Update Proposal"
-      />
+      <Dialog open={isEditing} onOpenChange={setIsEditing}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Room Suggestion</DialogTitle>
+            <DialogDescription>
+              Modify the proposed room details before approving.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-2">
+                <Label htmlFor="edit-roomCode">Room Code *</Label>
+                <Input
+                  id="edit-roomCode"
+                  value={editedPayload.roomCode ?? ""}
+                  onChange={(e) =>
+                    setEditedPayload({ ...editedPayload, roomCode: e.target.value })
+                  }
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-floor">Floor</Label>
+                <Input
+                  id="edit-floor"
+                  type="number"
+                  value={editedPayload.floor ?? ""}
+                  onChange={(e) =>
+                    setEditedPayload({
+                      ...editedPayload,
+                      floor: e.target.value === "" ? undefined : Number(e.target.value),
+                    })
+                  }
+                />
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-name">Name</Label>
+              <Input
+                id="edit-name"
+                value={editedPayload.name ?? ""}
+                onChange={(e) =>
+                  setEditedPayload({ ...editedPayload, name: e.target.value })
+                }
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-description">Description</Label>
+              <Textarea
+                id="edit-description"
+                value={editedPayload.description ?? ""}
+                onChange={(e) =>
+                  setEditedPayload({ ...editedPayload, description: e.target.value })
+                }
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsEditing(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => setIsEditing(false)}>
+              Update Proposal
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
