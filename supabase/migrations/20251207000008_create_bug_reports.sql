@@ -46,7 +46,7 @@ CREATE POLICY "Authenticated users can update bug reports"
   USING (true)
   WITH CHECK (true);
 
--- Trigger for updated_at
+-- Trigger to automatically update the updated_at column on row modification
 CREATE TRIGGER bug_reports_updated_at
   BEFORE UPDATE ON bug_reports
   FOR EACH ROW
