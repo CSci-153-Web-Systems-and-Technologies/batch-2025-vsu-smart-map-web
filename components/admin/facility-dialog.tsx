@@ -289,7 +289,7 @@ export function FacilityDialog({
                   }}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Max {STORAGE_LIMITS.imageMaxMB}MB. Types: {STORAGE_LIMITS.acceptedTypes.join(', ')}.
+                  Max {STORAGE_LIMITS.inputMaxMB}MB. Types: {STORAGE_LIMITS.acceptedTypes.join(', ')}.
                 </p>
               </div>
 
