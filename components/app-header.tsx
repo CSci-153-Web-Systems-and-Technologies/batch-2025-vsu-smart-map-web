@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { ThemeSwitcher } from "@/components/theme-switcher";
+import { SettingsDropdown } from "@/components/layout/settings-dropdown";
 import { useApp } from "@/lib/context/app-context";
 import { Search } from "lucide-react";
 import type { ReactNode } from "react";
@@ -61,7 +61,7 @@ export function AppHeader({ tabsSlot }: AppHeaderProps) {
 
           <div className="h-4 w-[1px] bg-border mx-1 hidden md:block" />
 
-          <ThemeSwitcher />
+          <SettingsDropdown />
         </div>
       </div>
     </header>

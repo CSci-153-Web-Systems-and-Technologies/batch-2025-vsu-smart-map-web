@@ -87,3 +87,30 @@ export const uploadSuggestionImageClient = async (
 
   return { data: { path, publicUrl }, error: null };
 };
+
+/**
+ * Upload a screenshot for a bug report.
+ */
+export const uploadBugScreenshotClient = async (
+  reportId: string,
+  file: File,
+  filename: string,
+): Promise<StorageResult<{ path: string; publicUrl: string | null }>> => {
+  const validationError = validateFile(file);
+  if (validationError) {
+    return { data: null, error: { message: validationError } };
+  }
+
+  const prefix = stripBucket(STORAGE_PATHS.bugReportScreenshot(reportId));
+  const path = makePath(prefix, filename);
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
+    upsert: true,
+  });
+  if (error) return { data: null, error };
+
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  const publicUrl = data?.publicUrl ? data.publicUrl : null;
+
+  return { data: { path, publicUrl }, error: null };
+};
