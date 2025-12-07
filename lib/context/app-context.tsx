@@ -28,7 +28,10 @@ interface AppContextValue extends AppState {
   resolvePendingFacility: (facility: Facility) => void;
   setSearchQuery: (query: string) => void;
   setCategory: (category: FacilityCategory | null) => void;
-  setActiveTab: (tab: AppState["activeTab"], options?: { clearSelection?: boolean }) => void;
+  setActiveTab: (
+    tab: AppState["activeTab"],
+    options?: { clearSelection?: boolean; selectFacilityAfter?: Facility }
+  ) => void;
   clearFilters: () => void;
 }
 
@@ -48,6 +51,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   const lastSyncedFacilityId = useRef<string | null>(null);
+  const lastSyncedCategory = useRef<FacilityCategory | null>(null);
+  const lastSyncedSearch = useRef<string>("");
   const isUserClosing = useRef(false);
   const isNavigating = useRef(false);
 
@@ -65,7 +70,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     lastSyncedFacilityId.current = initialFacilityId;
-  }, [initialFacilityId]);
+    lastSyncedCategory.current = initialCategory;
+    lastSyncedSearch.current = initialSearch;
+  }, [initialFacilityId, initialCategory, initialSearch]);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery), DEBOUNCE_MS);
@@ -75,11 +82,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const currentFacilityId = selectedFacility?.id ?? pendingFacilityId ?? null;
 
   const navigationTargetRef = useRef<string | null>(null);
+  const pendingFacilityRef = useRef<Facility | null>(null);
 
   useEffect(() => {
     if (navigationTargetRef.current && pathname === navigationTargetRef.current) {
       navigationTargetRef.current = null;
-      isNavigating.current = false;
+
+      // Select pending facility if it exists
+      if (pendingFacilityRef.current) {
+        const facilityToSelect = pendingFacilityRef.current;
+        pendingFacilityRef.current = null;
+        // Use setTimeout to ensure pathname update has been processed
+        setTimeout(() => {
+          setSelectedFacility(facilityToSelect);
+          setPendingFacilityId(facilityToSelect.id);
+        }, 0);
+      }
+
+      // Delay resetting isNavigating to allow searchParams to settle
+      const timeout = setTimeout(() => {
+        isNavigating.current = false;
+      }, 100);
+      return () => clearTimeout(timeout);
     }
   }, [pathname]);
 
@@ -111,25 +135,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const nextQueryString = params.toString();
     if (nextQueryString === searchParams.toString()) {
       lastSyncedFacilityId.current = currentFacilityId;
+      lastSyncedCategory.current = selectedCategory;
+      lastSyncedSearch.current = debouncedQuery.trim();
       return;
     }
 
     lastSyncedFacilityId.current = currentFacilityId;
+    lastSyncedCategory.current = selectedCategory;
+    lastSyncedSearch.current = debouncedQuery.trim();
     const newUrl = nextQueryString ? `${pathname}?${nextQueryString}` : pathname;
     router.replace(newUrl, { scroll: false });
   }, [debouncedQuery, selectedCategory, currentFacilityId, pathname, router, searchParams]);
 
   useEffect(() => {
+    if (isNavigating.current) return;
+
     const urlSearch = searchParams.get("q") ?? "";
     const urlCategoryParam = searchParams.get("category");
     const urlCategory = isValidCategory(urlCategoryParam) ? urlCategoryParam : null;
     const urlFacilityId = searchParams.get("facility");
 
-    if (urlSearch !== searchQuery && urlSearch !== debouncedQuery) {
+    // Only update if URL is different from what we last synced (to avoid loops)
+    if (urlSearch !== lastSyncedSearch.current && urlSearch !== searchQuery && urlSearch !== debouncedQuery) {
       setSearchQuery(urlSearch);
+      lastSyncedSearch.current = urlSearch;
     }
-    if (urlCategory !== selectedCategory) {
+    if (urlCategory !== lastSyncedCategory.current && urlCategory !== selectedCategory) {
       setSelectedCategory(urlCategory);
+      lastSyncedCategory.current = urlCategory;
     }
 
     if (isUserClosing.current) return;
@@ -170,7 +203,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSelectedCategory(null);
   }, []);
 
-  const setActiveTab = useCallback((tab: AppState["activeTab"], options?: { clearSelection?: boolean }) => {
+  const setActiveTab = useCallback((
+    tab: AppState["activeTab"],
+    options?: { clearSelection?: boolean; selectFacilityAfter?: Facility }
+  ) => {
     if (options?.clearSelection) {
       setSelectedFacility(null);
       setPendingFacilityId(null);
@@ -186,8 +222,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (selectedCategory) {
       params.set("category", selectedCategory);
     }
+
+    // Only include facility ID if not selecting after navigation
     const facilityId = selectedFacility?.id ?? pendingFacilityId;
-    if (facilityId && !options?.clearSelection) {
+    if (facilityId && !options?.clearSelection && !options?.selectFacilityAfter) {
       params.set("facility", facilityId);
     }
 
@@ -196,6 +234,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     isNavigating.current = true;
     navigationTargetRef.current = targetRoute;
+
+    // Store facility to select after navigation
+    if (options?.selectFacilityAfter) {
+      pendingFacilityRef.current = options.selectFacilityAfter;
+    }
 
     setActiveTabState(tab);
     router.push(fullUrl, { scroll: false });

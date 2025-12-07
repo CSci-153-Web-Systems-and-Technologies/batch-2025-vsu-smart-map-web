@@ -15,7 +15,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 export function RecentActivity({ submissions }: RecentSubmissionsProps) {
   return (
-    <Card className="border bg-white shadow-sm dark:bg-card">
+    <Card className="border shadow-sm">
       <CardHeader>
         <CardTitle className="text-base">Recent Activity</CardTitle>
         <p className="text-sm text-muted-foreground">
@@ -46,9 +46,8 @@ export function RecentActivity({ submissions }: RecentSubmissionsProps) {
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-sm">{submission.suggestedName}</span>
                     <span
-                      className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium uppercase tracking-wider ${
-                        isAdmin ? "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200" : "bg-blue-100 text-blue-700 dark:bg-blue-800 dark:text-blue-200"
-                      }`}
+                      className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium uppercase tracking-wider ${isAdmin ? "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200" : "bg-blue-100 text-blue-700 dark:bg-blue-800 dark:text-blue-200"
+                        }`}
                     >
                       {isAdmin ? "System" : "User"}
                     </span>

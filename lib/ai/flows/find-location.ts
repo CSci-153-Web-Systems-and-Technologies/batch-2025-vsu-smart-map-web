@@ -38,10 +38,13 @@ export const findLocationFlow = flow(
 
     const userQuery = input.query;
     const contextData = input.context || {};
-    const previousQueries = contextData.previousQueries?.length
-      ? contextData.previousQueries.join("\n- ")
-      : "None";
     const summary = contextData.summary || "None";
+
+    const conversationHistory = contextData.conversationHistory?.length
+      ? contextData.conversationHistory
+        .map((msg) => `${msg.role === "user" ? "User" : "Assistant"}: ${msg.content}`)
+        .join("\n\n")
+      : "None";
 
     const prompt = `
 ${CAMPUS_ASSISTANT_PROMPT}
@@ -52,13 +55,13 @@ User Query: "${userQuery}"
 Previous Conversation Summary:
 ${summary}
 
-Recent Queries:
-- ${previousQueries}
+Recent Conversation History:
+${conversationHistory}
 
 ## Available Facilities
 ${JSON.stringify(facilitiesContext, null, 2)}
 
-Answer the user's query based on the available facilities.
+Answer the user's query based on the available facilities. Consider the conversation history for context.
 `;
 
     return await runWithKeyRotation(async (ai) => {
@@ -81,8 +84,10 @@ export async function streamFindLocation(input: LocationQuery) {
 
   const userQuery = input.query;
   const contextData = input.context || {};
-  const previousQueries = contextData.previousQueries?.length
-    ? contextData.previousQueries.join("\n- ")
+  const conversationHistory = contextData.conversationHistory?.length
+    ? contextData.conversationHistory
+      .map((msg) => `${msg.role === "user" ? "User" : "Assistant"}: ${msg.content}`)
+      .join("\n\n")
     : "None";
   const summary = contextData.summary || "None";
 
@@ -95,13 +100,13 @@ User Query: "${userQuery}"
 Previous Conversation Summary:
 ${summary}
 
-Recent Queries:
-- ${previousQueries}
+Recent Conversation History:
+${conversationHistory}
 
 ## Available Facilities
 ${JSON.stringify(facilitiesContext, null, 2)}
 
-Answer the user's query based on the available facilities.
+Answer the user's query based on the available facilities. Consider the conversation history for context.
 `;
 
   return await streamWithKeyRotation(async (ai) => {

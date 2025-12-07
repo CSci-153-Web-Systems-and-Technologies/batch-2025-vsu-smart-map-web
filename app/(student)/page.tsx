@@ -2,10 +2,8 @@
 
 import dynamic from "next/dynamic";
 import { Suspense, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { MapContainerClient } from "@/components/map/map-container";
 import { MapSearchPanel } from "@/components/map/map-search-panel";
-import { MapSelectionCard } from "@/components/map/selection-card";
 import type { Facility } from "@/lib/types/facility";
 import { getFacilities } from "@/lib/supabase/queries/facilities";
 import { useApp } from "@/lib/context/app-context";
@@ -36,11 +34,7 @@ function HomePageSkeleton() {
 }
 
 function HomePageContent() {
-  return (
-    <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-6 bg-background px-4 py-10 md:px-6">
-      <MapTab />
-    </main>
-  );
+  return <MapTab />;
 }
 
 function MapTab() {
@@ -100,39 +94,47 @@ function MapTab() {
       id="map-panel"
       role="tabpanel"
       aria-label="Map panel"
-      className="rounded-xl border border-border bg-card p-4 shadow-card md:p-6"
+      className="relative flex h-full w-full flex-col overflow-hidden bg-background"
       tabIndex={0}
     >
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm uppercase tracking-wide text-muted-foreground">Map</p>
-          <h1 className="mt-1 text-2xl font-bold text-foreground">Explore the campus map</h1>
-        </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="gap-2"
-          onClick={() => setSuggestOpen(true)}
-        >
-          <Plus className="h-4 w-4" />
-          Submit a location
-        </Button>
+      {/* Filter Bar */}
+      <div className="w-full border-b bg-background/95 backdrop-blur z-20 px-4 py-1.5 shrink-0">
+        <MapSearchPanel
+          items={items}
+          onResultsChange={(results) => setFiltered(results as Facility[])}
+        />
       </div>
 
-      <MapView
-        items={items}
-        filtered={filtered}
-        isLoading={isLoading}
-        error={error}
-        selectedId={selectedFacility?.id ?? null}
-        onSelect={(id) => {
-          const facility = items.find((f) => f.id === id) || null;
-          selectFacility(facility);
-        }}
-        onClearSelection={() => selectFacility(null)}
-        onResultsChange={(results) => setFiltered(results as Facility[])}
-      />
+      <div className="relative flex-1 w-full overflow-hidden">
+        {/* Floating Action Button (Submit) */}
+        {/* Adjusted bottom position to clear mobile tabs (approx 4rem/64px + 1rem buffer = bottom-20 or bottom-24) */}
+        {/* Desktop remains bottom-8 */}
+        <div className="absolute right-6 bottom-24 z-30 md:right-8 md:bottom-8">
+          <Button
+            type="button"
+            size="default"
+            className="rounded-full shadow-lg gap-2 font-semibold"
+            onClick={() => setSuggestOpen(true)}
+            title="Submit a location"
+          >
+            <Plus className="h-5 w-5" />
+            <span className="hidden md:inline">Submit Location</span>
+            <span className="md:hidden sr-only">Submit Location</span>
+          </Button>
+        </div>
+
+        <MapView
+          filtered={filtered}
+          isLoading={isLoading}
+          error={error}
+          selectedId={selectedFacility?.id ?? null}
+          onSelect={(id) => {
+            const facility = items.find((f) => f.id === id) || null;
+            selectFacility(facility);
+          }}
+          onClearSelection={() => selectFacility(null)}
+        />
+      </div>
 
       <SuggestAddModal
         open={suggestOpen}
@@ -144,71 +146,58 @@ function MapTab() {
 }
 
 function MapView({
-  items,
   filtered,
   isLoading,
   error,
   selectedId,
   onSelect,
   onClearSelection,
-  onResultsChange,
 }: {
-  items: readonly Facility[];
   filtered: readonly Facility[];
   isLoading: boolean;
   error: string | null;
   selectedId: string | null;
   onSelect: (id: string) => void;
   onClearSelection: () => void;
-  onResultsChange: (items: Facility[]) => void;
 }) {
-  const router = useRouter();
-  const { selectedFacility } = useApp();
   const hasResults = filtered.length > 0;
 
   return (
-    <div className="mt-4 space-y-4 md:mt-6">
-      <MapSearchPanel
-        items={items}
-        onResultsChange={(results) => onResultsChange(results as Facility[])}
-      />
+    <div className="relative h-full w-full">
+
 
       {error && (
-        <p className="text-sm text-destructive" role="alert">
-          {error}
-        </p>
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/50 backdrop-blur-sm">
+          <p className="text-sm text-destructive font-medium bg-destructive/10 px-4 py-2 rounded-md" role="alert">
+            {error}
+          </p>
+        </div>
       )}
 
       {isLoading ? (
         <div
-          className="h-[420px] md:h-[560px] rounded-xl border border-border bg-muted animate-pulse"
+          className="h-full w-full bg-muted animate-pulse"
           aria-label="Loading map"
         />
       ) : (
-        <div className="relative h-[420px] md:h-[560px] rounded-xl border border-border overflow-hidden">
+        <div className="relative h-full w-full overflow-hidden">
           <MapContainerClient className="h-full w-full">
             <MapSelectionLayer
               items={filtered}
               selectedId={selectedId}
               onSelect={(item) => onSelect(item.id)}
+              onClearSelection={onClearSelection}
             />
           </MapContainerClient>
           {!hasResults && !error && (
-            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center bg-muted/30 text-center">
-              <p className="text-sm font-medium text-foreground">No locations match your search.</p>
-              <p className="mt-1 text-xs text-muted-foreground">Try clearing filters or another term.</p>
+            <div className="pointer-events-none absolute bottom-12 left-1/2 -translate-x-1/2 z-10 rounded-full bg-background/90 px-4 py-2 shadow-md backdrop-blur">
+              <p className="text-sm font-medium text-foreground">No locations found.</p>
             </div>
           )}
         </div>
       )}
 
-      {selectedFacility && (
-        <MapSelectionCard
-          facility={selectedFacility}
-          onClear={onClearSelection}
-          onViewDetails={() => router.push(`/directory?facility=${selectedFacility.id}`)}
-        />
-      )}
+
     </div>
   );
 }

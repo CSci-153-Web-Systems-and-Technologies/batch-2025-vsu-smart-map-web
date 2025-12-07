@@ -5,6 +5,15 @@ export const LocationQuerySchema = z.object({
   context: z
     .object({
       previousQueries: z.array(z.string()).optional(),
+      conversationHistory: z
+        .array(
+          z.object({
+            role: z.enum(["user", "assistant"]),
+            content: z.string(),
+          })
+        )
+        .optional()
+        .describe("Recent conversation history with both user and assistant messages"),
       summary: z.string().optional().describe("Summary of previous conversation history"),
       userLocation: z
         .object({
@@ -18,20 +27,16 @@ export const LocationQuerySchema = z.object({
 });
 
 export const LocationResponseSchema = z.object({
-  intent: z
-    .enum(["find_facility", "get_directions", "list_category", "general_info"])
-    .describe("The detected intent of the user's query"),
+  response: z.string().describe("Natural language response to the user in their preferred language"),
   facilities: z
     .array(
       z.object({
-        id: z.string(),
-        name: z.string(),
-        matchReason: z.string().describe("Why this facility matches the query"),
+        facilityId: z.string().describe("The facility's ID from the provided data"),
+        name: z.string().describe("The facility's official name"),
       })
     )
-    .describe("List of facilities that match the query"),
-  response: z.string().describe("Natural language response to the user"),
-  followUp: z.string().optional().describe("Optional suggested follow-up question"),
+    .max(6)
+    .describe("List of matched facilities (maximum 6, empty array if no match)"),
 });
 
 export type LocationQuery = z.infer<typeof LocationQuerySchema>;

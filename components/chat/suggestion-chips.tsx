@@ -1,26 +1,28 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { SUGGESTED_QUESTIONS } from "@/lib/constants/chat";
+
 interface SuggestionChipsProps {
-  suggestions?: string[];
   onSelect: (suggestion: string) => void;
   disabled?: boolean;
 }
 
-const DEFAULT_SUGGESTIONS = [
-  "Where is the registrar's office?",
-  "Find the nearest CR",
-  "How do I get to COE?",
-  "Where can I pay tuition?",
-  "Find a computer lab",
-];
-
 export function SuggestionChips({
-  suggestions = DEFAULT_SUGGESTIONS,
   onSelect,
   disabled = false,
 }: SuggestionChipsProps) {
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+
+  useEffect(() => {
+    const shuffled = [...SUGGESTED_QUESTIONS].sort(() => 0.5 - Math.random());
+    setSuggestions(shuffled.slice(0, 3));
+  }, []);
+
+  if (suggestions.length === 0) return null;
+
   return (
-    <div className="flex flex-wrap gap-2" role="region" aria-label="Suggested questions">
+    <div className="flex flex-wrap justify-center gap-2" role="region" aria-label="Suggested questions">
       {suggestions.map((suggestion) => (
         <button
           key={suggestion}

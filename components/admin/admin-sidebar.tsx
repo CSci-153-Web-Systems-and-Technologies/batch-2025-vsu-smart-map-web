@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { LayoutDashboard, Building, Lightbulb } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
+import { ThemeSwitcher } from '@/components/theme-switcher';
 
 const NAV_ITEMS = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
@@ -74,7 +75,11 @@ function SidebarContent({ pathname, onClose }: { pathname: string; onClose: () =
       </div>
 
       {/* Bottom Section */}
-      <div className="border-t border-border p-4">
+      <div className="border-t border-border p-4 space-y-4">
+        <div className="flex items-center justify-between px-2">
+          <span className="text-sm font-medium text-muted-foreground">Appearance</span>
+          <ThemeSwitcher />
+        </div>
         <div className="rounded-lg bg-muted/50 p-4">
           <div className="flex items-center gap-3">
             <div className="relative flex h-2.5 w-2.5">

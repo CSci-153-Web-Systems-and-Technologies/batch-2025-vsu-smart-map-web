@@ -5,7 +5,7 @@ import type { MapItem } from "@/lib/types/map";
 import { filterMapItems } from "@/lib/map/filter-map-items";
 import { useApp } from "@/lib/context/app-context";
 import { CategoryFilters } from "./category-filters";
-import { MapSearch } from "./map-search";
+
 
 type MapSearchPanelProps = {
   items: readonly MapItem[];
@@ -19,8 +19,6 @@ export function MapSearchPanel({
   onMatchCountChange,
 }: MapSearchPanelProps) {
   const {
-    searchQuery,
-    setSearchQuery,
     debouncedQuery,
     selectedCategory,
     setCategory,
@@ -41,10 +39,9 @@ export function MapSearchPanel({
     }
   }, [matchCount, onMatchCountChange]);
 
+  // Remove local MapSearch since search is now in Header
+
   return (
-    <div className="space-y-3">
-      <MapSearch value={searchQuery} onChange={setSearchQuery} matchCount={matchCount} />
-      <CategoryFilters value={selectedCategory} onChange={setCategory} />
-    </div>
+    <CategoryFilters value={selectedCategory} onChange={setCategory} />
   );
 }

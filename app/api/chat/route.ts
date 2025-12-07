@@ -23,24 +23,37 @@ function getPreviousQueries(history: unknown): string[] {
     .slice(-CHAT_HISTORY.MAX_CONTEXT_MESSAGES);
 }
 
+function getConversationHistory(history: unknown): HistoryEntry[] {
+  if (!Array.isArray(history)) return [];
+
+  return history
+    .filter(
+      (entry): entry is HistoryEntry =>
+        (entry?.role === "user" || entry?.role === "assistant") &&
+        typeof entry.content === "string" &&
+        entry.content.trim().length > 0
+    )
+    .slice(-CHAT_HISTORY.MAX_CONTEXT_MESSAGES);
+}
+
 async function resolveFacilityMatches(
-  facilities: Array<{ id: string; matchReason: string }> | undefined
+  facilities: Array<{ facilityId: string; name: string }> | undefined
 ): Promise<FacilityMatch[]> {
   if (!facilities?.length) return [];
 
-  const ids = Array.from(new Set(facilities.map((f) => f.id)));
+  const ids = Array.from(new Set(facilities.map((f) => f.facilityId)));
   const { data } = await getFacilitiesByIds({ ids });
 
   if (!data) return [];
 
   return facilities
     .map((facility) => {
-      const fullFacility = data.find((item) => item.id === facility.id);
+      const fullFacility = data.find((item) => item.id === facility.facilityId);
       if (!fullFacility) return null;
 
       return {
         facility: fullFacility,
-        matchReason: facility.matchReason,
+        matchReason: "",
         confidence: 1,
       };
     })
@@ -62,7 +75,8 @@ export async function POST(request: Request) {
     }
 
     const previousQueries = getPreviousQueries(history);
-    const context = { previousQueries };
+    const conversationHistory = getConversationHistory(history);
+    const context = { previousQueries, conversationHistory };
 
     if (streaming) {
       const stream = await streamFindLocation({
@@ -100,12 +114,22 @@ export async function POST(request: Request) {
               type: "final",
               content: response.output.response,
               facilities: matches,
-              followUp: response.output.followUp ?? null,
             });
           } catch (error) {
-            const errorMessage =
-              error instanceof Error ? error.message : "Failed to stream response";
-            send({ type: "error", error: errorMessage });
+            const errorMessage = error instanceof Error ? error.message : "Failed to stream response";
+            let userMessage = "Sorry, I encountered an error. Please try again.";
+
+            if (errorMessage.includes("429") || errorMessage.includes("quota") || errorMessage.includes("Too Many Requests")) {
+              userMessage = "I'm currently experiencing high traffic. Please wait a moment and try again.";
+            } else if (errorMessage.includes("rate limit") || errorMessage.includes("Max retries")) {
+              userMessage = "Too many requests right now. Please try again in a few seconds.";
+            } else if (errorMessage.includes("timeout") || errorMessage.includes("ETIMEDOUT")) {
+              userMessage = "The request timed out. Please try again.";
+            } else if (errorMessage.includes("network") || errorMessage.includes("ECONNREFUSED")) {
+              userMessage = "Network connection issue. Please check your connection and try again.";
+            }
+
+            send({ type: "error", error: userMessage });
           } finally {
             controller.enqueue(encoder.encode("data: [DONE]\n\n"));
             controller.close();
@@ -133,27 +157,31 @@ export async function POST(request: Request) {
     return NextResponse.json({
       content: result.response,
       facilities: matches,
-      followUp: result.followUp ?? null,
     });
   } catch (error: unknown) {
     console.error("Chat API Error:", error);
 
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    let userMessage = "Sorry, I encountered an error. Please try again.";
+    let statusCode = 500;
 
-    if (
-      errorMessage.includes("429") ||
-      errorMessage.includes("Max retries exceeded")
-    ) {
-      return NextResponse.json(
-        { error: "Too many requests. Please try again in a moment." },
-        { status: 429 }
-      );
+    if (errorMessage.includes("429") || errorMessage.includes("quota") || errorMessage.includes("Too Many Requests")) {
+      userMessage = "I'm currently experiencing high traffic. Please wait a moment and try again.";
+      statusCode = 429;
+    } else if (errorMessage.includes("rate limit") || errorMessage.includes("Max retries")) {
+      userMessage = "Too many requests right now. Please try again in a few seconds.";
+      statusCode = 429;
+    } else if (errorMessage.includes("timeout") || errorMessage.includes("ETIMEDOUT")) {
+      userMessage = "The request timed out. Please try again.";
+      statusCode = 504;
+    } else if (errorMessage.includes("network") || errorMessage.includes("ECONNREFUSED")) {
+      userMessage = "Network connection issue. Please check your connection and try again.";
+      statusCode = 503;
     }
 
     return NextResponse.json(
-      { error: "Failed to process chat request" },
-      { status: 500 }
+      { error: userMessage },
+      { status: statusCode }
     );
   }
 }

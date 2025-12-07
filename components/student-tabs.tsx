@@ -51,11 +51,14 @@ export function StudentTabs({
   );
 
   const isInline = placement === "inline";
+
+  // Desktop: Clean nav links, Mobile: Fixed bottom bar
   const wrapperClasses = isInline
-    ? "hidden md:block border-b border-border/80 bg-card/90 backdrop-blur"
-    : "md:hidden fixed inset-x-0 bottom-0 z-20 border-t border-border/80 bg-card/95 backdrop-blur pb-[calc(16px+env(safe-area-inset-bottom,0px))] pt-2";
+    ? "hidden md:block" // Removed borders/bg for header integration
+    : "md:hidden fixed inset-x-0 bottom-0 z-20 border-t border-border/80 bg-background/95 backdrop-blur pb-[calc(16px+env(safe-area-inset-bottom,0px))] pt-2 transition-transform duration-300";
+
   const innerClasses = isInline
-    ? "mx-auto flex max-w-6xl items-stretch justify-center gap-2 px-4 py-2 md:px-6"
+    ? "flex items-center gap-1"
     : "flex items-center justify-around px-4";
 
   return (
@@ -81,20 +84,26 @@ export function StudentTabs({
               onClick={() => setActiveTab(tab.id, { clearSelection: true })}
               onKeyDown={(event) => handleKeyDown(event, index)}
               className={cn(
-                "group relative flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition",
+                "group relative flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-all",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                // Mobile specific styles
+                !isInline && "flex-1 flex-col gap-1 py-1 text-xs",
+                // Active states
                 isActive
-                  ? "text-foreground"
-                  : "hover:bg-muted hover:text-foreground",
+                  ? "text-primary"
+                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                // Desktop specific active background
+                isInline && isActive && "bg-primary/10",
               )}
             >
-              {Icon ? <Icon className="h-4 w-4" aria-hidden /> : null}
-              <span className="hidden sm:inline">{tab.label}</span>
-              <span className="sm:hidden sr-only">{tab.label}</span>
-              {isActive && (
+              {Icon ? <Icon className={cn(isInline ? "h-4 w-4" : "h-5 w-5")} aria-hidden /> : null}
+              <span className={cn(isInline ? "hidden sm:inline" : "text-[10px] font-medium")}>{tab.label}</span>
+
+              {/* Mobile Active Indicator */}
+              {!isInline && isActive && (
                 <span
                   aria-hidden
-                  className="absolute inset-x-2 bottom-1 h-1 rounded-full bg-primary transition-all"
+                  className="absolute -top-2 left-1/2 h-1 w-8 -translate-x-1/2 rounded-full bg-primary"
                 />
               )}
             </button>

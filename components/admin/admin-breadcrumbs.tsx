@@ -24,13 +24,13 @@ export function AdminBreadcrumbs() {
         return (
           <span key={crumb.href} className="flex items-center gap-2">
             {isLast ? (
-              <span className="capitalize rounded-full bg-white px-3 py-1 font-medium text-foreground shadow-sm">
+              <span className="capitalize rounded-full bg-card px-3 py-1 font-medium text-foreground shadow-sm">
                 {crumb.label}
               </span>
             ) : (
               <Link
                 href={crumb.href}
-                className="capitalize rounded-full bg-white px-3 py-1 shadow-sm transition hover:text-foreground"
+                className="capitalize rounded-full bg-card px-3 py-1 shadow-sm transition hover:text-foreground"
               >
                 {crumb.label}
               </Link>

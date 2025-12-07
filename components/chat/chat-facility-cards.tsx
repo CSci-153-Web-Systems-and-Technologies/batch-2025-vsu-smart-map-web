@@ -10,13 +10,17 @@ interface ChatFacilityCardsProps {
 export function ChatFacilityCards({ matches }: ChatFacilityCardsProps) {
   if (!matches.length) return null;
 
+  const uniqueMatches = Array.from(
+    new Map(matches.map((m) => [m.facility.id, m])).values()
+  );
+
   return (
-    <div className="mt-2 space-y-2 rounded-lg bg-muted/40 p-3">
+    <div className="mt-2 space-y-2">
       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        Found {matches.length} location{matches.length > 1 ? "s" : ""}
+        Found {uniqueMatches.length} location{uniqueMatches.length > 1 ? "s" : ""}
       </p>
-      <div className="grid gap-2 sm:grid-cols-2">
-        {matches.map((match) => (
+      <div className="flex flex-wrap gap-2">
+        {uniqueMatches.map((match) => (
           <ChatFacilityCard key={match.facility.id} match={match} />
         ))}
       </div>
