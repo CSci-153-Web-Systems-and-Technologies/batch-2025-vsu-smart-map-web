@@ -12,6 +12,7 @@ import {
   deleteRoomAction,
   updateRoomAction,
 } from '@/app/admin/facilities/actions';
+import { uploadRoomImageClient } from '@/lib/supabase/storage-client';
 import { useRouter } from 'next/navigation';
 import type { RoomFormValues } from '@/lib/validation/room';
 import { ConfirmDialog } from './confirm-dialog';
@@ -22,6 +23,8 @@ interface RoomManagerDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+
+
 type RoomRowLike = {
   id: string;
   room_code: string;
@@ -29,6 +32,7 @@ type RoomRowLike = {
   description?: string | null;
   floor?: number | null;
   updated_at?: string | null;
+  image_url?: string | null;
 };
 
 const toRoomRecord = (row: RoomRowLike): RoomRecord => ({
@@ -38,6 +42,7 @@ const toRoomRecord = (row: RoomRowLike): RoomRecord => ({
   description: row.description ?? undefined,
   floor: row.floor ?? undefined,
   updatedAt: row.updated_at ?? undefined,
+  imageUrl: row.image_url ?? undefined,
 });
 
 export function RoomManagerDialog({ open, facility, onOpenChange }: RoomManagerDialogProps) {
@@ -89,30 +94,76 @@ export function RoomManagerDialog({ open, facility, onOpenChange }: RoomManagerD
     setFormOpen(true);
   };
 
-  const handleRoomSubmit = async (values: RoomFormValues) => {
+  const syncRoomImage = async (room: RoomRecord | RoomRowLike, file?: File | null, clearImage?: boolean) => {
+    if (clearImage && !file) {
+      const result = await updateRoomAction(room.id, { imageUrl: null });
+      if (result.error) throw new Error(result.error);
+      return result.data ? toRoomRecord(result.data as RoomRowLike) : { ...room, imageUrl: undefined } as RoomRecord;
+    }
+
+    if (!file) return room as RoomRecord;
+
+    const upload = await uploadRoomImageClient(facility!.id, room.id, file);
+    if (upload.error) throw new Error(upload.error.message);
+
+    const publicUrl = upload.data?.publicUrl ?? undefined;
+    const updateResult = await updateRoomAction(room.id, { imageUrl: publicUrl });
+    if (updateResult.error) throw new Error(updateResult.error);
+
+    return updateResult.data ? toRoomRecord(updateResult.data) : { ...room, imageUrl: publicUrl } as RoomRecord;
+  };
+
+  const handleRoomSubmit = async (
+    values: RoomFormValues,
+    options?: { file?: File | null; clearImage?: boolean }
+  ) => {
     if (!facility) return;
     setError(null);
+    const file = options?.file ?? null;
+    const clearImage = options?.clearImage ?? false;
+
+    const syncRoomImage = async (room: RoomRecord | RoomRowLike, file?: File | null, clearImage?: boolean) => {
+      if (clearImage && !file) {
+        const result = await updateRoomAction(room.id, { imageUrl: null });
+        if (result.error) throw new Error(result.error);
+        return result.data ? toRoomRecord(result.data as RoomRowLike) : { ...room, imageUrl: undefined } as RoomRecord;
+      }
+
+      if (!file) return room as RoomRecord;
+
+      const upload = await uploadRoomImageClient(facility!.id, room.id, file);
+      if (upload.error) throw new Error(upload.error.message);
+
+      const publicUrl = upload.data?.publicUrl ?? undefined;
+      const updateResult = await updateRoomAction(room.id, { imageUrl: publicUrl });
+      if (updateResult.error) throw new Error(updateResult.error);
+
+      return updateResult.data ? toRoomRecord(updateResult.data) : { ...room, imageUrl: publicUrl } as RoomRecord;
+    };
 
     try {
       if (mode === 'create') {
-        const result = await createRoomAction({ ...values, facilityId: facility.id });
+        const result = await createRoomAction({ ...values, facilityId: facility.id, imageUrl: undefined });
         if (result.error) {
           setError(result.error);
           return;
         }
         if (result.data) {
-          setRooms((prev) => [...prev, toRoomRecord(result.data as RoomRowLike)]);
+          const created = await syncRoomImage(result.data as RoomRowLike, file, clearImage);
+          setRooms((prev) => [...prev, created]);
         }
       } else if (selectedRoom) {
+        // Optimistic update for UI if needed, but we'll wait for server
         const result = await updateRoomAction(selectedRoom.id, { ...values, facilityId: facility.id });
         if (result.error) {
           setError(result.error);
           return;
         }
-        if (result.data) {
-          const updated = toRoomRecord(result.data);
-          setRooms((prev) => prev.map((room) => (room.id === updated.id ? updated : room)));
-        }
+
+        let updated = result.data ? toRoomRecord(result.data) : selectedRoom;
+        updated = await syncRoomImage(updated, file, clearImage);
+
+        setRooms((prev) => prev.map((room) => (room.id === updated.id ? updated : room)));
       }
 
       setFormOpen(false);
@@ -185,6 +236,7 @@ export function RoomManagerDialog({ open, facility, onOpenChange }: RoomManagerD
               {formOpen && (
                 <RoomForm
                   facilityId={facility.id}
+                  facilityCode={facility.code}
                   initialValues={selectedRoom ?? undefined}
                   submitting={isPending}
                   onSubmit={handleRoomSubmit}
@@ -197,7 +249,7 @@ export function RoomManagerDialog({ open, facility, onOpenChange }: RoomManagerD
               {loading ? (
                 <p className="text-sm text-muted-foreground">Loading rooms...</p>
               ) : (
-                <RoomList rooms={rooms} onEdit={handleEdit} onDelete={handleDelete} disabled={isPending} />
+                <RoomList rooms={rooms} onEdit={handleEdit} onDelete={handleDelete} disabled={isPending} facilityCode={facility.code} />
               )}
             </div>
           )}
