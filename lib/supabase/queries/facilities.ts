@@ -93,9 +93,7 @@ const getCachedFacilitiesForChat = unstable_cache(
   }
 );
 
-export async function getFacilitiesForChat(
-  client?: MaybeClient
-): Promise<BaseResult<FacilityChatContext[]>> {
+export async function getFacilitiesForChat(): Promise<BaseResult<FacilityChatContext[]>> {
   // Use cached version
   return getCachedFacilitiesForChat();
 }
