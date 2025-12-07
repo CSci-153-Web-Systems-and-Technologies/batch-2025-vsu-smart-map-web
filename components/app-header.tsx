@@ -3,7 +3,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ThemeSwitcher } from "@/components/theme-switcher";
-import { cn } from "@/lib/utils";
 import { useApp } from "@/lib/context/app-context";
 import { Search } from "lucide-react";
 import type { ReactNode } from "react";

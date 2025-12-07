@@ -1,4 +1,3 @@
-import { COLORS } from "@/lib/design-tokens";
 import type { FacilityCategory } from "@/lib/types/facility";
 
 export interface FacilityCategoryMeta {

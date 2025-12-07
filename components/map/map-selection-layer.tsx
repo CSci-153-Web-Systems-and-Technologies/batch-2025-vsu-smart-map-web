@@ -4,7 +4,6 @@ import { useEffect, useRef } from "react";
 import { useMap, useMapEvents } from "react-leaflet";
 import type { MapItem } from "@/lib/types/map";
 import { MapMarkers } from "./map-markers";
-import { MAP_DEFAULT_ZOOM } from "@/lib/constants/map";
 
 type MapSelectionLayerProps = {
   items: readonly MapItem[];

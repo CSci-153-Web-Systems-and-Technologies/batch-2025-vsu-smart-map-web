@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { DirectoryList } from "./directory-list";
 
 import { CategoryFilters } from "../map/category-filters";
@@ -19,7 +19,6 @@ export function DirectoryContainer({ facilities }: DirectoryContainerProps) {
   const router = useRouter();
   const {
     searchQuery,
-    setSearchQuery,
     selectedCategory,
     setCategory,
     clearFilters,

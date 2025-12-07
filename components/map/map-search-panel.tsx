@@ -17,8 +17,7 @@ export function MapSearchPanel({
   items,
   onResultsChange,
   onMatchCountChange,
-  onSuggestClick,
-}: MapSearchPanelProps & { onSuggestClick?: () => void }) {
+}: MapSearchPanelProps) {
   const {
     debouncedQuery,
     selectedCategory,

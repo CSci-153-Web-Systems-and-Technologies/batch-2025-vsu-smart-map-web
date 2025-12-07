@@ -38,9 +38,6 @@ export const findLocationFlow = flow(
 
     const userQuery = input.query;
     const contextData = input.context || {};
-    const previousQueries = contextData.previousQueries?.length
-      ? contextData.previousQueries.join("\n- ")
-      : "None";
     const summary = contextData.summary || "None";
 
     const conversationHistory = contextData.conversationHistory?.length

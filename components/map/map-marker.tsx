@@ -5,6 +5,7 @@ import { Marker, Tooltip, Popup } from "react-leaflet";
 import { divIcon, type DivIcon, type Marker as LeafletMarker } from "leaflet";
 import { getPinAssetForCategory } from "@/lib/map/pins";
 import type { MapItem } from "@/lib/types/map";
+import type { Facility } from "@/lib/types/facility";
 import { MapPopupCard } from "./map-popup-card";
 import { useApp } from "@/lib/context/app-context";
 
@@ -15,7 +16,7 @@ type MapMarkerProps = {
 };
 
 export function MapMarker({ item, isSelected = false, onSelect }: MapMarkerProps) {
-  const { setActiveTab, selectFacility } = useApp();
+  const { setActiveTab } = useApp();
 
   const icon: DivIcon = useMemo(() => {
     const category = item.category ?? "academic";
@@ -66,7 +67,7 @@ export function MapMarker({ item, isSelected = false, onSelect }: MapMarkerProps
       </Tooltip>
       <Popup offset={[0, -20]} className="map-popup-card">
         <MapPopupCard
-          facility={item as any}
+          facility={item as unknown as Facility}
           onViewDetails={handleViewDetails}
         />
       </Popup>

@@ -2,7 +2,6 @@
 
 import dynamic from "next/dynamic";
 import { Suspense, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { MapContainerClient } from "@/components/map/map-container";
 import { MapSearchPanel } from "@/components/map/map-search-panel";
 import type { Facility } from "@/lib/types/facility";
@@ -125,7 +124,6 @@ function MapTab() {
         </div>
 
         <MapView
-          items={items}
           filtered={filtered}
           isLoading={isLoading}
           error={error}
@@ -135,7 +133,6 @@ function MapTab() {
             selectFacility(facility);
           }}
           onClearSelection={() => selectFacility(null)}
-          onSuggestClick={() => setSuggestOpen(true)}
         />
       </div>
 
@@ -149,28 +146,20 @@ function MapTab() {
 }
 
 function MapView({
-  items,
   filtered,
   isLoading,
   error,
   selectedId,
   onSelect,
   onClearSelection,
-
-  onSuggestClick,
 }: {
-  items: readonly Facility[];
   filtered: readonly Facility[];
   isLoading: boolean;
   error: string | null;
   selectedId: string | null;
   onSelect: (id: string) => void;
   onClearSelection: () => void;
-
-  onSuggestClick: () => void;
 }) {
-  const router = useRouter();
-  const { selectedFacility } = useApp();
   const hasResults = filtered.length > 0;
 
   return (
