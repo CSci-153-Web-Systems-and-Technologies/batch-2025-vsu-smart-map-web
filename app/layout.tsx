@@ -4,6 +4,7 @@ import { ptSans, sourceCodePro } from "@/lib/typography";
 import { SkipLink } from "@/components/skip-link";
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 import { NavigationProgress } from "@/components/navigation-progress";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 const defaultUrl = process.env.VERCEL_URL
@@ -57,6 +58,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <NavigationProgress />
+          <Toaster />
           <ServiceWorkerRegistration />
           <SkipLink />
           {children}

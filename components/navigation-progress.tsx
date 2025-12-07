@@ -7,17 +7,17 @@ export function NavigationProgress() {
     <>
       <AppProgressBar
         height="4px"
-        color="#4CA771"
+        color="hsl(var(--primary))"
         options={{ showSpinner: false }}
         shallowRouting
       />
       <style jsx global>{`
         #nprogress .bar {
           z-index: 9999 !important;
-          background: #4ca771 !important;
+          background: hsl(var(--primary)) !important;
         }
         #nprogress .peg {
-          box-shadow: 0 0 10px #4ca771, 0 0 5px #4ca771 !important;
+          box-shadow: 0 0 10px hsl(var(--primary)), 0 0 5px hsl(var(--primary)) !important;
         }
       `}</style>
     </>
