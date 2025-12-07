@@ -37,23 +37,23 @@ function getConversationHistory(history: unknown): HistoryEntry[] {
 }
 
 async function resolveFacilityMatches(
-  facilities: Array<{ id: string; matchReason: string }> | undefined
+  facilities: Array<{ facilityId: string; name: string }> | undefined
 ): Promise<FacilityMatch[]> {
   if (!facilities?.length) return [];
 
-  const ids = Array.from(new Set(facilities.map((f) => f.id)));
+  const ids = Array.from(new Set(facilities.map((f) => f.facilityId)));
   const { data } = await getFacilitiesByIds({ ids });
 
   if (!data) return [];
 
   return facilities
     .map((facility) => {
-      const fullFacility = data.find((item) => item.id === facility.id);
+      const fullFacility = data.find((item) => item.id === facility.facilityId);
       if (!fullFacility) return null;
 
       return {
         facility: fullFacility,
-        matchReason: facility.matchReason,
+        matchReason: "", // No longer provided by AI, will be empty
         confidence: 1,
       };
     })
@@ -114,7 +114,6 @@ export async function POST(request: Request) {
               type: "final",
               content: response.output.response,
               facilities: matches,
-              followUp: response.output.followUp ?? null,
             });
           } catch (error) {
             const errorMessage =
@@ -147,7 +146,6 @@ export async function POST(request: Request) {
     return NextResponse.json({
       content: result.response,
       facilities: matches,
-      followUp: result.followUp ?? null,
     });
   } catch (error: unknown) {
     console.error("Chat API Error:", error);
