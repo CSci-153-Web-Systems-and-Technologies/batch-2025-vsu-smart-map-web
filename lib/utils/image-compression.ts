@@ -19,17 +19,26 @@ export async function compressImage(file: File): Promise<CompressionResult> {
     initialQuality: compression.quality,
   };
 
-  const compressedBlob = await imageCompression(file, options);
+  try {
+    const compressedBlob = await imageCompression(file, options);
 
-  const webpName = file.name.replace(/\.[^.]+$/, ".webp");
-  const compressedFile = new File([compressedBlob], webpName, {
-    type: "image/webp",
-  });
+    const webpName = file.name.includes(".")
+      ? file.name.replace(/\.[^.]+$/, ".webp")
+      : `${file.name}.webp`;
 
-  return {
-    file: compressedFile,
-    originalSize: file.size,
-    compressedSize: compressedFile.size,
-    format: "webp",
-  };
+    const compressedFile = new File([compressedBlob], webpName, {
+      type: "image/webp",
+    });
+
+    return {
+      file: compressedFile,
+      originalSize: file.size,
+      compressedSize: compressedFile.size,
+      format: "webp",
+    };
+  } catch (error) {
+    throw new Error(
+      `Image compression failed: ${error instanceof Error ? error.message : "Unknown error"}`
+    );
+  }
 }

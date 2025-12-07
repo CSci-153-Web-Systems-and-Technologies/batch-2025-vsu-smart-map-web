@@ -61,7 +61,7 @@ export function FacilitiesPageClient({ facilities }: FacilitiesPageClientProps) 
       return facility;
     }
 
-    const upload = await uploadFacilityHeroClient(facility.id, file, file.name);
+    const upload = await uploadFacilityHeroClient(facility.id, file);
     if (upload.error) {
       throw new Error(upload.error.message);
     }

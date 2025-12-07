@@ -65,7 +65,7 @@ export function SuggestEditModal({ facility, open, onOpenChange }: SuggestEditMo
 
     if (file) {
       const tempId = crypto.randomUUID();
-      const upload = await uploadSuggestionImageClient(tempId, file, file.name);
+      const upload = await uploadSuggestionImageClient(tempId, file);
       if (upload.error) {
         setMessage(upload.error.message);
         return;

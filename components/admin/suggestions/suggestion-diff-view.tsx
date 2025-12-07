@@ -166,7 +166,7 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
 
     if (options?.file) {
       const tempId = crypto.randomUUID();
-      const upload = await uploadFacilityHeroClient(tempId, options.file, options.file.name);
+      const upload = await uploadFacilityHeroClient(tempId, options.file);
       if (upload.error) {
         setError(upload.error.message);
         return;

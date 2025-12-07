@@ -127,8 +127,7 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
         if (selectedImage) {
           const { data: uploadData, error: uploadError } = await uploadBugScreenshotClient(
             reportId,
-            selectedImage,
-            `screenshot.${selectedImage.name.split('.').pop()}`
+            selectedImage
           );
 
           if (uploadError) {
