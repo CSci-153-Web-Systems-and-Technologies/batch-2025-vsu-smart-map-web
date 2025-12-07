@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import Image from "next/image";
+import { ImageZoomDialog } from "@/components/ui/image-zoom-dialog";
 
 interface RoomRow {
   id: string;
@@ -30,6 +32,7 @@ interface RoomRow {
   name: string | null;
   description: string | null;
   floor: number | null;
+  image_url: string | null;
 }
 
 interface SuggestionRoomDiffViewProps {
@@ -39,13 +42,14 @@ interface SuggestionRoomDiffViewProps {
   targetFacility: Facility | null;
 }
 
-type FieldKey = "roomCode" | "name" | "description" | "floor";
+type FieldKey = "roomCode" | "name" | "description" | "floor" | "imageUrl";
 
 const fieldLabels: Record<FieldKey, string> = {
   roomCode: "Room Code",
   name: "Name",
   description: "Description",
   floor: "Floor",
+  imageUrl: "Room Image",
 };
 
 const formatValue = (value: unknown) => {
@@ -62,11 +66,17 @@ const hasDifference = (
   const nextValue = payload[key];
   if (nextValue === undefined) return false;
 
+  // Treat empty string and null as equivalent for comparison if needed, 
+  // but strictly speaking, if we send "", it means we want to set it to "", 
+  // which might be different from "http://..."
+  // So standard string comparison is fine.
+
   const keyMap: Record<FieldKey, keyof RoomRow> = {
     roomCode: "room_code",
     name: "name",
     description: "description",
     floor: "floor",
+    imageUrl: "image_url",
   };
 
   const currentValue = currentRoom[keyMap[key]];
@@ -84,6 +94,7 @@ export function SuggestionRoomDiffView({
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [zoomImage, setZoomImage] = useState<string | null>(null);
 
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
@@ -137,6 +148,7 @@ export function SuggestionRoomDiffView({
       name: currentRoom.name ?? "",
       description: currentRoom.description ?? "",
       floor: currentRoom.floor ?? undefined,
+      imageUrl: currentRoom.image_url ?? undefined,
     }
     : null;
 
@@ -182,7 +194,26 @@ export function SuggestionRoomDiffView({
               {(Object.keys(fieldLabels) as FieldKey[]).map((key) => (
                 <div key={key} className="space-y-1 rounded-md border border-border/60 bg-background px-3 py-2">
                   <p className="text-xs font-medium text-muted-foreground">{fieldLabels[key]}</p>
-                  <p className="text-sm text-foreground">{formatValue(currentValues[key])}</p>
+                  {key === 'imageUrl' ? (
+                    currentValues[key] ? (
+                      <button
+                        type="button"
+                        onClick={() => setZoomImage(String(currentValues[key]))}
+                        className="relative block h-20 w-32 overflow-hidden rounded-md border hover:ring-2 hover:ring-primary/50 transition-all"
+                      >
+                        <Image
+                          src={String(currentValues[key])}
+                          alt="Current image"
+                          fill
+                          className="object-cover"
+                        />
+                      </button>
+                    ) : (
+                      <p className="text-sm text-muted-foreground italic">No image</p>
+                    )
+                  ) : (
+                    <p className="text-sm text-foreground">{formatValue(currentValues[key])}</p>
+                  )}
                 </div>
               ))}
             </div>
@@ -225,11 +256,46 @@ export function SuggestionRoomDiffView({
                   )}
                 >
                   <p className="text-xs font-medium text-muted-foreground">{fieldLabels[key]}</p>
-                  <p className="text-sm text-foreground">{formatValue(value)}</p>
+
+                  {key === 'imageUrl' ? (
+                    value ? (
+                      <button
+                        type="button"
+                        onClick={() => setZoomImage(String(value))}
+                        className="relative block h-20 w-32 overflow-hidden rounded-md border hover:ring-2 hover:ring-primary/50 transition-all"
+                      >
+                        <Image
+                          src={String(value)}
+                          alt="Proposed image"
+                          fill
+                          className="object-cover"
+                        />
+                      </button>
+                    ) : (
+                      <span className="text-sm italic text-muted-foreground">No image</span>
+                    )
+                  ) : (
+                    <p className="text-sm text-foreground">{formatValue(value)}</p>
+                  )}
+
                   {changed && currentValues && (
-                    <p className="text-xs text-primary">
-                      Updated from {formatValue(currentValues[key])}
-                    </p>
+                    <div className="mt-2 text-xs">
+                      <span className="text-primary font-medium">Original: </span>
+                      {key === 'imageUrl' ? (
+                        currentValues[key] ? (
+                          <div className="mt-1 relative h-16 w-24 overflow-hidden rounded-md border opacity-75">
+                            <Image
+                              src={String(currentValues[key])}
+                              alt="Original image"
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                        ) : <span className="text-muted-foreground">No image</span>
+                      ) : (
+                        <span className="text-primary">{formatValue(currentValues[key])}</span>
+                      )}
+                    </div>
                   )}
                 </div>
               );
@@ -362,6 +428,14 @@ export function SuggestionRoomDiffView({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {zoomImage && (
+        <ImageZoomDialog
+          open={!!zoomImage}
+          onOpenChange={(open) => !open && setZoomImage(null)}
+          src={zoomImage}
+          alt="Room image"
+        />
+      )}
     </div>
   );
 }
