@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { FacilityDialog } from "@/components/admin/facility-dialog";
 import type { UnifiedFacilityFormValues } from "@/lib/validation/facility";
 import { createSuggestionAction } from "@/app/actions/suggestions";
-import { uploadFacilityHeroClient } from "@/lib/supabase/storage-client";
+import { uploadSuggestionImageClient } from "@/lib/supabase/storage-client";
 
 interface SuggestAddModalProps {
   open: boolean;
@@ -33,7 +33,7 @@ export function SuggestAddModal({ open, onOpenChange, onSuccess }: SuggestAddMod
 
     if (file) {
       const tempId = crypto.randomUUID();
-      const upload = await uploadFacilityHeroClient(tempId, file, file.name);
+      const upload = await uploadSuggestionImageClient(tempId, file, file.name);
       if (upload.error) {
         setMessage(upload.error.message);
         return;
