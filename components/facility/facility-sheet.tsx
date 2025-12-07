@@ -68,7 +68,7 @@ export function FacilitySheet() {
                   {selectedFacility.hasRooms && (
                     <>
                       <div className="h-px bg-border" />
-                      <RoomList facilityId={selectedFacility.id} facilityName={selectedFacility.name} />
+                      <RoomList facilityId={selectedFacility.id} facilityName={selectedFacility.name} facilityCode={selectedFacility.code} />
                     </>
                   )}
                 </div>
