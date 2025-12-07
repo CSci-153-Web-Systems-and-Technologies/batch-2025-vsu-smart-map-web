@@ -2,7 +2,7 @@ import { flow } from "@genkit-ai/core";
 import { runWithKeyRotation, streamWithKeyRotation } from "../genkit";
 import { LocationQuerySchema, LocationResponseSchema, LocationQuery } from "../schemas/location";
 import { CAMPUS_ASSISTANT_PROMPT } from "../prompts/campus-assistant";
-import { getFacilitiesForChat } from "@/lib/supabase/queries/facilities";
+import { getFacilitiesForChatCached } from "@/lib/supabase/queries/facilities.server";
 
 export const findLocationFlow = flow(
   {
@@ -12,7 +12,7 @@ export const findLocationFlow = flow(
   },
   async (input: LocationQuery) => {
     // Data is now cached by Next.js in the data layer
-    const { data: facilitiesContext } = await getFacilitiesForChat();
+    const { data: facilitiesContext } = await getFacilitiesForChatCached();
 
     // If we fail to fetch context, we should probably still try to answer or error out.
     // For now, we'll proceed with an empty list if data is missing, 
@@ -69,7 +69,7 @@ Answer the user's query based on the available facilities. Consider the conversa
 );
 
 export async function streamFindLocation(input: LocationQuery) {
-  const { data: facilitiesContext } = await getFacilitiesForChat();
+  const { data: facilitiesContext } = await getFacilitiesForChatCached();
   // Optimize Context: Truncate descriptions
   const validContext = (facilitiesContext || []).map(f => ({
     ...f,

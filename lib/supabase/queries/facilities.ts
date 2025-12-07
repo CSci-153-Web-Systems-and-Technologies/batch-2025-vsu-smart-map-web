@@ -10,7 +10,6 @@ import type {
 } from "@/lib/types/facility";
 import { FACILITY_CATEGORIES } from "@/lib/types/facility";
 import { getSupabaseBrowserClient } from "../browser-client";
-import { unstable_cache, revalidateTag } from "next/cache";
 
 type BaseResult<T> = { data: T | null; error: PostgrestError | null };
 type MaybeClient = SupabaseClient | Promise<SupabaseClient>;
@@ -18,7 +17,7 @@ type MaybeClient = SupabaseClient | Promise<SupabaseClient>;
 const selectBase = () =>
   "id, code, name, slug, description, category, has_rooms, latitude, longitude, image_url, created_at, updated_at";
 
-const normalizeError = (error: PostgrestError | null) =>
+export const normalizeError = (error: PostgrestError | null) =>
   error ? { ...error, message: "Unable to complete facility request" } : null;
 
 const resolveClient = async (client?: MaybeClient) =>
@@ -74,28 +73,21 @@ function mapUpdatePayload(input: FacilityUpdate) {
   return patch;
 }
 
-type FacilityChatContext = Pick<Facility, "id" | "name" | "category" | "description" | "code">;
+export type FacilityChatContext = Pick<Facility, "id" | "name" | "category" | "description" | "code">;
 
-const getCachedFacilitiesForChat = unstable_cache(
-  async () => {
-    const client = getSupabaseBrowserClient();
-    const { data, error } = await client
-      .from("facilities")
-      .select("id, name, code, category, description")
-      .order("name", { ascending: true });
+export async function getFacilitiesForChat(
+  client?: MaybeClient
+): Promise<BaseResult<FacilityChatContext[]>> {
+  const resolved = await resolveClient(client);
+  const { data, error } = await resolved
+    .from("facilities")
+    .select("id, name, code, category, description")
+    .order("name", { ascending: true });
 
-    return { data: data as FacilityChatContext[] | null, error: normalizeError(error) };
-  },
-  ['facilities-chat-context'],
-  {
-    tags: ['facilities'],
-    revalidate: 3600 // Cache for 1 hour, or until revalidated
-  }
-);
-
-export async function getFacilitiesForChat(): Promise<BaseResult<FacilityChatContext[]>> {
-  // Use cached version
-  return getCachedFacilitiesForChat();
+  return {
+    data: data as FacilityChatContext[] | null,
+    error: normalizeError(error),
+  };
 }
 
 export async function getFacilities(params?: {
@@ -193,10 +185,6 @@ export async function createFacility(
     .select(selectBase())
     .maybeSingle();
 
-  if (!error) {
-    revalidateTag('facilities');
-  }
-
   const row = data as FacilityRow | null;
   return { data: row ? toFacility(row) : null, error: normalizeError(error) };
 }
@@ -216,10 +204,6 @@ export async function updateFacility(
     .select(selectBase())
     .maybeSingle();
 
-  if (!error) {
-    revalidateTag('facilities');
-  }
-
   const row = data as FacilityRow | null;
   return { data: row ? toFacility(row) : null, error: normalizeError(error) };
 }
@@ -235,10 +219,6 @@ export async function deleteFacility(
     .eq("id", id)
     .select(selectBase())
     .maybeSingle();
-
-  if (!error) {
-    revalidateTag('facilities');
-  }
 
   const row = data as FacilityRow | null;
   return { data: row ? toFacility(row) : null, error: normalizeError(error) };

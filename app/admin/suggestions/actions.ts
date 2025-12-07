@@ -11,6 +11,7 @@ import { getSupabaseAdminClient } from "@/lib/supabase/server-client";
 import type { FacilityCategory, FacilityInsert, FacilityUpdate } from "@/lib/types/facility";
 import { deleteImage } from "@/lib/supabase/storage";
 import { getFacilityById } from "@/lib/supabase/queries/facilities";
+import { revalidateFacilitiesCache } from "@/lib/supabase/queries/facilities.server";
 
 const GENERIC_ERROR = "Unable to process suggestion. Please try again.";
 
@@ -77,6 +78,7 @@ export async function approveSuggestion(id: string, overridePayload?: unknown) {
       }
 
       await updateSuggestion(id, { status: "APPROVED", targetId: data.id, payload: parsed.data }, client);
+      await revalidateFacilitiesCache();
       break;
     }
 
@@ -98,6 +100,7 @@ export async function approveSuggestion(id: string, overridePayload?: unknown) {
       }
 
       await updateSuggestion(id, { status: "APPROVED", payload: parsed.data }, client);
+      await revalidateFacilitiesCache();
       break;
     }
 
