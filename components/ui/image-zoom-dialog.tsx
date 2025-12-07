@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { X, ZoomIn, ZoomOut, RotateCw } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -42,6 +42,7 @@ export function ImageZoomDialog({
         className="max-w-[95vw] max-h-[95vh] p-0 overflow-hidden"
         aria-describedby="image-zoom-description"
       >
+        <DialogTitle className="sr-only">{alt}</DialogTitle>
         <div id="image-zoom-description" className="sr-only">
           Zoomed view of {alt}. Use controls to zoom in, zoom out, or rotate the image.
         </div>
