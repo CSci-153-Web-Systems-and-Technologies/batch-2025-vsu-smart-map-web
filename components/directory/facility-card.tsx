@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { MapPinned, Pencil } from "lucide-react";
+import { MapPinned } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,6 @@ export interface FacilityCardProps {
   facility: Facility;
   onClick?: (facility: Facility) => void;
   onViewOnMap?: (facility: Facility) => void;
-  onSuggestEdit?: (facility: Facility) => void;
   className?: string;
 }
 
@@ -21,12 +20,11 @@ export function FacilityCard({
   facility,
   onClick,
   onViewOnMap,
-  onSuggestEdit,
   className,
 }: FacilityCardProps) {
   const meta = getCategoryMeta(facility.category);
   const hasCoordinates = facility.coordinates?.lat && facility.coordinates?.lng;
-  
+
   const handleClick = () => {
     onClick?.(facility);
   };
@@ -43,16 +41,14 @@ export function FacilityCard({
     onViewOnMap?.(facility);
   };
 
-  const handleSuggestEdit = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onSuggestEdit?.(facility);
-  };
+
 
   return (
     <Card
       className={cn(
         "group cursor-pointer overflow-hidden transition-all duration-200",
         "hover:shadow-lg hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-primary",
+        "flex flex-row items-stretch",
         className
       )}
       onClick={handleClick}
@@ -61,40 +57,31 @@ export function FacilityCard({
       role="button"
       aria-label={`View details for ${facility.name}`}
     >
-      <div className="relative aspect-[16/10] w-full overflow-hidden bg-muted">
-        {facility.hasRooms && facility.imageUrl ? (
+      {/* Image Section - Only show if image exists */}
+      {facility.imageUrl && (
+        <div className="relative overflow-hidden bg-muted w-32 sm:w-48 shrink-0">
           <Image
             src={facility.imageUrl}
             alt={facility.name}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            sizes="200px"
           />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center">
-            <Image
-              src={meta.pinAsset}
-              alt={meta.label}
-              width={48}
-              height={48}
-              className="opacity-60 transition-opacity group-hover:opacity-80"
-            />
-          </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      <CardContent className="p-4">
+      <CardContent className="p-4 flex flex-col justify-center flex-1">
         <h3 className="mb-2 line-clamp-2 text-base font-semibold leading-tight text-foreground">
           {facility.name}
         </h3>
-        
+
         <div className="flex items-center justify-between gap-2">
           <Badge
             className="text-xs"
-            style={{ 
+            style={{
               backgroundColor: meta.color,
               color: "#ffffff",
-              borderColor: meta.color 
+              borderColor: meta.color
             }}
           >
             {meta.label}
@@ -115,18 +102,7 @@ export function FacilityCard({
           )}
         </div>
 
-        {onSuggestEdit && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="mt-3 h-8 gap-2 text-xs text-muted-foreground hover:text-foreground"
-            onClick={handleSuggestEdit}
-          >
-            <Pencil className="h-3.5 w-3.5" />
-            Suggest Edit
-          </Button>
-        )}
+
       </CardContent>
     </Card>
   );
