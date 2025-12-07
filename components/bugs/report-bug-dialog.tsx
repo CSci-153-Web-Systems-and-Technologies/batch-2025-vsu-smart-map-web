@@ -21,6 +21,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const bugReportSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters"),
@@ -46,6 +53,8 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
     register,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<BugReportFormValues>({
     resolver: zodResolver(bugReportSchema),
@@ -55,6 +64,8 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
       severity: "LOW",
     },
   });
+
+  const severityValue = watch("severity");
 
   // Reset form when dialog opens/closes
   useEffect(() => {
@@ -75,6 +86,12 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
         toast.error("Image must be less than 5MB");
         return;
       }
+
+      // Revoke previous URL if it exists
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+      }
+
       setSelectedImage(file);
       const url = URL.createObjectURL(file);
       setImagePreview(url);
@@ -92,61 +109,68 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
     }
   };
 
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen && isPending) {
+      toast.info("Please wait for the submission to complete");
+      return;
+    }
+    onOpenChange(newOpen);
+  };
+
   const onSubmit = (values: BugReportFormValues) => {
     startTransition(async () => {
       try {
-        // 1. Create the bug report first to get the ID
-        const { data: reportData, error: reportError } = await supabase
-          .from("bug_reports")
-          .insert({
-            title: values.title,
-            description: values.description,
-            severity: values.severity,
-            device_info: {
-              userAgent: navigator.userAgent,
-              pathname: window.location.pathname,
-            },
-            status: "OPEN",
-          })
-          .select()
-          .single();
-
-        if (reportError) {
-          console.error("Supabase Report Insert Error:", {
-            message: reportError.message,
-            details: reportError.details,
-            hint: reportError.hint,
-            code: reportError.code
-          });
-          throw reportError;
-        }
-
+        const reportId = crypto.randomUUID();
         let screenshotUrl = null;
 
-        // 2. Upload image if selected
-        if (selectedImage && reportData) {
+        // 1. Upload image if selected (FIRST, to avoid RLS issues with public users updating)
+        if (selectedImage) {
           const { data: uploadData, error: uploadError } = await uploadBugScreenshotClient(
-            reportData.id,
+            reportId,
             selectedImage,
             `screenshot.${selectedImage.name.split('.').pop()}`
           );
 
           if (uploadError) {
             console.error("Failed to upload screenshot", uploadError);
-            toast.error("Bug reported, but screenshot upload failed.");
+            toast.warning("Bug report submitting, but screenshot upload failed.");
           } else if (uploadData?.publicUrl) {
             screenshotUrl = uploadData.publicUrl;
-
-            // 3. Update report with screenshot URL
-            const { error: updateError } = await supabase
-              .from("bug_reports")
-              .update({ screenshot_url: screenshotUrl })
-              .eq("id", reportData.id);
-
-            if (updateError) {
-              console.error("Failed to update report with screenshot", updateError);
-            }
           }
+        }
+
+        // 2. Create the bug report with the screenshot URL already included
+        const { error: reportError } = await supabase
+          .from("bug_reports")
+          .insert({
+            id: reportId,
+            title: values.title,
+            description: values.description,
+            severity: values.severity,
+            screenshot_url: screenshotUrl,
+            device_info: {
+              userAgent: navigator.userAgent,
+              pathname: window.location.pathname,
+              viewport: `${window.innerWidth}x${window.innerHeight}`,
+              screen: `${window.screen.width}x${window.screen.height}`,
+              language: navigator.language,
+              timestamp: new Date().toISOString(),
+            },
+            status: "OPEN",
+          });
+
+        if (reportError) {
+          if (process.env.NODE_ENV === 'development') {
+            console.error("Supabase Report Insert Error:", {
+              message: reportError.message,
+              details: reportError.details,
+              hint: reportError.hint,
+              code: reportError.code
+            });
+          } else {
+            console.error("Failed to create bug report:", reportError.message);
+          }
+          throw reportError;
         }
 
         toast.success("Bug report submitted successfully! Thank you for your feedback.");
@@ -159,7 +183,7 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -190,27 +214,20 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
             <label htmlFor="severity" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
               Severity
             </label>
-            <div className="relative">
-              <select
-                id="severity"
-                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 appearance-none"
-                {...register("severity")}
-              >
-                <option value="LOW">Low - Minor cosmetic issue</option>
-                <option value="MEDIUM">Medium - Feature not working as expected</option>
-                <option value="HIGH">High - Feature broken / Cannot use app</option>
-                <option value="CRITICAL">Critical - Data loss / Security issue</option>
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
-                <svg
-                  className="h-4 w-4 fill-current"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                >
-                  <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                </svg>
-              </div>
-            </div>
+            <Select
+              value={severityValue}
+              onValueChange={(value) => setValue("severity", value as "LOW" | "MEDIUM" | "HIGH" | "CRITICAL")}
+            >
+              <SelectTrigger id="severity">
+                <SelectValue placeholder="Select severity" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="LOW">Low - Minor cosmetic issue</SelectItem>
+                <SelectItem value="MEDIUM">Medium - Feature not working as expected</SelectItem>
+                <SelectItem value="HIGH">High - Feature broken / Cannot use app</SelectItem>
+                <SelectItem value="CRITICAL">Critical - Data loss / Security issue</SelectItem>
+              </SelectContent>
+            </Select>
             {errors.severity && (
               <p className="text-sm font-medium text-destructive">{errors.severity.message}</p>
             )}
@@ -240,6 +257,15 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
               <div
                 className="border-2 border-dashed rounded-md p-4 flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors"
                 onClick={() => fileInputRef.current?.click()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    fileInputRef.current?.click();
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                aria-label="Upload screenshot"
               >
                 <Upload className="h-8 w-8 text-muted-foreground mb-2" />
                 <p className="text-sm text-muted-foreground text-center">
@@ -281,7 +307,7 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
               Cancel
             </Button>
             <Button type="submit" disabled={isPending}>
