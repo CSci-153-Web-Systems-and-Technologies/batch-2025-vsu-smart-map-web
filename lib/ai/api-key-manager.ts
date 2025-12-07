@@ -1,6 +1,5 @@
 export class ApiKeyManager {
   private keys: string[];
-  private currentIndex: number = 0;
   private failedKeys: Map<string, number> = new Map();
   private readonly COOLDOWN_MS = 5 * 60 * 1000;
 
@@ -16,22 +15,20 @@ export class ApiKeyManager {
       throw new Error('No API keys configured');
     }
 
-    for (let i = 0; i < this.keys.length; i++) {
-      const index = (this.currentIndex + i) % this.keys.length;
-      const key = this.keys[index];
+    // Filter for ready keys first
+    const readyKeys = this.keys.filter((key) => this.isKeyReady(key));
 
-      if (this.isKeyReady(key)) {
-        this.currentIndex = index;
-        return key;
-      }
+    if (readyKeys.length === 0) {
+      throw new Error('All API keys are currently rate limited. Please try again later.');
     }
 
-    throw new Error('All API keys are currently rate limited. Please try again later.');
+    // Select a random key from the ready keys
+    const randomIndex = Math.floor(Math.random() * readyKeys.length);
+    return readyKeys[randomIndex];
   }
 
   markKeyFailed(key: string) {
     this.failedKeys.set(key, Date.now());
-    this.currentIndex = (this.currentIndex + 1) % this.keys.length;
   }
 
   private isKeyReady(key: string): boolean {
