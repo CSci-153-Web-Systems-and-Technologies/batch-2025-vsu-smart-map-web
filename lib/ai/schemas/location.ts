@@ -5,6 +5,15 @@ export const LocationQuerySchema = z.object({
   context: z
     .object({
       previousQueries: z.array(z.string()).optional(),
+      conversationHistory: z
+        .array(
+          z.object({
+            role: z.enum(["user", "assistant"]),
+            content: z.string(),
+          })
+        )
+        .optional()
+        .describe("Recent conversation history with both user and assistant messages"),
       summary: z.string().optional().describe("Summary of previous conversation history"),
       userLocation: z
         .object({
