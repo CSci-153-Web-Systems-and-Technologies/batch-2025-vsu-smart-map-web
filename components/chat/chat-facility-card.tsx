@@ -16,8 +16,7 @@ export function ChatFacilityCard({ match }: ChatFacilityCardProps) {
   const { selectFacility, setActiveTab } = useApp();
 
   const handleDirections = () => {
-    selectFacility(facility);
-    setActiveTab("map");
+    setActiveTab("map", { selectFacilityAfter: facility });
   };
 
   const handleMoreInfo = () => {

@@ -28,7 +28,10 @@ interface AppContextValue extends AppState {
   resolvePendingFacility: (facility: Facility) => void;
   setSearchQuery: (query: string) => void;
   setCategory: (category: FacilityCategory | null) => void;
-  setActiveTab: (tab: AppState["activeTab"], options?: { clearSelection?: boolean }) => void;
+  setActiveTab: (
+    tab: AppState["activeTab"],
+    options?: { clearSelection?: boolean; selectFacilityAfter?: Facility }
+  ) => void;
   clearFilters: () => void;
 }
 
@@ -79,10 +82,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const currentFacilityId = selectedFacility?.id ?? pendingFacilityId ?? null;
 
   const navigationTargetRef = useRef<string | null>(null);
+  const pendingFacilityRef = useRef<Facility | null>(null);
 
   useEffect(() => {
     if (navigationTargetRef.current && pathname === navigationTargetRef.current) {
       navigationTargetRef.current = null;
+
+      // Select pending facility if it exists
+      if (pendingFacilityRef.current) {
+        const facilityToSelect = pendingFacilityRef.current;
+        pendingFacilityRef.current = null;
+        // Use setTimeout to ensure pathname update has been processed
+        setTimeout(() => {
+          setSelectedFacility(facilityToSelect);
+          setPendingFacilityId(facilityToSelect.id);
+        }, 0);
+      }
+
       // Delay resetting isNavigating to allow searchParams to settle
       const timeout = setTimeout(() => {
         isNavigating.current = false;
@@ -187,7 +203,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSelectedCategory(null);
   }, []);
 
-  const setActiveTab = useCallback((tab: AppState["activeTab"], options?: { clearSelection?: boolean }) => {
+  const setActiveTab = useCallback((
+    tab: AppState["activeTab"],
+    options?: { clearSelection?: boolean; selectFacilityAfter?: Facility }
+  ) => {
     if (options?.clearSelection) {
       setSelectedFacility(null);
       setPendingFacilityId(null);
@@ -203,8 +222,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (selectedCategory) {
       params.set("category", selectedCategory);
     }
+
+    // Only include facility ID if not selecting after navigation
     const facilityId = selectedFacility?.id ?? pendingFacilityId;
-    if (facilityId && !options?.clearSelection) {
+    if (facilityId && !options?.clearSelection && !options?.selectFacilityAfter) {
       params.set("facility", facilityId);
     }
 
@@ -213,6 +234,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     isNavigating.current = true;
     navigationTargetRef.current = targetRoute;
+
+    // Store facility to select after navigation
+    if (options?.selectFacilityAfter) {
+      pendingFacilityRef.current = options.selectFacilityAfter;
+    }
 
     setActiveTabState(tab);
     router.push(fullUrl, { scroll: false });
