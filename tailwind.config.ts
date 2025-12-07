@@ -31,43 +31,43 @@ const config = {
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/**/*.{js,ts,jsx,tsx,mdx}",
   ],
-  
+
   theme: {
     extend: {
       colors: {
-        background: VSU_COLORS.background.DEFAULT,
-        foreground: VSU_COLORS.neutral[900],
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
         card: {
-          DEFAULT: VSU_COLORS.background.card,
-          foreground: VSU_COLORS.neutral[900],
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
         },
         popover: {
-          DEFAULT: VSU_COLORS.background.card,
-          foreground: VSU_COLORS.neutral[700],
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
         },
         primary: {
-          DEFAULT: VSU_COLORS.primary.DEFAULT,
-          foreground: "#FFFFFF",
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
         },
         secondary: {
-          DEFAULT: VSU_COLORS.background.panel,
-          foreground: VSU_COLORS.neutral[900],
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
         },
         muted: {
-          DEFAULT: VSU_COLORS.neutral[100],
-          foreground: VSU_COLORS.neutral[500],
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
         },
         accent: {
-          DEFAULT: VSU_COLORS.accent.DEFAULT,
-          foreground: "#0F1C11",
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
         },
         destructive: {
-          DEFAULT: VSU_COLORS.status.danger,
-          foreground: "#FFFFFF",
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
         },
-        border: VSU_COLORS.neutral[100],
-        input: VSU_COLORS.neutral[100],
-        ring: VSU_COLORS.primary.DEFAULT,
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
         vsu: VSU_COLORS,
       },
       fontFamily: {
