@@ -29,5 +29,5 @@ export async function getFacilitiesForChatCached(): Promise<BaseResult<FacilityC
 }
 
 export async function revalidateFacilitiesCache() {
-  return revalidateTag("facilities");
+  return revalidateTag("facilities", "max");
 }
