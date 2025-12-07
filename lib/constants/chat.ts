@@ -6,4 +6,22 @@ export const CHAT_HISTORY = {
   MAX_TOKENS_ESTIMATE: 2000,
 } as const;
 
+export const SUGGESTED_QUESTIONS = [
+  "Where is the Registrar's Office?",
+  "How do I get to CET?",
+  "Where is the Administration Building?",
+  "Find the nearest Food Stall",
+  "Where can I find a comfort room?",
+  "Where is the Main Library?",
+  "How do I get to the Computer Science Department?",
+  "Where is the University Hospital?",
+  "Where is the USSO?",
+  "Find the Upper Oval",
+  "Where is CET?",
+  "How do I get to the Ecopark?",
+  "Where is the Guard House?",
+  "Where is the Guest House?",
+  "Find the nearest print shop",
+] as const;
+
 export type ChatHistoryConfig = typeof CHAT_HISTORY;
