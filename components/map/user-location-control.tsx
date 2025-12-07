@@ -91,7 +91,7 @@ export function UserLocationControl({ className }: UserLocationControlProps) {
         isTracking={isTracking}
         hasHeading={heading !== null}
         onLocate={handleLocate}
-        className={className || "left-3 bottom-40 md:left-4 md:bottom-24"}
+        className={className || "left-[12px] bottom-40 md:bottom-[80px]"}
       />
 
       <ConfirmDialog
