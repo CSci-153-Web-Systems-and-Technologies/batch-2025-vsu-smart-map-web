@@ -55,6 +55,9 @@ const formatValue = (key: FieldKey, value: unknown) => {
       ? `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`
       : "—";
   }
+  if (key === "imageUrl") {
+    return value ? "(image uploaded)" : "—";
+  }
   return String(value);
 };
 
@@ -308,6 +311,13 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
         </Button>
         <Button onClick={handleRejectClick} disabled={disabled} variant="outline">
           Reject
+        </Button>
+        <Button
+          variant="ghost"
+          onClick={() => router.push("/admin/suggestions")}
+          disabled={pending}
+        >
+          Back to Suggestions
         </Button>
       </div>
 
