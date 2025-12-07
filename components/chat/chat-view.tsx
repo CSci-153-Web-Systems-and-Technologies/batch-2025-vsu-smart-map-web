@@ -9,6 +9,7 @@ import { ChatMessage } from "./chat-message";
 import { ChatFacilityCards } from "./chat-facility-cards";
 import { ChatInput } from "./chat-input";
 import { TypingIndicator } from "./typing-indicator";
+import { useChatLimit } from "@/hooks/use-chat-limit";
 
 export function ChatView() {
   const { messages, isLoading, sendMessage, clearMessages, retryLastMessage } =
@@ -21,13 +22,22 @@ export function ChatView() {
 
   const hasMessages = messages.length > 0;
 
+  const { remaining, limit, isLimitReached, increment } = useChatLimit();
+
+  const handleSendMessage = async (message: string) => {
+    if (isLimitReached) return;
+
+    increment();
+    await sendMessage(message);
+  };
+
   return (
     <div className="flex h-full flex-col">
       <ChatHeader onClear={clearMessages} hasMessages={hasMessages} />
 
       <ScrollArea className="min-h-0 flex-1 overflow-hidden">
         {!hasMessages ? (
-          <ChatWelcome onSuggestionSelect={sendMessage} disabled={isLoading} />
+          <ChatWelcome onSuggestionSelect={handleSendMessage} disabled={isLoading} />
         ) : (
           <div
             className="space-y-4 p-4"
@@ -50,7 +60,7 @@ export function ChatView() {
                         : undefined
                     }
                     onFollowUp={
-                      message.followUp ? () => sendMessage(message.followUp!) : undefined
+                      message.followUp ? () => handleSendMessage(message.followUp!) : undefined
                     }
                   />
                   {message.facilities && (
@@ -68,7 +78,12 @@ export function ChatView() {
         )}
       </ScrollArea>
 
-      <ChatInput onSubmit={sendMessage} disabled={isLoading} />
+      <ChatInput
+        onSubmit={handleSendMessage}
+        disabled={isLoading}
+        remaining={remaining}
+        limit={limit}
+      />
     </div>
   );
 }
