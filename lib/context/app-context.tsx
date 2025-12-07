@@ -48,6 +48,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   const lastSyncedFacilityId = useRef<string | null>(null);
+  const lastSyncedCategory = useRef<FacilityCategory | null>(null);
+  const lastSyncedSearch = useRef<string>("");
   const isUserClosing = useRef(false);
   const isNavigating = useRef(false);
 
@@ -65,7 +67,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     lastSyncedFacilityId.current = initialFacilityId;
-  }, [initialFacilityId]);
+    lastSyncedCategory.current = initialCategory;
+    lastSyncedSearch.current = initialSearch;
+  }, [initialFacilityId, initialCategory, initialSearch]);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery), DEBOUNCE_MS);
@@ -79,7 +83,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (navigationTargetRef.current && pathname === navigationTargetRef.current) {
       navigationTargetRef.current = null;
-      isNavigating.current = false;
+      // Delay resetting isNavigating to allow searchParams to settle
+      const timeout = setTimeout(() => {
+        isNavigating.current = false;
+      }, 100);
+      return () => clearTimeout(timeout);
     }
   }, [pathname]);
 
@@ -111,25 +119,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const nextQueryString = params.toString();
     if (nextQueryString === searchParams.toString()) {
       lastSyncedFacilityId.current = currentFacilityId;
+      lastSyncedCategory.current = selectedCategory;
+      lastSyncedSearch.current = debouncedQuery.trim();
       return;
     }
 
     lastSyncedFacilityId.current = currentFacilityId;
+    lastSyncedCategory.current = selectedCategory;
+    lastSyncedSearch.current = debouncedQuery.trim();
     const newUrl = nextQueryString ? `${pathname}?${nextQueryString}` : pathname;
     router.replace(newUrl, { scroll: false });
   }, [debouncedQuery, selectedCategory, currentFacilityId, pathname, router, searchParams]);
 
   useEffect(() => {
+    if (isNavigating.current) return;
+
     const urlSearch = searchParams.get("q") ?? "";
     const urlCategoryParam = searchParams.get("category");
     const urlCategory = isValidCategory(urlCategoryParam) ? urlCategoryParam : null;
     const urlFacilityId = searchParams.get("facility");
 
-    if (urlSearch !== searchQuery && urlSearch !== debouncedQuery) {
+    // Only update if URL is different from what we last synced (to avoid loops)
+    if (urlSearch !== lastSyncedSearch.current && urlSearch !== searchQuery && urlSearch !== debouncedQuery) {
       setSearchQuery(urlSearch);
+      lastSyncedSearch.current = urlSearch;
     }
-    if (urlCategory !== selectedCategory) {
+    if (urlCategory !== lastSyncedCategory.current && urlCategory !== selectedCategory) {
       setSelectedCategory(urlCategory);
+      lastSyncedCategory.current = urlCategory;
     }
 
     if (isUserClosing.current) return;
