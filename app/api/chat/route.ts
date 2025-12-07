@@ -23,6 +23,19 @@ function getPreviousQueries(history: unknown): string[] {
     .slice(-CHAT_HISTORY.MAX_CONTEXT_MESSAGES);
 }
 
+function getConversationHistory(history: unknown): HistoryEntry[] {
+  if (!Array.isArray(history)) return [];
+
+  return history
+    .filter(
+      (entry): entry is HistoryEntry =>
+        (entry?.role === "user" || entry?.role === "assistant") &&
+        typeof entry.content === "string" &&
+        entry.content.trim().length > 0
+    )
+    .slice(-CHAT_HISTORY.MAX_CONTEXT_MESSAGES);
+}
+
 async function resolveFacilityMatches(
   facilities: Array<{ id: string; matchReason: string }> | undefined
 ): Promise<FacilityMatch[]> {
@@ -62,7 +75,8 @@ export async function POST(request: Request) {
     }
 
     const previousQueries = getPreviousQueries(history);
-    const context = { previousQueries };
+    const conversationHistory = getConversationHistory(history);
+    const context = { previousQueries, conversationHistory };
 
     if (streaming) {
       const stream = await streamFindLocation({
