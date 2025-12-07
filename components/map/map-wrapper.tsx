@@ -18,9 +18,10 @@ export function MapWrapper({ children, className }: MapWrapperProps) {
     setMounted(true);
   }, []);
 
-  const tileUrl = mounted && resolvedTheme === "dark" && MAP_TILES.darkUrl
-    ? MAP_TILES.darkUrl
-    : MAP_TILES.url;
+  const tileUrl =
+    mounted && resolvedTheme === "dark" && MAP_TILES.darkUrl
+      ? MAP_TILES.darkUrl
+      : MAP_TILES.url;
 
   return (
     <div className="map-wrapper h-full w-full relative">
