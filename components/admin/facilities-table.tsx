@@ -89,7 +89,7 @@ export function FacilitiesTable({
 
   return (
     <Card className="border shadow-sm">
-      <CardHeader className="flex flex-col gap-3 space-y-0 bg-white/80 md:flex-row md:items-center md:justify-between">
+      <CardHeader className="flex flex-col gap-3 space-y-0 bg-muted/20 md:flex-row md:items-center md:justify-between">
         <CardTitle className="text-lg">All facilities</CardTitle>
         <div className="flex flex-wrap items-center gap-3">
           <Button onClick={onAdd} disabled={!onAdd || disabled} className="whitespace-nowrap">
