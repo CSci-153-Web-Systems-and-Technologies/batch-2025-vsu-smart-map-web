@@ -3,6 +3,7 @@
 import { Component, ErrorInfo, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { AlertCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Props {
   children?: ReactNode;
@@ -35,7 +36,7 @@ export class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div className={`flex min-h-[400px] flex-col items-center justify-center gap-4 text-center p-6 ${this.props.wrapperClassName || ''}`}>
+        <div className={cn("flex min-h-[400px] flex-col items-center justify-center gap-4 text-center p-6", this.props.wrapperClassName, this.props.className)}>
           <div className="rounded-full bg-destructive/10 p-4">
             <AlertCircle className="h-8 w-8 text-destructive" />
           </div>

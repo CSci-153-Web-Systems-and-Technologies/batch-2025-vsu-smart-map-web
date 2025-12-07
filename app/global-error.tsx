@@ -10,7 +10,7 @@ export default function GlobalError({
   reset: () => void
 }) {
   return (
-    <html>
+    <html lang="en" suppressHydrationWarning>
       <body className="flex h-screen flex-col items-center justify-center gap-4 text-center">
         <h2 className="text-2xl font-bold">Something went wrong!</h2>
         <Button onClick={() => reset()}>Try again</Button>
