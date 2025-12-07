@@ -46,6 +46,16 @@ const SEVERITY_COLORS = {
   CRITICAL: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-500",
 };
 
+const StatusBadge = ({ status }: { status: BugStatus }) => {
+  const Icon = STATUS_ICONS[status];
+  return (
+    <div className="flex items-center gap-1.5">
+      <Icon className="w-4 h-4" />
+      <span className="capitalize">{status.toLowerCase().replace('_', ' ')}</span>
+    </div>
+  );
+};
+
 export function BugReportsTable() {
   const [reports, setReports] = useState<BugReport[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,6 +65,7 @@ export function BugReportsTable() {
   const fetchReports = useCallback(async () => {
     try {
       setLoading(true);
+      const supabase = createClient();
       const { data, error } = await supabase
         .from("bug_reports")
         .select("*")
@@ -68,7 +79,7 @@ export function BugReportsTable() {
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, []);
 
   useEffect(() => {
     fetchReports();
@@ -101,15 +112,7 @@ export function BugReportsTable() {
     }
   };
 
-  const StatusBadge = ({ status }: { status: BugStatus }) => {
-    const Icon = STATUS_ICONS[status];
-    return (
-      <div className="flex items-center gap-1.5">
-        <Icon className="w-4 h-4" />
-        <span className="capitalize">{status.toLowerCase().replace('_', ' ')}</span>
-      </div>
-    );
-  };
+
 
   if (loading) {
     return (
@@ -172,21 +175,23 @@ export function BugReportsTable() {
                   <span className="text-xs text-muted-foreground">None</span>
                 )}
               </TableCell>
-              <TableCell onClick={(e) => e.stopPropagation()}>
-                <Select
-                  defaultValue={report.status}
-                  onValueChange={(value) => updateStatus(report.id, value as BugStatus)}
-                >
-                  <SelectTrigger className="h-8 w-[130px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="OPEN">Open</SelectItem>
-                    <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                    <SelectItem value="RESOLVED">Resolved</SelectItem>
-                    <SelectItem value="CLOSED">Closed</SelectItem>
-                  </SelectContent>
-                </Select>
+              <TableCell>
+                <div onClick={(e) => e.stopPropagation()}>
+                  <Select
+                    defaultValue={report.status}
+                    onValueChange={(value) => updateStatus(report.id, value as BugStatus)}
+                  >
+                    <SelectTrigger className="h-8 w-[130px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="OPEN">Open</SelectItem>
+                      <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                      <SelectItem value="RESOLVED">Resolved</SelectItem>
+                      <SelectItem value="CLOSED">Closed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </TableCell>
               <TableCell className="text-muted-foreground text-sm">
                 {format(new Date(report.created_at), "MMM d, yyyy")}
@@ -200,7 +205,7 @@ export function BugReportsTable() {
         <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-start justify-between gap-4">
-              <span className="text-xl">{selectedReport?.title}</span>
+              <span className="text-xl flex-1 truncate">{selectedReport?.title}</span>
               {selectedReport && (
                 <div className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${SEVERITY_COLORS[selectedReport.severity]}`}>
                   {selectedReport.severity}
