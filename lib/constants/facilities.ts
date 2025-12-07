@@ -10,92 +10,92 @@ export interface FacilityCategoryMeta {
 export const FACILITY_CATEGORY_META: Record<FacilityCategory, FacilityCategoryMeta> = {
   academic: {
     label: "Academic",
-    color: COLORS.primary.DEFAULT,
+    color: "#10b981", // emerald-500
     pinAsset: "/pins/academic.svg",
   },
   administrative: {
     label: "Administrative",
-    color: COLORS.status.warning,
+    color: "#f59e0b", // amber-500
     pinAsset: "/pins/admin.svg",
   },
   research: {
     label: "Research",
-    color: COLORS.primary.light,
+    color: "#8b5cf6", // violet-500
     pinAsset: "/pins/research.svg",
   },
   office: {
     label: "Office",
-    color: COLORS.neutral[700],
+    color: "#64748b", // slate-500
     pinAsset: "/pins/office.svg",
   },
   residential: {
     label: "Residential",
-    color: COLORS.status.info,
+    color: "#3b82f6", // blue-500
     pinAsset: "/pins/dorm.svg",
   },
   dormitory: {
     label: "Dormitory",
-    color: COLORS.status.info,
+    color: "#6366f1", // indigo-500
     pinAsset: "/pins/dorm.svg",
   },
   lodging: {
     label: "Lodging",
-    color: COLORS.accent.DEFAULT,
+    color: "#0ea5e9", // sky-500
     pinAsset: "/pins/lodging.svg",
   },
   sports: {
     label: "Sports",
-    color: COLORS.status.success,
+    color: "#84cc16", // lime-500
     pinAsset: "/pins/sports.svg",
   },
   dining: {
     label: "Dining",
-    color: COLORS.status.warning,
+    color: "#f97316", // orange-500
     pinAsset: "/pins/dining.svg",
   },
   library: {
     label: "Library",
-    color: COLORS.neutral[700],
+    color: "#a16207", // yellow-800
     pinAsset: "/pins/library.svg",
   },
   medical: {
     label: "Medical",
-    color: COLORS.status.danger,
+    color: "#ef4444", // red-500
     pinAsset: "/pins/medical.svg",
   },
   parking: {
     label: "Parking",
-    color: COLORS.neutral[500],
+    color: "#71717a", // zinc-500
     pinAsset: "/pins/parking.svg",
   },
   landmark: {
     label: "Landmark",
-    color: COLORS.accent.DEFAULT,
+    color: "#ec4899", // pink-500
     pinAsset: "/pins/landmark.svg",
   },
   religious: {
     label: "Religious",
-    color: COLORS.primary.light,
+    color: "#06b6d4", // cyan-500
     pinAsset: "/pins/religious.svg",
   },
   utility: {
     label: "Utility",
-    color: COLORS.neutral[500],
+    color: "#4b5563", // gray-600
     pinAsset: "/pins/utility.svg",
   },
   commercial: {
     label: "Commercial",
-    color: COLORS.status.success,
+    color: "#14b8a6", // teal-500
     pinAsset: "/pins/commercial.svg",
   },
   transportation: {
     label: "Transportation",
-    color: COLORS.status.info,
+    color: "#eab308", // yellow-500
     pinAsset: "/pins/transport.svg",
   },
   atm: {
     label: "ATM",
-    color: COLORS.status.success,
+    color: "#22c55e", // green-500
     pinAsset: "/pins/atm.svg",
   },
 };
