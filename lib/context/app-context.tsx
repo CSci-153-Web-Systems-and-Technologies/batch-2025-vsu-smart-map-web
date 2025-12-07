@@ -112,39 +112,43 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const params = new URLSearchParams(searchParams.toString());
+    const handler = setTimeout(() => {
+      const params = new URLSearchParams(searchParams.toString());
 
-    if (debouncedQuery.trim()) {
-      params.set("q", debouncedQuery.trim());
-    } else {
-      params.delete("q");
-    }
+      if (debouncedQuery.trim()) {
+        params.set("q", debouncedQuery.trim());
+      } else {
+        params.delete("q");
+      }
 
-    if (selectedCategory) {
-      params.set("category", selectedCategory);
-    } else {
-      params.delete("category");
-    }
+      if (selectedCategory) {
+        params.set("category", selectedCategory);
+      } else {
+        params.delete("category");
+      }
 
-    if (currentFacilityId) {
-      params.set("facility", currentFacilityId);
-    } else {
-      params.delete("facility");
-    }
+      if (currentFacilityId) {
+        params.set("facility", currentFacilityId);
+      } else {
+        params.delete("facility");
+      }
 
-    const nextQueryString = params.toString();
-    if (nextQueryString === searchParams.toString()) {
+      const nextQueryString = params.toString();
+      if (nextQueryString === searchParams.toString()) {
+        lastSyncedFacilityId.current = currentFacilityId;
+        lastSyncedCategory.current = selectedCategory;
+        lastSyncedSearch.current = debouncedQuery.trim();
+        return;
+      }
+
       lastSyncedFacilityId.current = currentFacilityId;
       lastSyncedCategory.current = selectedCategory;
       lastSyncedSearch.current = debouncedQuery.trim();
-      return;
-    }
+      const newUrl = nextQueryString ? `${pathname}?${nextQueryString}` : pathname;
+      router.replace(newUrl, { scroll: false });
+    }, DEBOUNCE_MS);
 
-    lastSyncedFacilityId.current = currentFacilityId;
-    lastSyncedCategory.current = selectedCategory;
-    lastSyncedSearch.current = debouncedQuery.trim();
-    const newUrl = nextQueryString ? `${pathname}?${nextQueryString}` : pathname;
-    router.replace(newUrl, { scroll: false });
+    return () => clearTimeout(handler);
   }, [debouncedQuery, selectedCategory, currentFacilityId, pathname, router, searchParams]);
 
   useEffect(() => {
@@ -155,7 +159,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const urlCategory = isValidCategory(urlCategoryParam) ? urlCategoryParam : null;
     const urlFacilityId = searchParams.get("facility");
 
-    // Only update if URL is different from what we last synced (to avoid loops)
     if (urlSearch !== lastSyncedSearch.current && urlSearch !== searchQuery && urlSearch !== debouncedQuery) {
       setSearchQuery(urlSearch);
       lastSyncedSearch.current = urlSearch;
@@ -174,7 +177,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       lastSyncedFacilityId.current = urlFacilityId;
     }
-  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   useEffect(() => {
     if (pathname.startsWith("/directory")) setActiveTabState("directory");
