@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { ImagePlus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -13,12 +13,23 @@ interface FacilityHeaderProps {
     facility: Facility;
     className?: string;
     onAddPhoto?: () => void;
+    parentOpen?: boolean;
 }
 
-export function FacilityHeader({ facility, className, onAddPhoto }: FacilityHeaderProps) {
+export function FacilityHeader({ facility, className, onAddPhoto, parentOpen = true }: FacilityHeaderProps) {
     const meta = getCategoryMeta(facility.category);
     const hasImage = !!facility.imageUrl;
     const [zoomOpen, setZoomOpen] = useState(false);
+
+    useEffect(() => {
+        if (!parentOpen && zoomOpen) {
+            setZoomOpen(false);
+        }
+    }, [parentOpen, zoomOpen]);
+
+    useEffect(() => {
+        setZoomOpen(false);
+    }, [facility.id]);
 
     return (
         <>
@@ -90,7 +101,7 @@ export function FacilityHeader({ facility, className, onAddPhoto }: FacilityHead
 
             {hasImage && (
                 <ImageZoomDialog
-                    open={zoomOpen}
+                    open={zoomOpen && parentOpen}
                     onOpenChange={setZoomOpen}
                     src={facility.imageUrl!}
                     alt={facility.name}

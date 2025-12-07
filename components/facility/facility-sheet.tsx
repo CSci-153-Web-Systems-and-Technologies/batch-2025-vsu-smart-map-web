@@ -61,7 +61,7 @@ export function FacilitySheet() {
               </div>
               <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6">
                 <div className="space-y-8 pb-8 pt-4">
-                  <FacilityHeader facility={selectedFacility} onAddPhoto={() => setSuggestOpen(true)} />
+                  <FacilityHeader facility={selectedFacility} onAddPhoto={() => setSuggestOpen(true)} parentOpen={open} />
                   <ActionButtons facility={selectedFacility} />
                   <ContactInfo address="Visayas State University, Baybay City, Leyte" />
 
