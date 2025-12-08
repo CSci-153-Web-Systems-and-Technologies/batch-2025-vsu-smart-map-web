@@ -232,7 +232,7 @@ export function RoomManagerDialog({ open, facility, onOpenChange }: RoomManagerD
               {loading ? (
                 <p className="text-sm text-muted-foreground">Loading rooms...</p>
               ) : (
-                <RoomList rooms={rooms} onEdit={handleEdit} onDelete={handleDelete} disabled={isPending} facilityCode={facility.code} />
+                <RoomList rooms={rooms} onEdit={handleEdit} onDelete={handleDelete} disabled={isPending} />
               )}
             </div>
           )}

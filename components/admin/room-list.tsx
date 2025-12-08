@@ -22,10 +22,9 @@ interface RoomListProps {
   onDelete: (room: RoomRecord) => void;
 
   disabled?: boolean;
-  facilityCode?: string;
 }
 
-export function RoomList({ rooms, onEdit, onDelete, disabled, facilityCode }: RoomListProps) {
+export function RoomList({ rooms, onEdit, onDelete, disabled }: RoomListProps) {
   const [zoomImage, setZoomImage] = useState<string | null>(null);
 
   if (!rooms.length) {

@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { ImageZoomDialog } from "@/components/ui/image-zoom-dialog";
 import { SuggestRoomModal } from "@/components/suggestions/suggest-room-modal";
-import { type RoomFormValues } from "@/lib/validation/room";
 import { AlertCircle, Pencil, Plus } from "lucide-react";
 
 interface RoomRow {

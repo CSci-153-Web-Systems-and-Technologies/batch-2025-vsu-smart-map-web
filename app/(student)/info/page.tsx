@@ -1,7 +1,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Mail, Github, Globe } from "lucide-react";
+import { Mail, Github } from "lucide-react";
 
 export const metadata = {
   title: "Information | VSU SmartMap",
@@ -88,8 +88,8 @@ export default function InfoPage() {
                 <div className="space-y-2">
                   <h3 className="font-semibold text-foreground">How do I report an error?</h3>
                   <p className="text-sm text-muted-foreground">
-                    If you see incorrect information, navigate to the facility's details and click "Suggest Edit".
-                    For technical bugs, use the "Report a Bug" option in the settings menu.
+                    If you see incorrect information, open the facility details and choose Suggest Edit.
+                    For technical bugs, select the Report a Bug option in the settings menu.
                   </p>
                 </div>
 

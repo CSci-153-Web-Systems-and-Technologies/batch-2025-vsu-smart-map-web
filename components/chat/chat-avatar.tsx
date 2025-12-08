@@ -1,4 +1,5 @@
-import { Bot, User } from "lucide-react";
+import Image from "next/image";
+import { User } from "lucide-react";
 import type { MessageRole } from "@/lib/types";
 
 interface ChatAvatarProps {
@@ -16,7 +17,18 @@ export function ChatAvatar({ role }: ChatAvatarProps) {
           : "bg-muted text-muted-foreground"
       }`}
     >
-      {isAssistant ? <Bot className="h-4 w-4" /> : <User className="h-4 w-4" />}
+      {isAssistant ? (
+        <Image
+          src="/icons/icon-192x192.png"
+          alt="VSU SmartMap assistant"
+          width={20}
+          height={20}
+          className="h-5 w-5"
+          priority
+        />
+      ) : (
+        <User className="h-4 w-4" aria-hidden />
+      )}
     </div>
   );
 }

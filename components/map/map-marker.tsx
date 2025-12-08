@@ -57,8 +57,6 @@ export function MapMarker({ item, isSelected = false, onSelect }: MapMarkerProps
         click: () => {
           onSelect?.(item);
         },
-        popupclose: () => {
-        }
       }}
       title={item.code ? `${item.name} (${item.code})` : item.name}
     >
@@ -74,4 +72,3 @@ export function MapMarker({ item, isSelected = false, onSelect }: MapMarkerProps
     </Marker>
   );
 }
-

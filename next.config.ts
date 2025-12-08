@@ -17,6 +17,9 @@ if (supabaseUrl && typeof supabaseUrl === "string") {
 }
 
 const nextConfig: NextConfig = {
+  turbopack: {
+    root: __dirname,
+  },
   images: {
     remotePatterns: supabaseHost
       ? [
@@ -30,4 +33,3 @@ const nextConfig: NextConfig = {
 };
 
 export default withBundleAnalyzer(nextConfig);
-
