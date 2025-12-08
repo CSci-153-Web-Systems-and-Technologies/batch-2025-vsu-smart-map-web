@@ -18,7 +18,7 @@
 </p>
 <br/>
 
-![VSU Smart Map Banner](/public/banner-placeholder.png)
+![VSU Smart Map Banner](public/vsu-banner-21x9.png)
 
 ## Gallery
 
