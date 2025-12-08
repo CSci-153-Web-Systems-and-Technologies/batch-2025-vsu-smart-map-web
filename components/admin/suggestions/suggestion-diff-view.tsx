@@ -9,11 +9,13 @@ import type { Facility } from "@/lib/types/facility";
 import type { Suggestion } from "@/lib/types/suggestion";
 import type { UnifiedFacilityFormValues } from "@/lib/validation/facility";
 import { cn } from "@/lib/utils";
+import { formatDatePH } from "@/lib/utils/date";
 import { approveSuggestion, rejectSuggestion } from "@/app/admin/suggestions/actions";
 import { FacilityDialog } from "@/components/admin/facility-dialog";
 import { uploadFacilityHeroClient } from "@/lib/supabase/storage-client";
 import { ImageZoomDialog } from "@/components/ui/image-zoom-dialog";
 import { Pencil, MapPin } from "lucide-react";
+import { toast } from "sonner";
 import { LocationPreviewDialog } from "@/components/admin/location-preview-dialog";
 import type { LatLng } from "@/lib/types/common";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
@@ -134,9 +136,11 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
       const result = await approveSuggestion(suggestion.id, editedPayload);
       if (result?.error) {
         setError(result.error);
+        toast.error("Failed to approve suggestion");
         return;
       }
       setMessage("Suggestion approved and applied.");
+      toast.success("Suggestion approved!");
       router.refresh();
     });
   };
@@ -154,9 +158,11 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
       const result = await rejectSuggestion(suggestion.id, rejectionReason || undefined);
       if (result?.error) {
         setError(result.error);
+        toast.error("Failed to reject suggestion");
         return;
       }
       setMessage("Suggestion rejected.");
+      toast.success("Suggestion rejected");
       router.refresh();
     });
   };
@@ -203,7 +209,7 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
         <Badge variant="outline">{suggestion.type.replace("_", " ")}</Badge>
         <Badge variant="secondary">{suggestion.status}</Badge>
         <span className="text-sm text-muted-foreground">
-          Submitted {new Date(suggestion.createdAt).toLocaleString()}
+          Submitted {formatDatePH(suggestion.createdAt)}
         </span>
       </div>
 
