@@ -5,6 +5,7 @@ import { SkipLink } from "@/components/skip-link";
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 import { NavigationProgress } from "@/components/navigation-progress";
 import { Toaster } from "@/components/ui/sonner";
+import { MapStyleProvider } from "@/lib/context/map-style-context";
 import "./globals.css";
 
 const defaultUrl = process.env.VERCEL_URL
@@ -57,11 +58,13 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <NavigationProgress />
-          <Toaster />
-          <ServiceWorkerRegistration />
-          <SkipLink />
-          {children}
+          <MapStyleProvider>
+            <NavigationProgress />
+            <Toaster />
+            <ServiceWorkerRegistration />
+            <SkipLink />
+            {children}
+          </MapStyleProvider>
         </ThemeProvider>
       </body>
     </html>
