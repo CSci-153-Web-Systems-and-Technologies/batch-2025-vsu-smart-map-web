@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createSuggestion } from "@/lib/supabase/queries/suggestions";
-import { getSupabaseServerClient } from "@/lib/supabase/server-client";
+import { getSupabaseServiceRoleClient } from "@/lib/supabase/server-client";
 
 const SUGGESTION_TYPES = [
   "ADD_FACILITY",
@@ -28,7 +28,7 @@ export async function createSuggestionAction(input: unknown) {
     return { error: "Invalid suggestion payload. Please review the form and try again." };
   }
 
-  const client = await getSupabaseServerClient();
+  const client = getSupabaseServiceRoleClient();
   const { data, error } = await createSuggestion(parsed.data, client);
   if (error) {
     const payload = parsed.data.payload;
