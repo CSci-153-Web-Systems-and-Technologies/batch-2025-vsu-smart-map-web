@@ -1,118 +1,100 @@
-<a href="https://demo-nextjs-with-supabase.vercel.app/">
-  <img alt="Next.js and Supabase Starter Kit - the fastest way to build apps with Next.js and Supabase" src="https://demo-nextjs-with-supabase.vercel.app/opengraph-image.png">
-  <h1 align="center">Next.js and Supabase Starter Kit</h1>
-</a>
+# VSU SmartMap
 
-<p align="center">
- The fastest way to build apps with Next.js and Supabase
-</p>
+Smart, offline-friendly campus navigation for Visayas State University. Browse facilities, search rooms, chat with an AI assistant, and manage data through a secure admin console.
 
-<p align="center">
-  <a href="#features"><strong>Features</strong></a> ·
-  <a href="#demo"><strong>Demo</strong></a> ·
-  <a href="#deploy-to-vercel"><strong>Deploy to Vercel</strong></a> ·
-  <a href="#clone-and-run-locally"><strong>Clone and run locally</strong></a> ·
-  <a href="#feedback-and-issues"><strong>Feedback and issues</strong></a> ·
-  <a href="#more-supabase-examples"><strong>More Examples</strong></a> ·
-  <a href="#gallery"><strong>Gallery</strong></a>
-</p>
-<br/>
+![VSU SmartMap Banner](public/vsu-banner-21x9.png)
 
-![VSU Smart Map Banner](public/vsu-banner-21x9.png)
+## Overview
+- Interactive Leaflet map with category pins and selection sheet
+- Directory with search/filter and map handoff
+- AI chat assistant for natural language location queries (Gemini via Genkit)
+- User suggestions (add/edit) with admin review and approval
+- Offline-ready PWA with cached tiles/data and an offline landing page
+- Admin dashboard for facilities/rooms CRUD and suggestion approvals
+- Accessibility-focused (keyboardable tabs, focus rings, ARIA labelling)
 
-## Gallery
+## Tech Stack
+- Next.js 16 (App Router, Turbopack), React 19, TypeScript
+- Tailwind CSS + shadcn/ui, lucide-react
+- Supabase (Postgres, Auth, Storage)
+- Leaflet/react-leaflet for mapping
+- Genkit + Google Gemini for chat
 
-| Home Page | Information Hub |
-|:---:|:---:|
-| <img src="public/screenshots/home-preview.png" width="400" alt="Home Page Map"> | <img src="public/screenshots/info-preview.png" width="400" alt="Information Hub"> |
+## Requirements
+- Node.js 20+
+- npm 10+
+- Supabase project (URL, anon key, service role key)
+- MapTiler key for tiles
+- Gemini API keys (CSV) for chat
 
-## Features
-
-- Works across the entire [Next.js](https://nextjs.org) stack
-  - App Router
-  - Pages Router
-  - Middleware
-  - Client
-  - Server
-  - It just works!
-- supabase-ssr. A package to configure Supabase Auth to use cookies
-- Password-based authentication block installed via the [Supabase UI Library](https://supabase.com/ui/docs/nextjs/password-based-auth)
-- Styling with [Tailwind CSS](https://tailwindcss.com)
-- Components with [shadcn/ui](https://ui.shadcn.com/)
-- Optional deployment with [Supabase Vercel Integration and Vercel deploy](#deploy-your-own)
-  - Environment variables automatically assigned to Vercel project
-
-## Demo
- 
- You can view the source code at [GitHub Repository](https://github.com/CSci-153-Web-Systems-and-Technologies/batch-2025-vsu-smart-map-web).
- 
- ## Deploy to Vercel
- 
- Vercel deployment will guide you through creating a Supabase account and project.
- 
- After installation of the Supabase integration, all relevant environment variables will be assigned to the project so the deployment is fully functioning.
- 
- [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FCSci-153-Web-Systems-and-Technologies%2Fbatch-2025-vsu-smart-map-web&project-name=vsu-smart-map-web&repository-name=vsu-smart-map-web)
-
-The above will also clone the Starter kit to your GitHub, you can clone that locally and develop locally.
-
-If you wish to just develop locally and not deploy to Vercel, [follow the steps below](#clone-and-run-locally).
-
-## Clone and run locally
-
-1. You'll first need a Supabase project which can be made [via the Supabase dashboard](https://database.new)
-
-2. Create a Next.js app using the Supabase Starter template npx command
-
+## Setup
+1. Install dependencies
    ```bash
-   npx create-next-app --example with-supabase with-supabase-app
+   npm install
    ```
-
+2. Copy env template and fill in values
    ```bash
-   yarn create next-app --example with-supabase with-supabase-app
+   cp .env.example .env.local
    ```
-
-   ```bash
-   pnpm create next-app --example with-supabase with-supabase-app
-   ```
-
-3. Use `cd` to change into the app's directory
-
-   ```bash
-   cd with-supabase-app
-   ```
-
-4. Rename `.env.example` to `.env.local` and update the following:
-
-  ```env
-  NEXT_PUBLIC_SUPABASE_URL=[INSERT SUPABASE PROJECT URL]
-  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=[INSERT SUPABASE PROJECT API PUBLISHABLE OR ANON KEY]
-  ```
-  > [!NOTE]
-  > This example uses `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, which refers to Supabase's new **publishable** key format.
-  > Both legacy **anon** keys and new **publishable** keys can be used with this variable name during the transition period. Supabase's dashboard may show `NEXT_PUBLIC_SUPABASE_ANON_KEY`; its value can be used in this example.
-  > See the [full announcement](https://github.com/orgs/supabase/discussions/29260) for more information.
-
-  Both `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` can be found in [your Supabase project's API settings](https://supabase.com/dashboard/project/_?showConnect=true)
-
-5. You can now run the Next.js local development server:
-
+3. Run the app
    ```bash
    npm run dev
    ```
 
-   The starter kit should now be running on [localhost:3000](http://localhost:3000/).
+## Environment Variables
+```
+NEXT_PUBLIC_SUPABASE_URL=...           # Supabase project URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...      # Supabase anon/publishable key
+SUPABASE_SERVICE_ROLE_KEY=...          # Service role key (admin actions)
+NEXT_PUBLIC_MAPTILER_KEY=...           # MapTiler API key
+GEMINI_API_KEYS=key1,key2,...          # Comma-separated Gemini API keys
+GEMINI_MODEL=gemini-flash-lite-latest  # Gemini model name
+```
 
-6. This template comes with the default shadcn/ui style initialized. If you instead want other ui.shadcn styles, delete `components.json` and [re-install shadcn/ui](https://ui.shadcn.com/docs/installation/next)
+## Scripts
+- `npm run dev` — start Next.js (Turbopack)
+- `npm run build` — production build
+- `npm run start` — serve production build
+- `npm run lint` — ESLint
+- `npm run ai:dev` — start Genkit dev server
 
-> Check out [the docs for Local Development](https://supabase.com/docs/guides/getting-started/local-development) to also run Supabase locally.
+## Project Structure
+- `app/(student)` — student-facing map, directory, chat, info, offline
+- `app/admin` — admin shell and CRUD flows
+- `app/api` — API routes (chat)
+- `components` — shared UI/map/admin/chat components
+- `lib` — supabase clients, queries, context, constants, AI helpers
+- `public/sw.js` — custom service worker for offline caching
 
-## Feedback and issues
+## Offline & PWA
+- Service worker caches static assets, map tiles, and public Supabase facility/room endpoints
+- Offline page at `/offline` with retry/back-to-map actions
+- Facilities and chat history cached locally (with TTL/quotas)
+- Manifest/icons included for installability; theme color matches brand green
 
-Please file feedback and issues over on the [Supabase GitHub org](https://github.com/supabase/supabase/issues/new/choose).
+## Admin Access
+- Admin console at `/admin` (Supabase Auth protected)
+- Facilities/rooms CRUD, image upload (Supabase Storage), suggestion approvals, activity history
+- Server actions require `SUPABASE_SERVICE_ROLE_KEY`
 
-## More Supabase examples
+## QA & Verification
+- Lint: `npm run lint`
+- Build: `npm run build`
+- Manual flows to verify before release:
+  - Map load, pin selection, category filter, search
+  - Directory search/filter and “View on Map” handoff
+  - Chat: send/stream responses, follow-ups, rate-limit messaging
+  - Suggest add/edit flows and admin approval/rejection
+  - Admin CRUD (facilities, rooms, images, history)
+  - Offline: visit `/offline`, toggle network to confirm cached tiles/data
+  - PWA install prompt on mobile/desktop
 
-- [Next.js Subscription Payments Starter](https://github.com/vercel/nextjs-subscription-payments)
-- [Cookie-based Auth and the Next.js 13 App Router (free course)](https://youtube.com/playlist?list=PL5S4mPUpp4OtMhpnp93EFSo42iQ40XjbF)
-- [Supabase Auth and the Next.js App Router](https://github.com/supabase/supabase/tree/master/examples/auth/nextjs)
+## Deployment Notes
+- Ensure env vars are set in the hosting platform (Supabase + Gemini + MapTiler)
+- Turbopack root is pinned in `next.config.ts` to avoid multi-lockfile resolution issues
+- Use `npm run build && npm run start` for production runs
+
+## Troubleshooting
+- Turbopack root warnings: already pinned via `turbopack.root` in `next.config.ts`
+- Stale browser baseline warning: update `baseline-browser-mapping` (dev dep) if tooling requests
+- Service worker cache misses: clear browser storage and revisit the map to warm caches
