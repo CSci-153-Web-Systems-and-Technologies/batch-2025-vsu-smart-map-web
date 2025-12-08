@@ -100,6 +100,7 @@ export function FacilitiesPageClient({ facilities }: FacilitiesPageClientProps) 
             setItems((prev) => [...prev, created]);
             router.refresh();
           });
+          setDialogOpen(false);
         }
         return;
       }
@@ -125,6 +126,7 @@ export function FacilitiesPageClient({ facilities }: FacilitiesPageClientProps) 
         setItems((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
         router.refresh();
       });
+      setDialogOpen(false);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'An unexpected error occurred.';
       setMessage(message);

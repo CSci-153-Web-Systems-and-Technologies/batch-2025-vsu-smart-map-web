@@ -21,6 +21,7 @@ interface AppState {
   debouncedQuery: string;
   selectedCategory: FacilityCategory | null;
   activeTab: "map" | "directory" | "chat";
+  mapStyle: "vector" | "satellite";
 }
 
 interface AppContextValue extends AppState {
@@ -32,6 +33,7 @@ interface AppContextValue extends AppState {
     tab: AppState["activeTab"],
     options?: { clearSelection?: boolean; selectFacilityAfter?: Facility }
   ) => void;
+  setMapStyle: (style: "vector" | "satellite") => void;
   clearFilters: () => void;
 }
 
@@ -68,6 +70,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [debouncedQuery, setDebouncedQuery] = useState(initialSearch);
   const [selectedCategory, setSelectedCategory] = useState<FacilityCategory | null>(initialCategory);
   const [activeTab, setActiveTabState] = useState<AppState["activeTab"]>("map");
+  const [mapStyle, setMapStyle] = useState<"vector" | "satellite">("vector");
 
   useEffect(() => {
     lastSyncedFacilityId.current = initialFacilityId;
@@ -255,11 +258,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     debouncedQuery,
     selectedCategory,
     activeTab,
+    mapStyle,
     selectFacility,
     resolvePendingFacility,
     setSearchQuery,
     setCategory: setSelectedCategory,
     setActiveTab,
+    setMapStyle,
     clearFilters,
   }), [
     selectedFacility,
@@ -268,6 +273,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     debouncedQuery,
     selectedCategory,
     activeTab,
+    mapStyle,
     selectFacility,
     resolvePendingFacility,
     setActiveTab,
