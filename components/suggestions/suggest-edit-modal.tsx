@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { toast } from "sonner";
 import { FacilityDialog } from "@/components/admin/facility-dialog";
 import type { Facility } from "@/lib/types/facility";
 import type { UnifiedFacilityFormValues } from "@/lib/validation/facility";
 import { createSuggestionAction } from "@/app/actions/suggestions";
 import { uploadSuggestionImageClient } from "@/lib/supabase/storage-client";
+import { TurnstileWidget } from "@/components/ui/turnstile-widget";
 
 interface SuggestEditModalProps {
   facility: Facility | null;
@@ -36,10 +38,12 @@ function hasChanges(
 
 export function SuggestEditModal({ facility, open, onOpenChange }: SuggestEditModalProps) {
   const [message, setMessage] = useState<string | null>(null);
+  const turnstileTokenRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!open) {
       setMessage(null);
+      turnstileTokenRef.current = null;
     }
   }, [open]);
 
@@ -82,13 +86,16 @@ export function SuggestEditModal({ facility, open, onOpenChange }: SuggestEditMo
       type: "EDIT_FACILITY",
       targetId: facility.id,
       payload,
+      turnstileToken: turnstileTokenRef.current ?? undefined,
     });
 
     if (result.error) {
       setMessage(result.error);
+      toast.error("Failed to submit suggestion");
       return;
     }
 
+    toast.success("Edit suggestion submitted! An admin will review it.");
     onOpenChange(false);
   };
 
@@ -104,11 +111,17 @@ export function SuggestEditModal({ facility, open, onOpenChange }: SuggestEditMo
       submitLabel="Submit suggestion"
       submittingLabel="Submitting..."
     >
-      {message && (
-        <p className="px-6 pb-4 text-sm text-destructive" role="status">
-          {message}
-        </p>
-      )}
+      <div className="px-6 pb-4 space-y-3">
+        <TurnstileWidget
+          onVerify={(token) => { turnstileTokenRef.current = token; }}
+          onError={() => { turnstileTokenRef.current = null; }}
+        />
+        {message && (
+          <p className="text-sm text-destructive" role="status">
+            {message}
+          </p>
+        )}
+      </div>
     </FacilityDialog>
   );
 }

@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { toast } from "sonner";
 import { FacilityDialog } from "@/components/admin/facility-dialog";
 import type { UnifiedFacilityFormValues } from "@/lib/validation/facility";
 import { createSuggestionAction } from "@/app/actions/suggestions";
 import { uploadSuggestionImageClient } from "@/lib/supabase/storage-client";
+import { TurnstileWidget } from "@/components/ui/turnstile-widget";
 
 interface SuggestAddModalProps {
   open: boolean;
@@ -14,10 +16,12 @@ interface SuggestAddModalProps {
 
 export function SuggestAddModal({ open, onOpenChange, onSuccess }: SuggestAddModalProps) {
   const [message, setMessage] = useState<string | null>(null);
+  const turnstileTokenRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!open) {
       setMessage(null);
+      turnstileTokenRef.current = null;
     }
   }, [open]);
 
@@ -52,13 +56,16 @@ export function SuggestAddModal({ open, onOpenChange, onSuccess }: SuggestAddMod
       type: "ADD_FACILITY",
       targetId: null,
       payload,
+      turnstileToken: turnstileTokenRef.current ?? undefined,
     });
 
     if (result.error) {
       setMessage(result.error);
+      toast.error("Failed to submit suggestion");
       return;
     }
 
+    toast.success("Suggestion submitted! Thank you for contributing.");
     onOpenChange(false);
     onSuccess?.();
   };
@@ -74,11 +81,17 @@ export function SuggestAddModal({ open, onOpenChange, onSuccess }: SuggestAddMod
       submitLabel="Submit suggestion"
       submittingLabel="Submitting..."
     >
-      {message && (
-        <p className="px-6 pb-4 text-sm text-destructive" role="status">
-          {message}
-        </p>
-      )}
+      <div className="px-6 pb-4 space-y-3">
+        <TurnstileWidget
+          onVerify={(token) => { turnstileTokenRef.current = token; }}
+          onError={() => { turnstileTokenRef.current = null; }}
+        />
+        {message && (
+          <p className="text-sm text-destructive" role="status">
+            {message}
+          </p>
+        )}
+      </div>
     </FacilityDialog>
   );
 }

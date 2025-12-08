@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +18,7 @@ import { createSuggestionAction } from "@/app/actions/suggestions";
 import { ImagePlus, X } from "lucide-react";
 import Image from "next/image";
 import { uploadSuggestionImageClient } from "@/lib/supabase/storage-client";
+import { TurnstileWidget } from "@/components/ui/turnstile-widget";
 
 
 
@@ -52,6 +54,7 @@ export function SuggestRoomModal({
   const [submitting, setSubmitting] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const turnstileTokenRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -80,6 +83,7 @@ export function SuggestRoomModal({
         setFile(null);
         if (preview) URL.revokeObjectURL(preview);
         setPreview(null);
+        turnstileTokenRef.current = null;
       }
       setError(null);
     }
@@ -126,13 +130,16 @@ export function SuggestRoomModal({
         type: isEditing ? "EDIT_ROOM" : "ADD_ROOM",
         targetId: isEditing ? roomId : facilityId,
         payload,
+        turnstileToken: turnstileTokenRef.current ?? undefined,
       });
 
       if (result.error) {
         setError(result.error);
+        toast.error("Failed to submit room suggestion");
         return;
       }
 
+      toast.success(isEditing ? "Room edit suggestion submitted!" : "Room suggestion submitted!");
       onOpenChange(false);
     } finally {
       setSubmitting(false);
@@ -272,6 +279,11 @@ export function SuggestRoomModal({
               </div>
             )}
           </div>
+
+          <TurnstileWidget
+            onVerify={(token) => { turnstileTokenRef.current = token; }}
+            onError={() => { turnstileTokenRef.current = null; }}
+          />
 
           {error && (
             <p className="text-sm text-destructive" role="status">
