@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +20,19 @@ import Image from "next/image";
 import { uploadSuggestionImageClient } from "@/lib/supabase/storage-client";
 import { TurnstileWidget } from "@/components/ui/turnstile-widget";
 
-
+function hasRoomChanges(
+  initialData: RoomFormValues,
+  values: RoomFormValues,
+  file: File | null,
+): boolean {
+  if (file) return true;
+  if (values.roomCode !== initialData.roomCode) return true;
+  if ((values.name ?? "") !== (initialData.name ?? "")) return true;
+  if ((values.description ?? "") !== (initialData.description ?? "")) return true;
+  if (values.floor !== initialData.floor) return true;
+  if ((values.imageUrl ?? "") !== (initialData.imageUrl ?? "")) return true;
+  return false;
+}
 
 interface SuggestRoomModalProps {
   open: boolean;
@@ -106,6 +118,11 @@ export function SuggestRoomModal({
       return;
     }
 
+    if (isEditing && initialData && !hasRoomChanges(initialData, values, file)) {
+      setError("No changes detected. Please modify at least one field.");
+      return;
+    }
+
     setSubmitting(true);
     try {
       let imageUrl: string | undefined = undefined;
@@ -165,6 +182,18 @@ export function SuggestRoomModal({
     // Explicitly set imageUrl to empty string to indicate removal
     setValues({ ...values, imageUrl: "" });
   };
+
+  const handleTurnstileVerify = useCallback((token: string) => {
+    turnstileTokenRef.current = token;
+  }, []);
+
+  const handleTurnstileError = useCallback(() => {
+    turnstileTokenRef.current = null;
+  }, []);
+
+  const handleTurnstileExpire = useCallback(() => {
+    turnstileTokenRef.current = null;
+  }, []);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -281,8 +310,9 @@ export function SuggestRoomModal({
           </div>
 
           <TurnstileWidget
-            onVerify={(token) => { turnstileTokenRef.current = token; }}
-            onError={() => { turnstileTokenRef.current = null; }}
+            onVerify={handleTurnstileVerify}
+            onError={handleTurnstileError}
+            onExpire={handleTurnstileExpire}
           />
 
           {error && (

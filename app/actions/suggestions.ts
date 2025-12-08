@@ -30,7 +30,12 @@ export async function createSuggestionAction(input: unknown) {
     return { error: "Invalid suggestion payload. Please review the form and try again." };
   }
 
-  if (parsed.data.turnstileToken) {
+  const hasTurnstileConfigured = !!process.env.TURNSTILE_SECRET_KEY;
+
+  if (hasTurnstileConfigured) {
+    if (!parsed.data.turnstileToken) {
+      return { error: "Captcha verification required. Please complete the captcha." };
+    }
     const turnstileResult = await verifyTurnstileToken(parsed.data.turnstileToken);
     if (!turnstileResult.success) {
       return { error: turnstileResult.error ?? "Captcha verification failed" };

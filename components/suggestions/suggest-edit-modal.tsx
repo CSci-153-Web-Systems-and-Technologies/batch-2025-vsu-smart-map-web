@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import { FacilityDialog } from "@/components/admin/facility-dialog";
 import type { Facility } from "@/lib/types/facility";
@@ -99,6 +99,18 @@ export function SuggestEditModal({ facility, open, onOpenChange }: SuggestEditMo
     onOpenChange(false);
   };
 
+  const handleTurnstileVerify = useCallback((token: string) => {
+    turnstileTokenRef.current = token;
+  }, []);
+
+  const handleTurnstileError = useCallback(() => {
+    turnstileTokenRef.current = null;
+  }, []);
+
+  const handleTurnstileExpire = useCallback(() => {
+    turnstileTokenRef.current = null;
+  }, []);
+
   return (
     <FacilityDialog
       open={open}
@@ -113,8 +125,9 @@ export function SuggestEditModal({ facility, open, onOpenChange }: SuggestEditMo
     >
       <div className="px-6 pb-4 space-y-3">
         <TurnstileWidget
-          onVerify={(token) => { turnstileTokenRef.current = token; }}
-          onError={() => { turnstileTokenRef.current = null; }}
+          onVerify={handleTurnstileVerify}
+          onError={handleTurnstileError}
+          onExpire={handleTurnstileExpire}
         />
         {message && (
           <p className="text-sm text-destructive" role="status">
