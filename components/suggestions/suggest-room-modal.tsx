@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +30,10 @@ interface SuggestRoomModalProps {
   roomId?: string; // If editing an existing room
 }
 
+const isBlobUrl = (url: string | null): boolean => {
+  return !!url && url.startsWith("blob:");
+};
+
 export function SuggestRoomModal({
   open,
   onOpenChange,
@@ -52,6 +56,7 @@ export function SuggestRoomModal({
   const [submitting, setSubmitting] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const previewRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -78,21 +83,20 @@ export function SuggestRoomModal({
           floor: undefined,
         });
         setFile(null);
-        if (preview && preview.startsWith("blob:")) URL.revokeObjectURL(preview);
+        if (isBlobUrl(previewRef.current)) URL.revokeObjectURL(previewRef.current!);
         setPreview(null);
+        previewRef.current = null;
       }
       setError(null);
     }
-  }, [open, facilityId, initialData, facilityCode]);
-
-  // Cleanup effect to revoke blob URLs when component unmounts
-  useEffect(() => {
+    
+    // Cleanup on unmount
     return () => {
-      if (preview && preview.startsWith("blob:")) {
-        URL.revokeObjectURL(preview);
+      if (isBlobUrl(previewRef.current)) {
+        URL.revokeObjectURL(previewRef.current!);
       }
     };
-  }, [preview]);
+  }, [open, facilityId, initialData, facilityCode]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -146,17 +150,20 @@ export function SuggestRoomModal({
     const selected = e.target.files?.[0];
     if (!selected) return;
 
-    if (preview && preview.startsWith("blob:")) URL.revokeObjectURL(preview);
+    if (isBlobUrl(previewRef.current)) URL.revokeObjectURL(previewRef.current!);
+    const newPreview = URL.createObjectURL(selected);
     setFile(selected);
-    setPreview(URL.createObjectURL(selected));
+    setPreview(newPreview);
+    previewRef.current = newPreview;
     // Clear the existing imageUrl in values so we know we have a new file
     setValues({ ...values, imageUrl: undefined });
   };
 
   const clearImage = () => {
     setFile(null);
-    if (preview && preview.startsWith("blob:")) URL.revokeObjectURL(preview);
+    if (isBlobUrl(previewRef.current)) URL.revokeObjectURL(previewRef.current!);
     setPreview(null);
+    previewRef.current = null;
     // Explicitly set imageUrl to empty string to indicate removal
     setValues({ ...values, imageUrl: "" });
   };
