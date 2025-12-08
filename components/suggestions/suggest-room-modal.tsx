@@ -30,7 +30,7 @@ interface SuggestRoomModalProps {
   roomId?: string; // If editing an existing room
 }
 
-const isBlobUrl = (url: string | null): boolean => {
+const isBlobUrl = (url: string | null): url is string => {
   return !!url && url.startsWith("blob:");
 };
 
@@ -83,7 +83,7 @@ export function SuggestRoomModal({
           floor: undefined,
         });
         setFile(null);
-        if (isBlobUrl(previewRef.current)) URL.revokeObjectURL(previewRef.current!);
+        if (isBlobUrl(previewRef.current)) URL.revokeObjectURL(previewRef.current);
         setPreview(null);
         previewRef.current = null;
       }
@@ -93,7 +93,7 @@ export function SuggestRoomModal({
     // Cleanup on unmount
     return () => {
       if (isBlobUrl(previewRef.current)) {
-        URL.revokeObjectURL(previewRef.current!);
+        URL.revokeObjectURL(previewRef.current);
       }
     };
   }, [open, facilityId, initialData, facilityCode]);
@@ -150,7 +150,7 @@ export function SuggestRoomModal({
     const selected = e.target.files?.[0];
     if (!selected) return;
 
-    if (isBlobUrl(previewRef.current)) URL.revokeObjectURL(previewRef.current!);
+    if (isBlobUrl(previewRef.current)) URL.revokeObjectURL(previewRef.current);
     const newPreview = URL.createObjectURL(selected);
     setFile(selected);
     setPreview(newPreview);
@@ -161,7 +161,7 @@ export function SuggestRoomModal({
 
   const clearImage = () => {
     setFile(null);
-    if (isBlobUrl(previewRef.current)) URL.revokeObjectURL(previewRef.current!);
+    if (isBlobUrl(previewRef.current)) URL.revokeObjectURL(previewRef.current);
     setPreview(null);
     previewRef.current = null;
     // Explicitly set imageUrl to empty string to indicate removal
