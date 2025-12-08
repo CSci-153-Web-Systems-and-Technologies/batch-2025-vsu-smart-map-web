@@ -217,6 +217,9 @@ export async function updateRoomAction(id: string, input: unknown) {
     if (inputData.facilityId !== undefined && inputData.facilityId !== currentRoom.facility_id) {
       changes.facilityId = { from: currentRoom.facility_id, to: inputData.facilityId };
     }
+    if (inputData.imageUrl !== undefined && inputData.imageUrl !== currentRoom.image_url) {
+      changes.imageUrl = { from: currentRoom.image_url, to: inputData.imageUrl };
+    }
 
     if (Object.keys(changes).length > 0) {
       await createSuggestion(

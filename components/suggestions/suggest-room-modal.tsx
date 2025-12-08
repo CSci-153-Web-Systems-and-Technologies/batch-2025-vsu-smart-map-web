@@ -14,12 +14,20 @@ import {
 } from "@/components/ui/dialog";
 import { roomSchema, type RoomFormValues } from "@/lib/validation/room";
 import { createSuggestionAction } from "@/app/actions/suggestions";
+import { ImagePlus, X } from "lucide-react";
+import Image from "next/image";
+import { uploadSuggestionImageClient } from "@/lib/supabase/storage-client";
+
+
 
 interface SuggestRoomModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   facilityId: string;
   facilityName: string;
+  facilityCode?: string;
+  initialData?: RoomFormValues | null;
+  roomId?: string; // If editing an existing room
 }
 
 export function SuggestRoomModal({
@@ -27,29 +35,61 @@ export function SuggestRoomModal({
   onOpenChange,
   facilityId,
   facilityName,
+  facilityCode,
+  initialData,
+  roomId,
 }: SuggestRoomModalProps) {
+  const isEditing = !!initialData && !!roomId;
   const [values, setValues] = useState<RoomFormValues>({
     facilityId,
-    roomCode: "",
-    name: "",
-    description: "",
-    floor: undefined,
+    roomCode: initialData?.roomCode ?? (facilityCode ? `${facilityCode} ` : ""),
+    name: initialData?.name ?? "",
+    description: initialData?.description ?? "",
+    floor: initialData?.floor ?? undefined,
+    imageUrl: initialData?.imageUrl ?? undefined,
   });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!open) {
-      setValues({
-        facilityId,
-        roomCode: "",
-        name: "",
-        description: "",
-        floor: undefined,
-      });
+    if (open) {
+      if (initialData) {
+        setValues({
+          facilityId, // Keep facilityId from props to ensure sync
+          roomCode: initialData.roomCode,
+          name: initialData.name ?? "",
+          description: initialData.description ?? "",
+          floor: initialData.floor,
+          imageUrl: initialData.imageUrl
+        });
+        // If there's an existing image URL, show it as preview
+        if (initialData.imageUrl) {
+          setPreview(initialData.imageUrl);
+        }
+      } else {
+        // Reset for adding new room
+        setValues({
+          facilityId,
+          roomCode: facilityCode ? `${facilityCode} ` : "",
+          name: "",
+          description: "",
+          floor: undefined,
+        });
+        setFile(null);
+        if (preview) URL.revokeObjectURL(preview);
+        setPreview(null);
+      }
       setError(null);
     }
-  }, [open, facilityId]);
+    // Cleanup preview URL when modal closes or unmounts, IF it's a blob URL
+    return () => {
+      if (preview?.startsWith("blob:")) {
+        URL.revokeObjectURL(preview);
+      }
+    };
+  }, [open, facilityId, initialData, facilityCode, preview]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -64,10 +104,28 @@ export function SuggestRoomModal({
 
     setSubmitting(true);
     try {
+      let imageUrl: string | undefined = undefined;
+
+      if (file) {
+        const tempId = crypto.randomUUID();
+        const upload = await uploadSuggestionImageClient(tempId, file);
+        if (upload.error) {
+          setError(upload.error.message);
+          setSubmitting(false);
+          return;
+        }
+        imageUrl = upload.data?.publicUrl ?? undefined;
+      }
+
+      const payload = {
+        ...parsed.data,
+        imageUrl,
+      };
+
       const result = await createSuggestionAction({
-        type: "ADD_ROOM",
-        targetId: facilityId,
-        payload: parsed.data,
+        type: isEditing ? "EDIT_ROOM" : "ADD_ROOM",
+        targetId: isEditing ? roomId : facilityId,
+        payload,
       });
 
       if (result.error) {
@@ -81,14 +139,37 @@ export function SuggestRoomModal({
     }
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0];
+    if (!selected) return;
+
+    if (preview) URL.revokeObjectURL(preview);
+    setFile(selected);
+    setPreview(URL.createObjectURL(selected));
+    // Clear the existing imageUrl in values so we know we have a new file
+    setValues({ ...values, imageUrl: undefined });
+  };
+
+  const clearImage = () => {
+    setFile(null);
+    // Only revoke if it's a blob URL we created
+    if (preview?.startsWith("blob:")) URL.revokeObjectURL(preview);
+    setPreview(null);
+    // Explicitly set imageUrl to empty string to indicate removal
+    setValues({ ...values, imageUrl: "" });
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Suggest a room</DialogTitle>
+          <DialogTitle>{isEditing ? "Suggest edit" : "Suggest a room"}</DialogTitle>
           <DialogDescription>
-            Suggest a new room for <span className="font-medium">{facilityName}</span>.
-            An admin will review your suggestion before it is added.
+            {isEditing
+              ? <span>Suggest changes to <span className="font-medium">{values.roomCode}</span> in <span className="font-medium">{facilityName}</span>.</span>
+              : <span>Suggest a new room for <span className="font-medium">{facilityName}</span>.</span>
+            }
+            An admin will review your suggestion before it is applied.
           </DialogDescription>
         </DialogHeader>
 
@@ -106,25 +187,20 @@ export function SuggestRoomModal({
                 required
               />
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label htmlFor="floor">Floor (optional)</Label>
               <Input
                 id="floor"
                 type="number"
-                inputMode="numeric"
-                min={-10}
-                max={100}
+                placeholder="e.g. 1"
                 value={values.floor ?? ""}
-                onChange={(event) =>
+                onChange={(e) =>
                   setValues({
                     ...values,
-                    floor:
-                      event.target.value === ""
-                        ? undefined
-                        : Math.min(100, Math.max(-10, Number(event.target.value))),
+                    floor: e.target.value ? parseInt(e.target.value) : undefined,
                   })
                 }
-                placeholder="e.g., 1"
+                disabled={submitting}
               />
             </div>
           </div>
@@ -152,6 +228,49 @@ export function SuggestRoomModal({
               placeholder="What is this room used for?"
               rows={3}
             />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Room Image (optional)</Label>
+            {!preview ? (
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-2 text-muted-foreground"
+                  onClick={() => document.getElementById("room-image-upload")?.click()}
+                >
+                  <ImagePlus className="h-4 w-4" />
+                  Select image
+                </Button>
+                <input
+                  id="room-image-upload"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+              </div>
+            ) : (
+              <div className="relative mt-2 aspect-video w-full overflow-hidden rounded-md border">
+                <Image
+                  src={preview}
+                  alt="Preview"
+                  fill
+                  className="object-cover"
+                />
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="destructive"
+                  className="absolute right-2 top-2 h-6 w-6 rounded-full opacity-90 transition-opacity hover:opacity-100"
+                  onClick={clearImage}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
           </div>
 
           {error && (

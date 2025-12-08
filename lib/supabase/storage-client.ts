@@ -147,3 +147,34 @@ export const uploadBugScreenshotClient = async (
 
   return { data: { path, publicUrl }, error: null };
 };
+
+export const uploadRoomImageClient = async (
+  facilityId: string,
+  roomId: string,
+  file: File,
+): Promise<StorageResult<{ path: string; publicUrl: string | null }>> => {
+  const validationError = validateFile(file);
+  if (validationError) {
+    return { data: null, error: { message: validationError } };
+  }
+
+  const compressionResult = await compressAndValidate(file);
+  if (compressionResult.error) {
+    return { data: null, error: compressionResult.error };
+  }
+  const compressedFile = compressionResult.data!;
+
+  const prefix = stripBucket(STORAGE_PATHS.roomImage(facilityId, roomId));
+  const path = makePath(prefix, compressedFile.name);
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase.storage.from(BUCKET).upload(path, compressedFile, {
+    upsert: true,
+  });
+  if (error) return { data: null, error };
+
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  const publicUrl = data?.publicUrl ? data.publicUrl : null;
+
+  return { data: { path, publicUrl }, error: null };
+};
+

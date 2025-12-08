@@ -5,8 +5,11 @@ import { getRoomsByFacility } from "@/lib/supabase/queries/rooms";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, Plus } from "lucide-react";
+import Image from "next/image";
+import { ImageZoomDialog } from "@/components/ui/image-zoom-dialog";
 import { SuggestRoomModal } from "@/components/suggestions/suggest-room-modal";
+import { type RoomFormValues } from "@/lib/validation/room";
+import { AlertCircle, Pencil, Plus } from "lucide-react";
 
 interface RoomRow {
     id: string;
@@ -15,18 +18,22 @@ interface RoomRow {
     name: string | null;
     description: string | null;
     floor: number | null;
+    image_url: string | null;
 }
 
 interface RoomListProps {
     facilityId: string;
     facilityName: string;
+    facilityCode?: string;
 }
 
-export function RoomList({ facilityId, facilityName }: RoomListProps) {
+export function RoomList({ facilityId, facilityName, facilityCode }: RoomListProps) {
     const [rooms, setRooms] = useState<RoomRow[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [suggestOpen, setSuggestOpen] = useState(false);
+    const [selectedRoom, setSelectedRoom] = useState<RoomRow | null>(null);
+    const [zoomImage, setZoomImage] = useState<string | null>(null);
 
     useEffect(() => {
         let mounted = true;
@@ -99,6 +106,16 @@ export function RoomList({ facilityId, facilityName }: RoomListProps) {
         </div>
     );
 
+    const handleSuggestEdit = (room: RoomRow) => {
+        setSelectedRoom(room);
+        setSuggestOpen(true);
+    };
+
+    const handleOpenSuggest = (open: boolean) => {
+        setSuggestOpen(open);
+        if (!open) setSelectedRoom(null);
+    };
+
     if (rooms.length === 0) {
         return (
             <>
@@ -110,9 +127,10 @@ export function RoomList({ facilityId, facilityName }: RoomListProps) {
                 </div>
                 <SuggestRoomModal
                     open={suggestOpen}
-                    onOpenChange={setSuggestOpen}
+                    onOpenChange={handleOpenSuggest}
                     facilityId={facilityId}
                     facilityName={facilityName}
+                    facilityCode={facilityCode}
                 />
             </>
         );
@@ -125,38 +143,84 @@ export function RoomList({ facilityId, facilityName }: RoomListProps) {
                 <div className="grid gap-2">
                     {rooms.map((room) => (
                         <Card key={room.id} className="overflow-hidden">
-                            <CardContent className="p-3">
-                                <div className="flex items-center justify-between gap-2">
-                                    <div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-medium">{room.room_code}</span>
-                                            {room.floor !== null && (
-                                                <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-                                                    Floor {room.floor}
-                                                </span>
+                            <CardContent className="p-0 flex">
+                                {room.image_url && (
+                                    <div className="relative w-24 shrink-0 overflow-hidden border-r bg-muted">
+                                        <button
+                                            type="button"
+                                            className="h-full w-full cursor-zoom-in"
+                                            onClick={() => setZoomImage(room.image_url!)}
+                                        >
+                                            <Image
+                                                src={room.image_url}
+                                                alt={room.name || room.room_code}
+                                                fill
+                                                className="object-cover transition-transform hover:scale-105"
+                                                sizes="96px"
+                                            />
+                                        </button>
+                                    </div>
+                                )}
+                                <div className="flex-1 p-3 min-w-0">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-medium">{room.room_code}</span>
+                                                {room.floor !== null && (
+                                                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                                                        Floor {room.floor}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {room.name && (
+                                                <p className="text-sm text-muted-foreground">{room.name}</p>
                                             )}
                                         </div>
-                                        {room.name && (
-                                            <p className="text-sm text-muted-foreground">{room.name}</p>
-                                        )}
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                                            onClick={() => handleSuggestEdit(room)}
+                                        >
+                                            <Pencil className="h-3 w-3" />
+                                            <span className="sr-only">Suggest edit</span>
+                                        </Button>
                                     </div>
+                                    {room.description && (
+                                        <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
+                                            {room.description}
+                                        </p>
+                                    )}
                                 </div>
-                                {room.description && (
-                                    <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
-                                        {room.description}
-                                    </p>
-                                )}
                             </CardContent>
                         </Card>
                     ))}
                 </div>
-            </div>
+            </div >
             <SuggestRoomModal
                 open={suggestOpen}
-                onOpenChange={setSuggestOpen}
+                onOpenChange={handleOpenSuggest}
                 facilityId={facilityId}
                 facilityName={facilityName}
+                facilityCode={facilityCode}
+                initialData={selectedRoom ? {
+                    facilityId,
+                    roomCode: selectedRoom.room_code,
+                    name: selectedRoom.name ?? "", // Ensure empty string fallback matching form logic
+                    description: selectedRoom.description ?? "",
+                    floor: selectedRoom.floor ?? undefined,
+                    imageUrl: selectedRoom.image_url ?? undefined
+                } : undefined}
+                roomId={selectedRoom?.id}
             />
+            {zoomImage && (
+                <ImageZoomDialog
+                    open={!!zoomImage}
+                    onOpenChange={(open) => !open && setZoomImage(null)}
+                    src={zoomImage}
+                    alt="Room image"
+                />
+            )}
         </>
     );
 }
