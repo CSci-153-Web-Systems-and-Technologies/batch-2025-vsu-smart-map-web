@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
-import { Settings, Moon, Sun, Laptop, Bug } from "lucide-react";
+import { Settings, Moon, Sun, Laptop, Bug, Info } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -79,6 +80,13 @@ export function SettingsDropdown() {
           </DropdownMenuSub>
 
           <DropdownMenuSeparator />
+
+          <DropdownMenuItem asChild>
+            <Link href="/info" className="flex items-center w-full cursor-pointer">
+              <Info className="mr-2 h-4 w-4" />
+              <span>About & Info</span>
+            </Link>
+          </DropdownMenuItem>
 
           <DropdownMenuItem onClick={() => setBugDialogOpen(true)}>
             <Bug className="mr-2 h-4 w-4" />
