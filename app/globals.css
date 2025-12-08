@@ -138,6 +138,16 @@ select:focus-visible,
   z-index: 0;
 }
 
+/* Map performance optimizations */
+.map-wrapper .leaflet-container {
+  touch-action: manipulation !important;
+  will-change: transform;
+}
+
+.vsu-pin svg {
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.3));
+}
+
 /* User Location Marker Styles */
 .user-location-marker {
   background: transparent !important;

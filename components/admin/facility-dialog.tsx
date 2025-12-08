@@ -128,7 +128,6 @@ export function FacilityDialog({
     setSubmitting(true);
     try {
       await onSubmit(parsed.data, { file, clearImage });
-      onOpenChange(false);
     } catch (submitError) {
       console.error('Failed to save facility:', submitError);
       setError('Failed to save facility');
