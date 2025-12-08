@@ -36,7 +36,7 @@ const mapInsertPayload = (input: SuggestionInsert) => ({
   status: input.status ?? "PENDING",
   target_id: input.targetId ?? null,
   payload: input.payload ?? {},
-  admin_note: input.adminNote ?? null,
+  ...(input.adminNote ? { admin_note: input.adminNote } : {}),
 });
 
 export async function createSuggestion(
