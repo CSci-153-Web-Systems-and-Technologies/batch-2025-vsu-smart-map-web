@@ -29,12 +29,6 @@ export default function InfoPage() {
           </TabsList>
         </div>
 
-        {/* ... (Other content remains, we skip to Contact) ... */}
-        {/* We need to be careful with replace_file_content partial matches. I'll target the Contact tab content specifically or recreate the file if needed.
-           Actually, the instruction implies updating specific parts. I'll do a focused replace for the Container first, then Contact.
-        */}
-
-
         {/* ABOUT CONTENT */}
         <TabsContent value="about">
           <Card>
@@ -74,11 +68,6 @@ export default function InfoPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {/* Note: If Accordion is not available, we use simple details/summary or text.
-                      Assuming Accordion might not be installed, using simple list for now to be safe,
-                      or I'll check if I need to install accordion. I'll use simple HTML details if needed,
-                      but let's try to stick to basic cards if accordion isn't ready.
-                      Actually, I didn't install accordion. I'll use simple markup. */}
 
                 <div className="space-y-2">
                   <h3 className="font-semibold text-foreground">How do I find a specific room?</h3>
