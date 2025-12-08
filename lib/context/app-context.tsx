@@ -277,6 +277,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     selectFacility,
     resolvePendingFacility,
     setActiveTab,
+    setMapStyle,
     clearFilters,
   ]);
 

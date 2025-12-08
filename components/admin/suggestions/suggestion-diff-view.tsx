@@ -13,7 +13,9 @@ import { approveSuggestion, rejectSuggestion } from "@/app/admin/suggestions/act
 import { FacilityDialog } from "@/components/admin/facility-dialog";
 import { uploadFacilityHeroClient } from "@/lib/supabase/storage-client";
 import { ImageZoomDialog } from "@/components/ui/image-zoom-dialog";
-import { Pencil } from "lucide-react";
+import { Pencil, MapPin } from "lucide-react";
+import { LocationPreviewDialog } from "@/components/admin/location-preview-dialog";
+import type { LatLng } from "@/lib/types/common";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 import {
   Dialog,
@@ -115,6 +117,7 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [zoomImage, setZoomImage] = useState<{ src: string; alt: string } | null>(null);
+  const [previewLocation, setPreviewLocation] = useState<{ coords: LatLng; title: string } | null>(null);
 
   const router = useRouter();
   const disabled = pending || suggestion.status !== "PENDING";
@@ -241,6 +244,15 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
                         sizes="(max-width: 768px) 100vw, 50vw"
                       />
                     </button>
+                  ) : key === "coordinates" && currentValues.coordinates && currentValues.coordinates.lat !== undefined && currentValues.coordinates.lng !== undefined ? (
+                    <button
+                      type="button"
+                      className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors cursor-pointer"
+                      onClick={() => setPreviewLocation({ coords: currentValues.coordinates!, title: "Current Location" })}
+                    >
+                      <MapPin className="h-4 w-4" />
+                      <span className="underline underline-offset-2">{formatValue(key, currentValues[key])}</span>
+                    </button>
                   ) : (
                     <p className="text-sm text-foreground">{formatValue(key, currentValues[key])}</p>
                   )}
@@ -299,6 +311,15 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
                         className="object-cover"
                         sizes="(max-width: 768px) 100vw, 50vw"
                       />
+                    </button>
+                  ) : key === "coordinates" && value && typeof value === "object" && (value as LatLng).lat !== undefined && (value as LatLng).lng !== undefined ? (
+                    <button
+                      type="button"
+                      className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors cursor-pointer"
+                      onClick={() => setPreviewLocation({ coords: value as LatLng, title: "Proposed Location" })}
+                    >
+                      <MapPin className="h-4 w-4" />
+                      <span className="underline underline-offset-2">{formatValue(key, value)}</span>
                     </button>
                   ) : (
                     <p className="text-sm text-foreground">{formatValue(key, value)}</p>
@@ -389,6 +410,15 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
           onOpenChange={(open) => !open && setZoomImage(null)}
           src={zoomImage.src}
           alt={zoomImage.alt}
+        />
+      )}
+
+      {previewLocation && (
+        <LocationPreviewDialog
+          open={!!previewLocation}
+          onOpenChange={(open) => !open && setPreviewLocation(null)}
+          coordinates={previewLocation.coords}
+          title={previewLocation.title}
         />
       )}
     </div>
