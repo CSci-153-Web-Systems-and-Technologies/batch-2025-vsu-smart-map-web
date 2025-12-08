@@ -83,8 +83,13 @@ export function SuggestRoomModal({
       }
       setError(null);
     }
-    // Cleanup on close is handled by the fact that next open will reset or set values
-  }, [open, facilityId, initialData, facilityCode]);
+    // Cleanup preview URL when modal closes or unmounts, IF it's a blob URL
+    return () => {
+      if (preview?.startsWith("blob:")) {
+        URL.revokeObjectURL(preview);
+      }
+    };
+  }, [open, facilityId, initialData, facilityCode, preview]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -147,7 +152,8 @@ export function SuggestRoomModal({
 
   const clearImage = () => {
     setFile(null);
-    if (preview && !initialData?.imageUrl) URL.revokeObjectURL(preview);
+    // Only revoke if it's a blob URL we created
+    if (preview?.startsWith("blob:")) URL.revokeObjectURL(preview);
     setPreview(null);
     // Explicitly set imageUrl to empty string to indicate removal
     setValues({ ...values, imageUrl: "" });

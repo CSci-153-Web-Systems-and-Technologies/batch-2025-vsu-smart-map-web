@@ -122,153 +122,137 @@ export function RoomManagerDialog({ open, facility, onOpenChange }: RoomManagerD
     const file = options?.file ?? null;
     const clearImage = options?.clearImage ?? false;
 
-    const syncRoomImage = async (room: RoomRecord | RoomRowLike, file?: File | null, clearImage?: boolean) => {
-      if (clearImage && !file) {
-        const result = await updateRoomAction(room.id, { imageUrl: null });
-        if (result.error) throw new Error(result.error);
-        return result.data ? toRoomRecord(result.data as RoomRowLike) : { ...room, imageUrl: undefined } as RoomRecord;
-      }
 
-      if (!file) return room as RoomRecord;
-
-      const upload = await uploadRoomImageClient(facility!.id, room.id, file);
-      if (upload.error) throw new Error(upload.error.message);
-
-      const publicUrl = upload.data?.publicUrl ?? undefined;
-      const updateResult = await updateRoomAction(room.id, { imageUrl: publicUrl });
-      if (updateResult.error) throw new Error(updateResult.error);
-
-      return updateResult.data ? toRoomRecord(updateResult.data) : { ...room, imageUrl: publicUrl } as RoomRecord;
-    };
 
     try {
       if (mode === 'create') {
-        const result = await createRoomAction({ ...values, facilityId: facility.id, imageUrl: undefined });
-        if (result.error) {
-          setError(result.error);
-          return;
-        }
-        if (result.data) {
-          const created = await syncRoomImage(result.data as RoomRowLike, file, clearImage);
-          setRooms((prev) => [...prev, created]);
-        }
-      } else if (selectedRoom) {
-        // Optimistic update for UI if needed, but we'll wait for server
-        const result = await updateRoomAction(selectedRoom.id, { ...values, facilityId: facility.id });
-        if (result.error) {
-          setError(result.error);
-          return;
+        if (mode === 'create') {
+          const result = await createRoomAction({ ...values, facilityId: facility.id });
+          if (result.error) {
+            setError(result.error);
+            return;
+          }
+          if (result.data) {
+            const created = await syncRoomImage(result.data as RoomRowLike, file, clearImage);
+            setRooms((prev) => [...prev, created]);
+          }
+        } else if (selectedRoom) {
+
+          const result = await updateRoomAction(selectedRoom.id, { ...values, facilityId: facility.id });
+          if (result.error) {
+            setError(result.error);
+            return;
+          }
+
+          let updated = result.data ? toRoomRecord(result.data) : selectedRoom;
+          updated = await syncRoomImage(updated, file, clearImage);
+
+          setRooms((prev) => prev.map((room) => (room.id === updated.id ? updated : room)));
         }
 
-        let updated = result.data ? toRoomRecord(result.data) : selectedRoom;
-        updated = await syncRoomImage(updated, file, clearImage);
+        setFormOpen(false);
+        startTransition(() => router.refresh());
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'An unexpected error occurred.';
+        setError(message);
+      }
+    };
 
-        setRooms((prev) => prev.map((room) => (room.id === updated.id ? updated : room)));
+    const handleDelete = (room: RoomRecord) => {
+      setError(null);
+      setRoomToDelete(room);
+    };
+
+    const confirmDelete = async () => {
+      if (!roomToDelete) {
+        return;
       }
 
-      setFormOpen(false);
-      startTransition(() => router.refresh());
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'An unexpected error occurred.';
-      setError(message);
-    }
-  };
+      setDeleteLoading(true);
+      const result = await deleteRoomAction(roomToDelete.id);
+      if (result.error) {
+        setError(result.error);
+        setDeleteLoading(false);
+        setRoomToDelete(null);
+        return;
+      }
 
-  const handleDelete = (room: RoomRecord) => {
-    setError(null);
-    setRoomToDelete(room);
-  };
+      startTransition(() => {
+        setRooms((prev) => prev.filter((item) => item.id !== roomToDelete.id));
+        router.refresh();
+      });
 
-  const confirmDelete = async () => {
-    if (!roomToDelete) {
-      return;
-    }
-
-    setDeleteLoading(true);
-    const result = await deleteRoomAction(roomToDelete.id);
-    if (result.error) {
-      setError(result.error);
       setDeleteLoading(false);
       setRoomToDelete(null);
-      return;
-    }
+    };
 
-    startTransition(() => {
-      setRooms((prev) => prev.filter((item) => item.id !== roomToDelete.id));
-      router.refresh();
-    });
+    const cancelDelete = () => {
+      if (deleteLoading) return;
+      setRoomToDelete(null);
+    };
 
-    setDeleteLoading(false);
-    setRoomToDelete(null);
-  };
+    return (
+      <>
+        <Dialog open={open} onOpenChange={onOpenChange}>
+          <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col overflow-hidden">
+            <DialogHeader>
+              <DialogTitle>Manage rooms</DialogTitle>
+              <DialogDescription>
+                {title}
+              </DialogDescription>
+            </DialogHeader>
 
-  const cancelDelete = () => {
-    if (deleteLoading) return;
-    setRoomToDelete(null);
-  };
+            {!facility && (
+              <p className="text-sm text-muted-foreground">Select a facility to manage rooms.</p>
+            )}
 
-  return (
-    <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col overflow-hidden">
-          <DialogHeader>
-            <DialogTitle>Manage rooms</DialogTitle>
-            <DialogDescription>
-              {title}
-            </DialogDescription>
-          </DialogHeader>
-
-          {!facility && (
-            <p className="text-sm text-muted-foreground">Select a facility to manage rooms.</p>
-          )}
-
-          {facility && (
-            <div className="space-y-4 flex-1 overflow-y-auto min-h-0 pr-2">
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-sm text-muted-foreground">
-                  Rooms linked to {facility.name}
+            {facility && (
+              <div className="space-y-4 flex-1 overflow-y-auto min-h-0 pr-2">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-sm text-muted-foreground">
+                    Rooms linked to {facility.name}
+                  </div>
+                  <Button size="sm" onClick={handleCreate} disabled={isPending}>
+                    Add room
+                  </Button>
                 </div>
-                <Button size="sm" onClick={handleCreate} disabled={isPending}>
-                  Add room
-                </Button>
+
+                {formOpen && (
+                  <RoomForm
+                    facilityId={facility.id}
+                    facilityCode={facility.code}
+                    initialValues={selectedRoom ?? undefined}
+                    submitting={isPending}
+                    onSubmit={handleRoomSubmit}
+                    onCancel={() => setFormOpen(false)}
+                  />
+                )}
+
+                {error && <p className="text-sm text-destructive">{error}</p>}
+
+                {loading ? (
+                  <p className="text-sm text-muted-foreground">Loading rooms...</p>
+                ) : (
+                  <RoomList rooms={rooms} onEdit={handleEdit} onDelete={handleDelete} disabled={isPending} facilityCode={facility.code} />
+                )}
               </div>
-
-              {formOpen && (
-                <RoomForm
-                  facilityId={facility.id}
-                  facilityCode={facility.code}
-                  initialValues={selectedRoom ?? undefined}
-                  submitting={isPending}
-                  onSubmit={handleRoomSubmit}
-                  onCancel={() => setFormOpen(false)}
-                />
-              )}
-
-              {error && <p className="text-sm text-destructive">{error}</p>}
-
-              {loading ? (
-                <p className="text-sm text-muted-foreground">Loading rooms...</p>
-              ) : (
-                <RoomList rooms={rooms} onEdit={handleEdit} onDelete={handleDelete} disabled={isPending} facilityCode={facility.code} />
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-      <ConfirmDialog
-        open={Boolean(roomToDelete)}
-        title="Delete room"
-        description={
-          roomToDelete
-            ? `Delete room ${roomToDelete.roomCode}? This cannot be undone.`
-            : undefined
-        }
-        confirmLabel={deleteLoading ? 'Deleting...' : 'Delete'}
-        loading={deleteLoading}
-        onConfirm={confirmDelete}
-        onCancel={cancelDelete}
-        contentClassName="z-[110]"
-      />
-    </>
-  );
-}
+            )}
+          </DialogContent>
+        </Dialog>
+        <ConfirmDialog
+          open={Boolean(roomToDelete)}
+          title="Delete room"
+          description={
+            roomToDelete
+              ? `Delete room ${roomToDelete.roomCode}? This cannot be undone.`
+              : undefined
+          }
+          confirmLabel={deleteLoading ? 'Deleting...' : 'Delete'}
+          loading={deleteLoading}
+          onConfirm={confirmDelete}
+          onCancel={cancelDelete}
+          contentClassName="z-[110]"
+        />
+      </>
+    );
+  }
