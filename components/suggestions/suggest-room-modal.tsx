@@ -78,13 +78,19 @@ export function SuggestRoomModal({
           floor: undefined,
         });
         setFile(null);
-        if (preview) URL.revokeObjectURL(preview);
+        if (preview && preview.startsWith("blob:")) URL.revokeObjectURL(preview);
         setPreview(null);
       }
       setError(null);
     }
-    // Cleanup on close is handled by the fact that next open will reset or set values
-  }, [open, facilityId, initialData, facilityCode]);
+    
+    // Cleanup function to revoke blob URLs when component unmounts or modal closes
+    return () => {
+      if (preview && preview.startsWith("blob:")) {
+        URL.revokeObjectURL(preview);
+      }
+    };
+  }, [open, facilityId, initialData, facilityCode, preview]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -138,7 +144,7 @@ export function SuggestRoomModal({
     const selected = e.target.files?.[0];
     if (!selected) return;
 
-    if (preview) URL.revokeObjectURL(preview);
+    if (preview && preview.startsWith("blob:")) URL.revokeObjectURL(preview);
     setFile(selected);
     setPreview(URL.createObjectURL(selected));
     // Clear the existing imageUrl in values so we know we have a new file
@@ -147,7 +153,7 @@ export function SuggestRoomModal({
 
   const clearImage = () => {
     setFile(null);
-    if (preview && !initialData?.imageUrl) URL.revokeObjectURL(preview);
+    if (preview && preview.startsWith("blob:")) URL.revokeObjectURL(preview);
     setPreview(null);
     // Explicitly set imageUrl to empty string to indicate removal
     setValues({ ...values, imageUrl: "" });

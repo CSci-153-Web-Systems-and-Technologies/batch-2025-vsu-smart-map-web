@@ -66,10 +66,8 @@ const hasDifference = (
   const nextValue = payload[key];
   if (nextValue === undefined) return false;
 
-  // Treat empty string and null as equivalent for comparison if needed, 
-  // but strictly speaking, if we send "", it means we want to set it to "", 
-  // which might be different from "http://..."
-  // So standard string comparison is fine.
+  // For comparison, null and empty string are treated as equivalent,
+  // since both are converted to "" before comparison.
 
   const keyMap: Record<FieldKey, keyof RoomRow> = {
     roomCode: "room_code",

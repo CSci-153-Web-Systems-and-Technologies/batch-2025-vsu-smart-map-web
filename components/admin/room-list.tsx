@@ -20,7 +20,6 @@ interface RoomListProps {
   rooms: RoomRecord[];
   onEdit: (room: RoomRecord) => void;
   onDelete: (room: RoomRecord) => void;
-  onDelete: (room: RoomRecord) => void;
   disabled?: boolean;
   facilityCode?: string;
 }
