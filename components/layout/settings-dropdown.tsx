@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
-import { Settings, Moon, Sun, Laptop, Bug, Info } from "lucide-react";
+import { Settings, Moon, Sun, Laptop, Bug, Info, Globe, Map } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -21,10 +21,12 @@ import {
   DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
 import { ReportBugDialog } from "@/components/bugs/report-bug-dialog";
+import { useApp } from "@/lib/context/app-context";
 
 export function SettingsDropdown() {
   const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme();
+  const { mapStyle, setMapStyle } = useApp();
   const [bugDialogOpen, setBugDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -73,6 +75,27 @@ export function SettingsDropdown() {
                   <DropdownMenuRadioItem value="system">
                     <Laptop className="mr-2 h-4 w-4" />
                     System
+                  </DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuSubContent>
+            </DropdownMenuPortal>
+          </DropdownMenuSub>
+
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <Globe className="mr-2 h-4 w-4" />
+              <span>Map Style</span>
+            </DropdownMenuSubTrigger>
+            <DropdownMenuPortal>
+              <DropdownMenuSubContent>
+                <DropdownMenuRadioGroup value={mapStyle} onValueChange={(val) => setMapStyle(val as "vector" | "satellite")}>
+                  <DropdownMenuRadioItem value="vector">
+                    <Map className="mr-2 h-4 w-4" />
+                    Vector
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="satellite">
+                    <Globe className="mr-2 h-4 w-4" />
+                    Satellite
                   </DropdownMenuRadioItem>
                 </DropdownMenuRadioGroup>
               </DropdownMenuSubContent>
