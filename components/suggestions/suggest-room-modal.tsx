@@ -83,14 +83,16 @@ export function SuggestRoomModal({
       }
       setError(null);
     }
-    
-    // Cleanup function to revoke blob URLs when component unmounts or modal closes
+  }, [open, facilityId, initialData, facilityCode]);
+
+  // Cleanup effect to revoke blob URLs when component unmounts
+  useEffect(() => {
     return () => {
       if (preview && preview.startsWith("blob:")) {
         URL.revokeObjectURL(preview);
       }
     };
-  }, [open, facilityId, initialData, facilityCode, preview]);
+  }, [preview]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
