@@ -1,0 +1,299 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { roomSchema, type RoomFormValues } from "@/lib/validation/room";
+import { createSuggestionAction } from "@/app/actions/suggestions";
+import { ImagePlus, X } from "lucide-react";
+import Image from "next/image";
+import { uploadSuggestionImageClient } from "@/lib/supabase/storage-client";
+
+
+
+interface SuggestRoomModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  facilityId: string;
+  facilityName: string;
+  facilityCode?: string;
+  initialData?: RoomFormValues | null;
+  roomId?: string; // If editing an existing room
+}
+
+export function SuggestRoomModal({
+  open,
+  onOpenChange,
+  facilityId,
+  facilityName,
+  facilityCode,
+  initialData,
+  roomId,
+}: SuggestRoomModalProps) {
+  const isEditing = !!initialData && !!roomId;
+  const [values, setValues] = useState<RoomFormValues>({
+    facilityId,
+    roomCode: initialData?.roomCode ?? (facilityCode ? `${facilityCode} ` : ""),
+    name: initialData?.name ?? "",
+    description: initialData?.description ?? "",
+    floor: initialData?.floor ?? undefined,
+    imageUrl: initialData?.imageUrl ?? undefined,
+  });
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      if (initialData) {
+        setValues({
+          facilityId, // Keep facilityId from props to ensure sync
+          roomCode: initialData.roomCode,
+          name: initialData.name ?? "",
+          description: initialData.description ?? "",
+          floor: initialData.floor,
+          imageUrl: initialData.imageUrl
+        });
+        // If there's an existing image URL, show it as preview
+        if (initialData.imageUrl) {
+          setPreview(initialData.imageUrl);
+        }
+      } else {
+        // Reset for adding new room
+        setValues({
+          facilityId,
+          roomCode: facilityCode ? `${facilityCode} ` : "",
+          name: "",
+          description: "",
+          floor: undefined,
+        });
+        setFile(null);
+        if (preview) URL.revokeObjectURL(preview);
+        setPreview(null);
+      }
+      setError(null);
+    }
+    // Cleanup preview URL when modal closes or unmounts, IF it's a blob URL
+    return () => {
+      if (preview?.startsWith("blob:")) {
+        URL.revokeObjectURL(preview);
+      }
+    };
+  }, [open, facilityId, initialData, facilityCode, preview]);
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setError(null);
+
+    const parsed = roomSchema.safeParse(values);
+    if (!parsed.success) {
+      const message = parsed.error.issues[0]?.message ?? "Invalid room data";
+      setError(message);
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      let imageUrl: string | undefined = undefined;
+
+      if (file) {
+        const tempId = crypto.randomUUID();
+        const upload = await uploadSuggestionImageClient(tempId, file);
+        if (upload.error) {
+          setError(upload.error.message);
+          setSubmitting(false);
+          return;
+        }
+        imageUrl = upload.data?.publicUrl ?? undefined;
+      }
+
+      const payload = {
+        ...parsed.data,
+        imageUrl,
+      };
+
+      const result = await createSuggestionAction({
+        type: isEditing ? "EDIT_ROOM" : "ADD_ROOM",
+        targetId: isEditing ? roomId : facilityId,
+        payload,
+      });
+
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+
+      onOpenChange(false);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0];
+    if (!selected) return;
+
+    if (preview) URL.revokeObjectURL(preview);
+    setFile(selected);
+    setPreview(URL.createObjectURL(selected));
+    // Clear the existing imageUrl in values so we know we have a new file
+    setValues({ ...values, imageUrl: undefined });
+  };
+
+  const clearImage = () => {
+    setFile(null);
+    // Only revoke if it's a blob URL we created
+    if (preview?.startsWith("blob:")) URL.revokeObjectURL(preview);
+    setPreview(null);
+    // Explicitly set imageUrl to empty string to indicate removal
+    setValues({ ...values, imageUrl: "" });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{isEditing ? "Suggest edit" : "Suggest a room"}</DialogTitle>
+          <DialogDescription>
+            {isEditing
+              ? <span>Suggest changes to <span className="font-medium">{values.roomCode}</span> in <span className="font-medium">{facilityName}</span>.</span>
+              : <span>Suggest a new room for <span className="font-medium">{facilityName}</span>.</span>
+            }
+            An admin will review your suggestion before it is applied.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="roomCode">Room code *</Label>
+              <Input
+                id="roomCode"
+                value={values.roomCode}
+                onChange={(event) =>
+                  setValues({ ...values, roomCode: event.target.value })
+                }
+                placeholder="e.g., 101, Lab-A"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="floor">Floor (optional)</Label>
+              <Input
+                id="floor"
+                type="number"
+                placeholder="e.g. 1"
+                value={values.floor ?? ""}
+                onChange={(e) =>
+                  setValues({
+                    ...values,
+                    floor: e.target.value ? parseInt(e.target.value) : undefined,
+                  })
+                }
+                disabled={submitting}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="name">Name (optional)</Label>
+            <Input
+              id="name"
+              value={values.name ?? ""}
+              onChange={(event) =>
+                setValues({ ...values, name: event.target.value })
+              }
+              placeholder="e.g., Computer Lab, Conference Room"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="description">Description (optional)</Label>
+            <Textarea
+              id="description"
+              value={values.description ?? ""}
+              onChange={(event) =>
+                setValues({ ...values, description: event.target.value })
+              }
+              placeholder="What is this room used for?"
+              rows={3}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Room Image (optional)</Label>
+            {!preview ? (
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-2 text-muted-foreground"
+                  onClick={() => document.getElementById("room-image-upload")?.click()}
+                >
+                  <ImagePlus className="h-4 w-4" />
+                  Select image
+                </Button>
+                <input
+                  id="room-image-upload"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+              </div>
+            ) : (
+              <div className="relative mt-2 aspect-video w-full overflow-hidden rounded-md border">
+                <Image
+                  src={preview}
+                  alt="Preview"
+                  fill
+                  className="object-cover"
+                />
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="destructive"
+                  className="absolute right-2 top-2 h-6 w-6 rounded-full opacity-90 transition-opacity hover:opacity-100"
+                  onClick={clearImage}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {error && (
+            <p className="text-sm text-destructive" role="status">
+              {error}
+            </p>
+          )}
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => onOpenChange(false)}
+              disabled={submitting}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? "Submitting..." : "Submit suggestion"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

@@ -1,0 +1,281 @@
+"use client";
+
+import { useEffect, useState, useCallback } from "react";
+import { createClient } from "@/lib/supabase/client";
+import type { BugReport, BugStatus } from "@/lib/types/bug-report";
+import { format } from "date-fns";
+import { Loader2, Bug, CheckCircle2, AlertCircle, XCircle, Clock, ExternalLink } from "lucide-react";
+import { toast } from "sonner";
+
+
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+const STATUS_ICONS = {
+  OPEN: AlertCircle,
+  IN_PROGRESS: Clock,
+  RESOLVED: CheckCircle2,
+  CLOSED: XCircle,
+};
+
+const SEVERITY_COLORS = {
+  LOW: "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300",
+  MEDIUM: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500",
+  HIGH: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-500",
+  CRITICAL: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-500",
+};
+
+const StatusBadge = ({ status }: { status: BugStatus }) => {
+  const Icon = STATUS_ICONS[status];
+  return (
+    <div className="flex items-center gap-1.5">
+      <Icon className="w-4 h-4" />
+      <span className="capitalize">{status.toLowerCase().replace('_', ' ')}</span>
+    </div>
+  );
+};
+
+export function BugReportsTable() {
+  const [reports, setReports] = useState<BugReport[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedReport, setSelectedReport] = useState<BugReport | null>(null);
+  const supabase = createClient();
+
+  const fetchReports = useCallback(async () => {
+    try {
+      setLoading(true);
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("bug_reports")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setReports(data as BugReport[]);
+    } catch (error) {
+      console.error("Error fetching bug reports:", error);
+      toast.error("Failed to load bug reports");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchReports();
+  }, [fetchReports]);
+
+  const updateStatus = async (id: string, newStatus: BugStatus) => {
+    try {
+      const { error } = await supabase
+        .from("bug_reports")
+        .update({ status: newStatus })
+        .eq("id", id);
+
+      if (error) throw error;
+
+      setReports((prev) =>
+        prev.map((report) =>
+          report.id === id ? { ...report, status: newStatus } : report
+        )
+      );
+
+      // Update selected report if it's the one being modified
+      if (selectedReport?.id === id) {
+        setSelectedReport(prev => prev ? { ...prev, status: newStatus } : null);
+      }
+
+      toast.success("Status updated");
+    } catch (error) {
+      console.error("Error updating status:", error);
+      toast.error("Failed to update status");
+    }
+  };
+
+
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (reports.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+        <Bug className="h-12 w-12 mb-4 opacity-20" />
+        <p>No bug reports found.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-md border bg-card">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[100px]">Severity</TableHead>
+            <TableHead>Title</TableHead>
+            <TableHead className="hidden md:table-cell">Description</TableHead>
+            <TableHead className="w-[100px]">Screenshot</TableHead>
+            <TableHead className="w-[140px]">Status</TableHead>
+            <TableHead className="w-[140px]">Date</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {reports.map((report) => (
+            <TableRow
+              key={report.id}
+              className="cursor-pointer hover:bg-muted/50"
+              onClick={() => setSelectedReport(report)}
+            >
+              <TableCell>
+                <div className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${SEVERITY_COLORS[report.severity]}`}>
+                  {report.severity}
+                </div>
+              </TableCell>
+              <TableCell className="font-medium">
+                {report.title}
+                <div className="md:hidden text-xs text-muted-foreground mt-1 truncate max-w-[200px]">
+                  {report.description}
+                </div>
+              </TableCell>
+              <TableCell className="hidden md:table-cell max-w-xs truncate">
+                {report.description}
+              </TableCell>
+              <TableCell>
+                {report.screenshot_url ? (
+                  <div className="relative h-8 w-12 rounded border overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={report.screenshot_url} alt="Screenshot" className="object-cover w-full h-full" />
+                  </div>
+                ) : (
+                  <span className="text-xs text-muted-foreground">None</span>
+                )}
+              </TableCell>
+              <TableCell>
+                <div onClick={(e) => e.stopPropagation()}>
+                  <Select
+                    defaultValue={report.status}
+                    onValueChange={(value) => updateStatus(report.id, value as BugStatus)}
+                  >
+                    <SelectTrigger className="h-8 w-[130px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="OPEN">Open</SelectItem>
+                      <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                      <SelectItem value="RESOLVED">Resolved</SelectItem>
+                      <SelectItem value="CLOSED">Closed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </TableCell>
+              <TableCell className="text-muted-foreground text-sm">
+                {format(new Date(report.created_at), "MMM d, yyyy")}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
+      <Dialog open={!!selectedReport} onOpenChange={(open) => !open && setSelectedReport(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-start justify-between gap-4">
+              <span className="text-xl flex-1 truncate">{selectedReport?.title}</span>
+              {selectedReport && (
+                <div className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${SEVERITY_COLORS[selectedReport.severity]}`}>
+                  {selectedReport.severity}
+                </div>
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              Reported on {selectedReport && format(new Date(selectedReport.created_at), "PPP p")}
+            </DialogDescription>
+          </DialogHeader>
+
+          <ScrollArea className="flex-1 -mx-6 px-6">
+            <div className="space-y-6">
+              {/* Status Section */}
+              <div className="flex items-center gap-2 text-sm">
+                <span className="font-medium text-muted-foreground">Status:</span>
+                {selectedReport && <StatusBadge status={selectedReport.status} />}
+              </div>
+
+              {/* Description Section */}
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium text-muted-foreground">Description</h3>
+                <div className="p-4 rounded-md bg-muted/50 text-sm whitespace-pre-wrap">
+                  {selectedReport?.description}
+                </div>
+              </div>
+
+              {/* Screenshot Section */}
+              {selectedReport?.screenshot_url && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-medium text-muted-foreground">Screenshot</h3>
+                    <a
+                      href={selectedReport.screenshot_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs flex items-center gap-1 text-primary hover:underline"
+                    >
+                      Open original <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                  <div className="relative rounded-lg border overflow-hidden bg-muted/20">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={selectedReport.screenshot_url}
+                      alt="Bug report screenshot"
+                      className="w-full h-auto max-h-[500px] object-contain"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Device Info Section */}
+              {selectedReport?.device_info && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium text-muted-foreground">Device Information</h3>
+                  <div className="grid grid-cols-2 gap-2 text-xs p-3 rounded-md bg-muted/30">
+                    {Object.entries(selectedReport.device_info).map(([key, value]) => (
+                      <div key={key} className="flex flex-col">
+                        <span className="text-muted-foreground capitalize">{key}</span>
+                        <span className="font-medium truncate" title={String(value)}>{String(value)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
