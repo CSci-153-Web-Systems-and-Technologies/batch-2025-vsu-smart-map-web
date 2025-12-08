@@ -39,6 +39,10 @@ export function MapWrapper({ children, className }: MapWrapperProps) {
         maxZoom={MAP_MAX_ZOOM}
         scrollWheelZoom
         zoomControl={false}
+        zoomSnap={0}
+        zoomDelta={0.5}
+        wheelDebounceTime={40}
+        bounceAtZoomLimits={false}
         className={className ?? "h-full w-full"}
       >
         <TileLayer
