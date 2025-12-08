@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createSuggestion } from "@/lib/supabase/queries/suggestions";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server-client";
+import { verifyTurnstileToken } from "@/lib/turnstile";
 
 const SUGGESTION_TYPES = [
   "ADD_FACILITY",
@@ -18,6 +19,7 @@ const suggestionSchema = z.object({
   targetId: z.string().uuid().nullable(),
   payload: z.record(z.string(), z.unknown()),
   adminNote: z.string().optional().nullable(),
+  turnstileToken: z.string().optional(),
 });
 
 const GENERIC_ERROR = "Unable to submit suggestion. Please try again.";
@@ -28,8 +30,23 @@ export async function createSuggestionAction(input: unknown) {
     return { error: "Invalid suggestion payload. Please review the form and try again." };
   }
 
+  if (parsed.data.turnstileToken) {
+    const turnstileResult = await verifyTurnstileToken(parsed.data.turnstileToken);
+    if (!turnstileResult.success) {
+      return { error: turnstileResult.error ?? "Captcha verification failed" };
+    }
+  }
+
+  const suggestionData = {
+    id: parsed.data.id,
+    type: parsed.data.type,
+    targetId: parsed.data.targetId,
+    payload: parsed.data.payload,
+    adminNote: parsed.data.adminNote,
+  };
+
   const client = getSupabaseServiceRoleClient();
-  const { data, error } = await createSuggestion(parsed.data, client);
+  const { data, error } = await createSuggestion(suggestionData, client);
   if (error) {
     const payload = parsed.data.payload;
     if (typeof payload.imageUrl === "string" && payload.imageUrl) {
@@ -43,3 +60,4 @@ export async function createSuggestionAction(input: unknown) {
   revalidatePath("/directory");
   return { data };
 }
+
