@@ -3,10 +3,12 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Building, Lightbulb, Bug, Info } from 'lucide-react';
+import { LayoutDashboard, Building, Lightbulb, Bug, Info, Map, Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { ThemeSwitcher } from '@/components/theme-switcher';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { useMapStyle } from '@/lib/context/map-style-context';
 
 const NAV_ITEMS = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
@@ -22,6 +24,8 @@ interface AdminSidebarProps {
 }
 
 function SidebarContent({ pathname, onClose }: { pathname: string; onClose: () => void }) {
+  const { mapStyle, setMapStyle } = useMapStyle();
+
   return (
     <div className="flex h-full flex-col bg-card text-card-foreground">
       {/* Brand Section */}
@@ -79,8 +83,24 @@ function SidebarContent({ pathname, onClose }: { pathname: string; onClose: () =
       {/* Bottom Section */}
       <div className="border-t border-border p-4 space-y-4">
         <div className="flex items-center justify-between px-2">
-          <span className="text-sm font-medium text-muted-foreground">Appearance</span>
+          <span className="text-sm font-medium text-muted-foreground">Theme</span>
           <ThemeSwitcher />
+        </div>
+        <div className="flex items-center justify-between px-2">
+          <span className="text-sm font-medium text-muted-foreground">Map Style</span>
+          <ToggleGroup
+            type="single"
+            value={mapStyle}
+            onValueChange={(val) => val && setMapStyle(val as "vector" | "satellite")}
+            className="gap-1"
+          >
+            <ToggleGroupItem value="vector" aria-label="Vector map" size="sm" className="px-2">
+              <Map className="h-4 w-4" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="satellite" aria-label="Satellite map" size="sm" className="px-2">
+              <Globe className="h-4 w-4" />
+            </ToggleGroupItem>
+          </ToggleGroup>
         </div>
         <div className="rounded-lg bg-muted/50 p-4">
           <div className="flex items-center gap-3">
