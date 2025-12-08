@@ -12,10 +12,19 @@
   <a href="#demo"><strong>Demo</strong></a> ·
   <a href="#deploy-to-vercel"><strong>Deploy to Vercel</strong></a> ·
   <a href="#clone-and-run-locally"><strong>Clone and run locally</strong></a> ·
-  <a href="#feedback-and-issues"><strong>Feedback and issues</strong></a>
-  <a href="#more-supabase-examples"><strong>More Examples</strong></a>
+  <a href="#feedback-and-issues"><strong>Feedback and issues</strong></a> ·
+  <a href="#more-supabase-examples"><strong>More Examples</strong></a> ·
+  <a href="#gallery"><strong>Gallery</strong></a>
 </p>
 <br/>
+
+![VSU Smart Map Banner](/public/banner-placeholder.png)
+
+## Gallery
+
+| Home Page | Information Hub |
+|:---:|:---:|
+| <img src="/public/screenshots/home-preview.png" width="400" alt="Home Page Map"> | <img src="/public/screenshots/info-preview.png" width="400" alt="Information Hub"> |
 
 ## Features
 
