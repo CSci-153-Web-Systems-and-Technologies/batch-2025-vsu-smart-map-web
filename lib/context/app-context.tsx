@@ -46,6 +46,7 @@ function isValidCategory(value: string | null): value is FacilityCategory {
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
+  // Centralizes student tab state and keeps selection/search/category in sync with URL params.
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
