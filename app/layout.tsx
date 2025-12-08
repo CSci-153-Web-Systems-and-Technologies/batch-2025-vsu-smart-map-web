@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import { ThemeProvider } from "next-themes";
 import { ptSans, sourceCodePro } from "@/lib/typography";
 import { SkipLink } from "@/components/skip-link";
@@ -62,6 +63,7 @@ export default function RootLayout({
           <ServiceWorkerRegistration />
           <SkipLink />
           {children}
+          <Analytics />
         </ThemeProvider>
       </body>
     </html>
