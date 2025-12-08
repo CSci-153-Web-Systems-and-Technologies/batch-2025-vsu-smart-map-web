@@ -166,12 +166,6 @@ export function getPinAssetForCategory(
   // viewBox expanded: -2 on y to account for ring top, height becomes 68
   const html = `
     <svg xmlns="http://www.w3.org/2000/svg" width="48" height="52" viewBox="0 -4 64 70">
-      <defs>
-        <filter id="shadow-${category}" x="-25%" y="-25%" width="150%" height="150%">
-          <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000" flood-opacity="0.3"/>
-        </filter>
-      </defs>
-      
       ${selectedRing}
       
       <path 
@@ -179,7 +173,6 @@ export function getPinAssetForCategory(
         fill="${color}" 
         stroke="#ffffff" 
         stroke-width="${options.selected ? 2 : 1.5}"
-        filter="url(#shadow-${category})"
       />
       
       <g transform="translate(32, 22) scale(${1.15 * scale}) translate(-12, -12) translate(0, ${translateY})" fill="white">
