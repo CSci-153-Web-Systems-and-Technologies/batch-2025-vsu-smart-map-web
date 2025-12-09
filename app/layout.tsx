@@ -7,6 +7,7 @@ import { NavigationProgress } from "@/components/navigation-progress";
 import { Toaster } from "@/components/ui/sonner";
 import { MapStyleProvider } from "@/lib/context/map-style-context";
 import Script from "next/script";
+import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 
 const defaultUrl = process.env.VERCEL_URL
@@ -92,6 +93,7 @@ export default function RootLayout({
             <ServiceWorkerRegistration />
             <SkipLink />
             {children}
+            <Analytics />
           </MapStyleProvider>
         </ThemeProvider>
       </body>
