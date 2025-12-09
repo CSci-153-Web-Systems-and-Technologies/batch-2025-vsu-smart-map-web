@@ -1,28 +1,39 @@
 const PH_TIMEZONE = "Asia/Manila";
 
-export function formatDatePH(date: Date | string): string {
+const fullFormatter = new Intl.DateTimeFormat("en", {
+  timeZone: PH_TIMEZONE,
+  year: "numeric",
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+  hour12: true,
+});
+
+const shortFormatter = new Intl.DateTimeFormat("en", {
+  timeZone: PH_TIMEZONE,
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+  hour12: true,
+});
+
+const formatParts = (date: Date | string, formatter: Intl.DateTimeFormat) => {
   const d = typeof date === "string" ? new Date(date) : date;
-  return d.toLocaleString("en-PH", {
-    timeZone: PH_TIMEZONE,
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
+  const parts = formatter.formatToParts(d);
+  const get = (type: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === type)?.value ?? "";
+  return { month: get("month"), day: get("day"), year: get("year"), hour: get("hour"), minute: get("minute"), dayPeriod: get("dayPeriod") };
+};
+
+export function formatDatePH(date: Date | string): string {
+  const { month, day, year, hour, minute, dayPeriod } = formatParts(date, fullFormatter);
+  return `${month} ${day}, ${year} at ${hour}:${minute} ${dayPeriod}`;
 }
 
 export function formatDateShortPH(date: Date | string): string {
-  const d = typeof date === "string" ? new Date(date) : date;
-  return d.toLocaleString("en-PH", {
-    timeZone: PH_TIMEZONE,
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
+  const { month, day, hour, minute, dayPeriod } = formatParts(date, shortFormatter);
+  return `${month} ${day} at ${hour}:${minute} ${dayPeriod}`;
 }
 
 export function formatRelativeTimePH(date: Date | string): string {
