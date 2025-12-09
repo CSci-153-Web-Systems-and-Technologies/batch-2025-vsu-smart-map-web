@@ -51,6 +51,11 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
   }, []);
 
   const handleError = useCallback((error: GeolocationPositionError) => {
+    if (watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+    }
+
     setState((prev) => ({
       ...prev,
       error,
@@ -69,6 +74,10 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
   }, []);
 
   const startTracking = useCallback(() => {
+    if (watchIdRef.current !== null) {
+      return;
+    }
+
     if (!state.isSupported) {
       setState((prev) => ({
         ...prev,
@@ -84,6 +93,12 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
     }
 
     setState((prev) => ({ ...prev, isTracking: true, error: null }));
+
+    navigator.geolocation.getCurrentPosition(
+      handleSuccess,
+      handleError,
+      mergedOptions
+    );
 
     watchIdRef.current = navigator.geolocation.watchPosition(
       handleSuccess,

@@ -169,41 +169,38 @@ function MapView({
 
   return (
     <div className="relative h-full w-full">
+      <div className="relative h-full w-full overflow-hidden">
+        <MapContainerClient className="h-full w-full">
+          <MapSelectionLayer
+            items={filtered}
+            selectedId={selectedId}
+            onSelect={(item) => onSelect(item.id)}
+            onClearSelection={onClearSelection}
+          />
+          <UserLocationControl />
+        </MapContainerClient>
 
+        {!hasResults && !error && !isLoading && (
+          <div className="pointer-events-none absolute bottom-12 left-1/2 -translate-x-1/2 z-10 rounded-full bg-background/90 px-4 py-2 shadow-md backdrop-blur">
+            <p className="text-sm font-medium text-foreground">No locations found.</p>
+          </div>
+        )}
+      </div>
+
+      {isLoading && (
+        <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 bg-background/80 backdrop-blur-sm" aria-label="Loading map">
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
+          <p className="text-sm text-muted-foreground">Loading map and locations...</p>
+        </div>
+      )}
 
       {error && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/50 backdrop-blur-sm">
+        <div className="absolute inset-0 z-40 flex items-center justify-center bg-background/60 backdrop-blur-sm">
           <p className="text-sm text-destructive font-medium bg-destructive/10 px-4 py-2 rounded-md" role="alert">
             {error}
           </p>
         </div>
       )}
-
-      {isLoading ? (
-        <div
-          className="h-full w-full bg-muted animate-pulse"
-          aria-label="Loading map"
-        />
-      ) : (
-        <div className="relative h-full w-full overflow-hidden">
-          <MapContainerClient className="h-full w-full">
-            <MapSelectionLayer
-              items={filtered}
-              selectedId={selectedId}
-              onSelect={(item) => onSelect(item.id)}
-              onClearSelection={onClearSelection}
-            />
-            <UserLocationControl />
-          </MapContainerClient>
-          {!hasResults && !error && (
-            <div className="pointer-events-none absolute bottom-12 left-1/2 -translate-x-1/2 z-10 rounded-full bg-background/90 px-4 py-2 shadow-md backdrop-blur">
-              <p className="text-sm font-medium text-foreground">No locations found.</p>
-            </div>
-          )}
-        </div>
-      )}
-
-
     </div>
   );
 }

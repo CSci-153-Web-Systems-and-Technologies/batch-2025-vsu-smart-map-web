@@ -8,7 +8,7 @@ export const STORAGE_PATHS = {
   roomImage: (facilityId: string, roomId: string) =>
     `${STORAGE_BUCKETS.facilityImages}/${facilityId}/rooms/${roomId}`,
   suggestionImage: (tempId: string) =>
-    `${STORAGE_BUCKETS.facilityImages}/suggestions/${tempId}`,
+    `${STORAGE_BUCKETS.facilityImages}/suggestion-images/${tempId}`,
   bugReportScreenshot: (reportId: string) =>
     `${STORAGE_BUCKETS.facilityImages}/bug-reports/${reportId}`,
 } as const;
