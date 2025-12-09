@@ -79,19 +79,17 @@ export function SuggestRoomModal({
     if (open) {
       if (initialData) {
         setValues({
-          facilityId, // Keep facilityId from props to ensure sync
+          facilityId,
           roomCode: initialData.roomCode,
           name: initialData.name ?? "",
           description: initialData.description ?? "",
           floor: initialData.floor,
-          imageUrl: initialData.imageUrl
+          imageUrl: initialData.imageUrl,
         });
-        // If there's an existing image URL, show it as preview
         if (initialData.imageUrl) {
           setPreview(initialData.imageUrl);
         }
       } else {
-        // Reset for adding new room
         setValues({
           facilityId,
           roomCode: facilityCode ? `${facilityCode} ` : "",
@@ -100,21 +98,25 @@ export function SuggestRoomModal({
           floor: undefined,
         });
         setFile(null);
-        if (preview) URL.revokeObjectURL(preview);
-        setPreview(null);
+        setPreview((prev) => {
+          if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
+          return null;
+        });
         resetTurnstile();
       }
       setError(null);
     } else {
       resetTurnstile();
     }
-    // Cleanup preview URL when modal closes or unmounts, IF it's a blob URL
+  }, [open, facilityId, initialData, facilityCode, resetTurnstile]);
+
+  useEffect(() => {
     return () => {
       if (preview?.startsWith("blob:")) {
         URL.revokeObjectURL(preview);
       }
     };
-  }, [open, facilityId, initialData, facilityCode, preview, resetTurnstile]);
+  }, [preview]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
