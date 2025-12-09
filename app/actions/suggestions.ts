@@ -67,5 +67,6 @@ export async function createSuggestionAction(input: unknown) {
 
   revalidatePath("/");
   revalidatePath("/directory");
+  revalidatePath("/admin/suggestions");
   return { data };
 }
