@@ -43,6 +43,29 @@ export const metadata: Metadata = {
     ],
     apple: "/icons/apple-touch-icon.png",
   },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: defaultUrl,
+    title: "VSU SmartMap",
+    description: "Interactive campus map for Visayas State University. Find buildings, facilities, and get directions with AI-powered assistance.",
+    siteName: "VSU SmartMap",
+    images: [
+      {
+        url: "/vsu-banner-21x9.png",
+        width: 1200,
+        height: 514, // 21:9 ratio approx
+        alt: "VSU SmartMap Application Banner",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "VSU SmartMap",
+    description: "Interactive campus map for Visayas State University. AI-powered navigation and facility directory.",
+    images: ["/vsu-banner-21x9.png"],
+    creator: "@VSU", // or remove if not applicable, keeping generic for now or user handle
+  },
 };
 
 export default function RootLayout({
