@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,8 +18,22 @@ import { createSuggestionAction } from "@/app/actions/suggestions";
 import { ImagePlus, X } from "lucide-react";
 import Image from "next/image";
 import { uploadSuggestionImageClient } from "@/lib/supabase/storage-client";
+import { TurnstileWidget } from "@/components/ui/turnstile-widget";
+import type { TurnstileToken } from "@/lib/types/turnstile";
 
-
+function hasRoomChanges(
+  initialData: RoomFormValues,
+  values: RoomFormValues,
+  file: File | null,
+): boolean {
+  if (file) return true;
+  if (values.roomCode !== initialData.roomCode) return true;
+  if ((values.name ?? "") !== (initialData.name ?? "")) return true;
+  if ((values.description ?? "") !== (initialData.description ?? "")) return true;
+  if (values.floor !== initialData.floor) return true;
+  if ((values.imageUrl ?? "") !== (initialData.imageUrl ?? "")) return true;
+  return false;
+}
 
 interface SuggestRoomModalProps {
   open: boolean;
@@ -52,6 +67,13 @@ export function SuggestRoomModal({
   const [submitting, setSubmitting] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
+  const turnstileTokenRef = useRef<TurnstileToken | null>(null);
+
+  const resetTurnstile = useCallback(() => {
+    turnstileTokenRef.current = null;
+    setTurnstileResetKey((value) => value + 1);
+  }, []);
 
   useEffect(() => {
     if (open) {
@@ -80,8 +102,11 @@ export function SuggestRoomModal({
         setFile(null);
         if (preview) URL.revokeObjectURL(preview);
         setPreview(null);
+        resetTurnstile();
       }
       setError(null);
+    } else {
+      resetTurnstile();
     }
     // Cleanup preview URL when modal closes or unmounts, IF it's a blob URL
     return () => {
@@ -89,7 +114,7 @@ export function SuggestRoomModal({
         URL.revokeObjectURL(preview);
       }
     };
-  }, [open, facilityId, initialData, facilityCode, preview]);
+  }, [open, facilityId, initialData, facilityCode, preview, resetTurnstile]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -99,6 +124,11 @@ export function SuggestRoomModal({
     if (!parsed.success) {
       const message = parsed.error.issues[0]?.message ?? "Invalid room data";
       setError(message);
+      return;
+    }
+
+    if (isEditing && initialData && !hasRoomChanges(initialData, values, file)) {
+      setError("No changes detected. Please modify at least one field.");
       return;
     }
 
@@ -122,17 +152,25 @@ export function SuggestRoomModal({
         imageUrl,
       };
 
+      const turnstilePayload = turnstileTokenRef.current;
+
       const result = await createSuggestionAction({
         type: isEditing ? "EDIT_ROOM" : "ADD_ROOM",
         targetId: isEditing ? roomId : facilityId,
         payload,
+        turnstileToken: turnstilePayload?.token ?? undefined,
+        turnstileIdempotencyKey: turnstilePayload?.idempotencyKey ?? undefined,
       });
+
+      resetTurnstile();
 
       if (result.error) {
         setError(result.error);
+        toast.error("Failed to submit room suggestion");
         return;
       }
 
+      toast.success(isEditing ? "Room edit suggestion submitted!" : "Room suggestion submitted!");
       onOpenChange(false);
     } finally {
       setSubmitting(false);
@@ -158,6 +196,27 @@ export function SuggestRoomModal({
     // Explicitly set imageUrl to empty string to indicate removal
     setValues({ ...values, imageUrl: "" });
   };
+
+  const handleTurnstileReset = useCallback(() => {
+    turnstileTokenRef.current = null;
+  }, []);
+
+  const handleTurnstileVerify = useCallback((payload: TurnstileToken) => {
+    turnstileTokenRef.current = payload;
+    setError(null);
+  }, []);
+
+  const handleTurnstileError = useCallback((code?: string) => {
+    if (code) {
+      setError(`Captcha error (code ${code}). Please try again or refresh.`);
+      console.error("Turnstile error code:", code);
+    }
+    resetTurnstile();
+  }, [resetTurnstile]);
+
+  const handleTurnstileExpire = useCallback(() => {
+    resetTurnstile();
+  }, [resetTurnstile]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -272,6 +331,14 @@ export function SuggestRoomModal({
               </div>
             )}
           </div>
+
+          <TurnstileWidget
+            onVerify={handleTurnstileVerify}
+            onError={handleTurnstileError}
+            onExpire={handleTurnstileExpire}
+            onReset={handleTurnstileReset}
+            resetSignal={turnstileResetKey}
+          />
 
           {error && (
             <p className="text-sm text-destructive" role="status">

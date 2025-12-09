@@ -7,6 +7,7 @@ import { useTheme } from "next-themes";
 import { MapContainer, TileLayer, useMap, useMapEvents, CircleMarker } from "react-leaflet";
 import type { LatLng } from "@/lib/types/common";
 import { MAP_MAX_ZOOM, MAP_MIN_ZOOM, MAP_TILES } from "@/lib/constants/map";
+import { useMapStyle } from "@/lib/context/map-style-context";
 
 interface CoordinatePickerMapProps {
   value: LatLng;
@@ -34,6 +35,12 @@ function MapCenterUpdater({ value }: { value: LatLng }) {
 
 export function CoordinatePickerMap({ value, onChange }: CoordinatePickerMapProps) {
   const { resolvedTheme } = useTheme();
+  const { mapStyle } = useMapStyle();
+
+  const tileUrl = (() => {
+    if (mapStyle === "satellite") return MAP_TILES.satelliteUrl;
+    return resolvedTheme === "dark" && MAP_TILES.darkUrl ? MAP_TILES.darkUrl : MAP_TILES.url;
+  })();
 
   return (
     <div className="coordinate-picker h-full w-full">
@@ -46,8 +53,9 @@ export function CoordinatePickerMap({ value, onChange }: CoordinatePickerMapProp
         scrollWheelZoom
       >
         <TileLayer
+          key={tileUrl}
           attribution={MAP_TILES.attribution}
-          url={resolvedTheme === 'dark' ? MAP_TILES.darkUrl : MAP_TILES.url}
+          url={tileUrl}
           maxZoom={MAP_MAX_ZOOM}
           maxNativeZoom={MAP_TILES.maxNativeZoom ?? MAP_MAX_ZOOM}
         />
@@ -62,3 +70,4 @@ export function CoordinatePickerMap({ value, onChange }: CoordinatePickerMapProp
     </div>
   );
 }
+

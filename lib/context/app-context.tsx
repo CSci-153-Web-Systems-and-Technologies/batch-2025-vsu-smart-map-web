@@ -13,6 +13,7 @@ import {
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import type { Facility, FacilityCategory } from "@/lib/types/facility";
 import { FACILITY_CATEGORY_META } from "@/lib/constants/facilities";
+import { useMapStyle } from "@/lib/context/map-style-context";
 
 interface AppState {
   selectedFacility: Facility | null;
@@ -48,10 +49,10 @@ function isValidCategory(value: string | null): value is FacilityCategory {
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  // Centralizes student tab state and keeps selection/search/category in sync with URL params.
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
+  const { mapStyle, setMapStyle } = useMapStyle();
 
   const lastSyncedFacilityId = useRef<string | null>(null);
   const lastSyncedCategory = useRef<FacilityCategory | null>(null);
@@ -70,7 +71,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [debouncedQuery, setDebouncedQuery] = useState(initialSearch);
   const [selectedCategory, setSelectedCategory] = useState<FacilityCategory | null>(initialCategory);
   const [activeTab, setActiveTabState] = useState<AppState["activeTab"]>("map");
-  const [mapStyle, setMapStyle] = useState<"vector" | "satellite">("vector");
 
   useEffect(() => {
     lastSyncedFacilityId.current = initialFacilityId;
@@ -277,6 +277,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     selectFacility,
     resolvePendingFacility,
     setActiveTab,
+    setMapStyle,
     clearFilters,
   ]);
 

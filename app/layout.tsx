@@ -5,6 +5,9 @@ import { SkipLink } from "@/components/skip-link";
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 import { NavigationProgress } from "@/components/navigation-progress";
 import { Toaster } from "@/components/ui/sonner";
+import { MapStyleProvider } from "@/lib/context/map-style-context";
+import Script from "next/script";
+import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 
 const defaultUrl = process.env.VERCEL_URL
@@ -41,6 +44,29 @@ export const metadata: Metadata = {
     ],
     apple: "/icons/apple-touch-icon.png",
   },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: defaultUrl,
+    title: "VSU SmartMap",
+    description: "Interactive campus map for Visayas State University. Find buildings, facilities, and get directions with AI-powered assistance.",
+    siteName: "VSU SmartMap",
+    images: [
+      {
+        url: "/vsu-banner-21x9.png",
+        width: 1200,
+        height: 514, // 21:9 ratio approx
+        alt: "VSU SmartMap Application Banner",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "VSU SmartMap",
+    description: "Interactive campus map for Visayas State University. AI-powered navigation and facility directory.",
+    images: ["/vsu-banner-21x9.png"],
+    creator: "@VSU", // or remove if not applicable, keeping generic for now or user handle
+  },
 };
 
 export default function RootLayout({
@@ -57,11 +83,18 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <NavigationProgress />
-          <Toaster />
-          <ServiceWorkerRegistration />
-          <SkipLink />
-          {children}
+          <MapStyleProvider>
+            <Script
+              src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+              strategy="afterInteractive"
+            />
+            <NavigationProgress />
+            <Toaster />
+            <ServiceWorkerRegistration />
+            <SkipLink />
+            {children}
+            <Analytics />
+          </MapStyleProvider>
         </ThemeProvider>
       </body>
     </html>
