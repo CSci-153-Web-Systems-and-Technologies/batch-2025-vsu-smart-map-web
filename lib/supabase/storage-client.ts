@@ -111,7 +111,31 @@ export const uploadSuggestionImageClient = async (
   const { error } = await supabase.storage.from(BUCKET).upload(path, compressedFile, {
     upsert: true,
   });
-  if (error) return { data: null, error };
+  if (error) {
+    if (error.message?.toLowerCase().includes("row-level security")) {
+      const formData = new FormData();
+      formData.append("file", compressedFile);
+      formData.append("tempId", tempId);
+
+      try {
+        const response = await fetch("/api/upload-suggestion-image", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const body = (await response.json().catch(() => ({}))) as { error?: string };
+          return { data: null, error: { message: body.error ?? "Unable to upload image" } };
+        }
+
+        const body = (await response.json()) as { path: string; publicUrl: string | null };
+        return { data: { path: body.path, publicUrl: body.publicUrl }, error: null };
+      } catch {
+        return { data: null, error: { message: "Unable to upload image" } };
+      }
+    }
+    return { data: null, error };
+  }
 
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
   const publicUrl = data?.publicUrl ? data.publicUrl : null;
@@ -177,4 +201,3 @@ export const uploadRoomImageClient = async (
 
   return { data: { path, publicUrl }, error: null };
 };
-
