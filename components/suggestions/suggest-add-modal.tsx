@@ -7,6 +7,7 @@ import type { UnifiedFacilityFormValues } from "@/lib/validation/facility";
 import { createSuggestionAction } from "@/app/actions/suggestions";
 import { uploadSuggestionImageClient } from "@/lib/supabase/storage-client";
 import { TurnstileWidget } from "@/components/ui/turnstile-widget";
+import type { TurnstileToken } from "@/lib/types/turnstile";
 
 interface SuggestAddModalProps {
   open: boolean;
@@ -16,14 +17,20 @@ interface SuggestAddModalProps {
 
 export function SuggestAddModal({ open, onOpenChange, onSuccess }: SuggestAddModalProps) {
   const [message, setMessage] = useState<string | null>(null);
-  const turnstileTokenRef = useRef<string | null>(null);
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
+  const turnstileTokenRef = useRef<TurnstileToken | null>(null);
+
+  const resetTurnstile = useCallback(() => {
+    turnstileTokenRef.current = null;
+    setTurnstileResetKey((value) => value + 1);
+  }, []);
 
   useEffect(() => {
     if (!open) {
       setMessage(null);
-      turnstileTokenRef.current = null;
+      resetTurnstile();
     }
-  }, [open]);
+  }, [open, resetTurnstile]);
 
   const handleSubmit = async (
     values: UnifiedFacilityFormValues,
@@ -52,12 +59,17 @@ export function SuggestAddModal({ open, onOpenChange, onSuccess }: SuggestAddMod
       imageUrl: imageUrl ?? undefined,
     };
 
+    const turnstilePayload = turnstileTokenRef.current;
+
     const result = await createSuggestionAction({
       type: "ADD_FACILITY",
       targetId: null,
       payload,
-      turnstileToken: turnstileTokenRef.current ?? undefined,
+      turnstileToken: turnstilePayload?.token ?? undefined,
+      turnstileIdempotencyKey: turnstilePayload?.idempotencyKey ?? undefined,
     });
+
+    resetTurnstile();
 
     if (result.error) {
       setMessage(result.error);
@@ -70,17 +82,26 @@ export function SuggestAddModal({ open, onOpenChange, onSuccess }: SuggestAddMod
     onSuccess?.();
   };
 
-  const handleTurnstileVerify = useCallback((token: string) => {
-    turnstileTokenRef.current = token;
-  }, []);
-
-  const handleTurnstileError = useCallback(() => {
+  const handleTurnstileReset = useCallback(() => {
     turnstileTokenRef.current = null;
   }, []);
+
+  const handleTurnstileVerify = useCallback((payload: TurnstileToken) => {
+    turnstileTokenRef.current = payload;
+    setMessage(null);
+  }, []);
+
+  const handleTurnstileError = useCallback((code?: string) => {
+    if (code) {
+      setMessage(`Captcha error (code ${code}). Please try again or refresh.`);
+      console.error("Turnstile error code:", code);
+    }
+    resetTurnstile();
+  }, [resetTurnstile]);
 
   const handleTurnstileExpire = useCallback(() => {
-    turnstileTokenRef.current = null;
-  }, []);
+    resetTurnstile();
+  }, [resetTurnstile]);
 
   return (
     <FacilityDialog
@@ -98,6 +119,8 @@ export function SuggestAddModal({ open, onOpenChange, onSuccess }: SuggestAddMod
           onVerify={handleTurnstileVerify}
           onError={handleTurnstileError}
           onExpire={handleTurnstileExpire}
+          onReset={handleTurnstileReset}
+          resetSignal={turnstileResetKey}
         />
         {message && (
           <p className="text-sm text-destructive" role="status">

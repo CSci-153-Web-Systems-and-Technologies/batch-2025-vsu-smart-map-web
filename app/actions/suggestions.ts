@@ -20,6 +20,7 @@ const suggestionSchema = z.object({
   payload: z.record(z.string(), z.unknown()),
   adminNote: z.string().optional().nullable(),
   turnstileToken: z.string().optional(),
+  turnstileIdempotencyKey: z.string().optional(),
 });
 
 const GENERIC_ERROR = "Unable to submit suggestion. Please try again.";
@@ -36,7 +37,10 @@ export async function createSuggestionAction(input: unknown) {
     if (!parsed.data.turnstileToken) {
       return { error: "Captcha verification required. Please complete the captcha." };
     }
-    const turnstileResult = await verifyTurnstileToken(parsed.data.turnstileToken);
+    const turnstileResult = await verifyTurnstileToken(
+      parsed.data.turnstileToken,
+      parsed.data.turnstileIdempotencyKey,
+    );
     if (!turnstileResult.success) {
       return { error: turnstileResult.error ?? "Captcha verification failed" };
     }
@@ -65,4 +69,3 @@ export async function createSuggestionAction(input: unknown) {
   revalidatePath("/directory");
   return { data };
 }
-
