@@ -120,7 +120,7 @@ export function SuggestionRoomDiffView({
       }
       setMessage("Room suggestion approved and applied.");
       toast.success("Room suggestion approved!");
-      router.refresh();
+      router.push("/admin/suggestions");
     });
   };
 
@@ -142,7 +142,7 @@ export function SuggestionRoomDiffView({
       }
       setMessage("Room suggestion rejected.");
       toast.success("Room suggestion rejected");
-      router.refresh();
+      router.push("/admin/suggestions");
     });
   };
 

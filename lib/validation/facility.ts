@@ -19,8 +19,12 @@ const codeSchema = z.preprocess((value) => {
 
 export const baseFacilitySchema = z.object({
   code: codeSchema,
+  slug: z.preprocess((value) => {
+    if (typeof value !== "string") return value;
+    const trimmed = value.trim();
+    return trimmed === "" ? undefined : trimmed;
+  }, z.string().min(1).max(100).optional()),
   name: z.string().min(VALIDATION_LIMITS.facility.name.min).max(VALIDATION_LIMITS.facility.name.max),
-  slug: z.string().min(1).max(100).optional(),
   description: z.string().max(VALIDATION_LIMITS.facility.description.max).optional().or(z.literal("")),
   category: z.enum(FACILITY_CATEGORIES),
   coordinates: coordsSchema,

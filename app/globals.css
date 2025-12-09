@@ -239,3 +239,31 @@ select:focus-visible,
 .user-location-accuracy {
   pointer-events: none;
 }
+
+/* Rounded scrollbars across pages and dialogs */
+body,
+[data-radix-scroll-area-viewport],
+.scrollable {
+  scrollbar-width: thin;
+  scrollbar-color: hsla(var(--foreground), 0.3) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: hsla(var(--foreground), 0.28);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.dark *::-webkit-scrollbar-thumb {
+  background: hsla(var(--foreground), 0.35);
+}

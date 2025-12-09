@@ -141,7 +141,7 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
       }
       setMessage("Suggestion approved and applied.");
       toast.success("Suggestion approved!");
-      router.refresh();
+      router.push("/admin/suggestions");
     });
   };
 
@@ -163,7 +163,7 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
       }
       setMessage("Suggestion rejected.");
       toast.success("Suggestion rejected");
-      router.refresh();
+      router.push("/admin/suggestions");
     });
   };
 
