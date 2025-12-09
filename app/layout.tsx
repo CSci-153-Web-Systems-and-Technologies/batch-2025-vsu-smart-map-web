@@ -53,10 +53,10 @@ export const metadata: Metadata = {
     siteName: "VSU SmartMap",
     images: [
       {
-        url: "/vsu-banner-21x9.png",
+        url: "/og-image.png",
         width: 1200,
-        height: 514, // 21:9 ratio approx
-        alt: "VSU SmartMap Application Banner",
+        height: 630,
+        alt: "VSU SmartMap preview showing the campus map and search",
       },
     ],
   },
@@ -64,7 +64,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "VSU SmartMap",
     description: "Interactive campus map for Visayas State University. AI-powered navigation and facility directory.",
-    images: ["/vsu-banner-21x9.png"],
+    images: ["/og-image.png"],
     creator: "@VSU", // or remove if not applicable, keeping generic for now or user handle
   },
 };
