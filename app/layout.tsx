@@ -6,6 +6,7 @@ import { ServiceWorkerRegistration } from "@/components/service-worker-registrat
 import { NavigationProgress } from "@/components/navigation-progress";
 import { Toaster } from "@/components/ui/sonner";
 import { MapStyleProvider } from "@/lib/context/map-style-context";
+import Script from "next/script";
 import "./globals.css";
 
 const defaultUrl = process.env.VERCEL_URL
@@ -59,6 +60,10 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <MapStyleProvider>
+            <Script
+              src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+              strategy="afterInteractive"
+            />
             <NavigationProgress />
             <Toaster />
             <ServiceWorkerRegistration />
