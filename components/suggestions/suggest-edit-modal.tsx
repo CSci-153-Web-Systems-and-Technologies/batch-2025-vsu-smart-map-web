@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
+import { toast } from "sonner";
 import { FacilityDialog } from "@/components/admin/facility-dialog";
 import type { Facility } from "@/lib/types/facility";
 import type { UnifiedFacilityFormValues } from "@/lib/validation/facility";
 import { createSuggestionAction } from "@/app/actions/suggestions";
 import { uploadSuggestionImageClient } from "@/lib/supabase/storage-client";
+import { TurnstileWidget } from "@/components/ui/turnstile-widget";
+import type { TurnstileToken } from "@/lib/types/turnstile";
 
 interface SuggestEditModalProps {
   facility: Facility | null;
@@ -36,12 +39,20 @@ function hasChanges(
 
 export function SuggestEditModal({ facility, open, onOpenChange }: SuggestEditModalProps) {
   const [message, setMessage] = useState<string | null>(null);
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
+  const turnstileTokenRef = useRef<TurnstileToken | null>(null);
+
+  const resetTurnstile = useCallback(() => {
+    turnstileTokenRef.current = null;
+    setTurnstileResetKey((value) => value + 1);
+  }, []);
 
   useEffect(() => {
     if (!open) {
       setMessage(null);
+      resetTurnstile();
     }
-  }, [open]);
+  }, [open, resetTurnstile]);
 
   const handleSubmit = async (
     values: UnifiedFacilityFormValues,
@@ -78,19 +89,48 @@ export function SuggestEditModal({ facility, open, onOpenChange }: SuggestEditMo
       imageUrl: imageUrl ?? undefined,
     };
 
+    const turnstilePayload = turnstileTokenRef.current;
+
     const result = await createSuggestionAction({
       type: "EDIT_FACILITY",
       targetId: facility.id,
       payload,
+      turnstileToken: turnstilePayload?.token ?? undefined,
+      turnstileIdempotencyKey: turnstilePayload?.idempotencyKey ?? undefined,
     });
+
+    resetTurnstile();
 
     if (result.error) {
       setMessage(result.error);
+      toast.error("Failed to submit suggestion");
       return;
     }
 
+    toast.success("Edit suggestion submitted! An admin will review it.");
     onOpenChange(false);
   };
+
+  const handleTurnstileReset = useCallback(() => {
+    turnstileTokenRef.current = null;
+  }, []);
+
+  const handleTurnstileVerify = useCallback((payload: TurnstileToken) => {
+    turnstileTokenRef.current = payload;
+    setMessage(null);
+  }, []);
+
+  const handleTurnstileError = useCallback((code?: string) => {
+    if (code) {
+      setMessage(`Captcha error (code ${code}). Please try again or refresh.`);
+      console.error("Turnstile error code:", code);
+    }
+    resetTurnstile();
+  }, [resetTurnstile]);
+
+  const handleTurnstileExpire = useCallback(() => {
+    resetTurnstile();
+  }, [resetTurnstile]);
 
   return (
     <FacilityDialog
@@ -104,11 +144,20 @@ export function SuggestEditModal({ facility, open, onOpenChange }: SuggestEditMo
       submitLabel="Submit suggestion"
       submittingLabel="Submitting..."
     >
-      {message && (
-        <p className="px-6 pb-4 text-sm text-destructive" role="status">
-          {message}
-        </p>
-      )}
+      <div className="px-6 pb-4 space-y-3">
+        <TurnstileWidget
+          onVerify={handleTurnstileVerify}
+          onError={handleTurnstileError}
+          onExpire={handleTurnstileExpire}
+          onReset={handleTurnstileReset}
+          resetSignal={turnstileResetKey}
+        />
+        {message && (
+          <p className="text-sm text-destructive" role="status">
+            {message}
+          </p>
+        )}
+      </div>
     </FacilityDialog>
   );
 }

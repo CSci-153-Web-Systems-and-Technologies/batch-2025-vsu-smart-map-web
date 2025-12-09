@@ -5,3 +5,4 @@ export * from "./facility";
 export * from "./map";
 export * from "./chat";
 export * from "./suggestion";
+export * from "./turnstile";

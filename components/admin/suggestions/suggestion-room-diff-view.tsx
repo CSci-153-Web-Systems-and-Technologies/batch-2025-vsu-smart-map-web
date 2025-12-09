@@ -9,9 +9,11 @@ import type { Facility } from "@/lib/types/facility";
 import type { Suggestion } from "@/lib/types/suggestion";
 import type { RoomFormValues } from "@/lib/validation/room";
 import { cn } from "@/lib/utils";
+import { formatDatePH } from "@/lib/utils/date";
 import { approveSuggestion, rejectSuggestion } from "@/app/admin/suggestions/actions";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 import { Pencil } from "lucide-react";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -113,9 +115,11 @@ export function SuggestionRoomDiffView({
       const result = await approveSuggestion(suggestion.id, editedPayload);
       if (result?.error) {
         setError(result.error);
+        toast.error("Failed to approve room suggestion");
         return;
       }
       setMessage("Room suggestion approved and applied.");
+      toast.success("Room suggestion approved!");
       router.refresh();
     });
   };
@@ -133,9 +137,11 @@ export function SuggestionRoomDiffView({
       const result = await rejectSuggestion(suggestion.id, rejectionReason || undefined);
       if (result?.error) {
         setError(result.error);
+        toast.error("Failed to reject room suggestion");
         return;
       }
       setMessage("Room suggestion rejected.");
+      toast.success("Room suggestion rejected");
       router.refresh();
     });
   };
@@ -156,7 +162,7 @@ export function SuggestionRoomDiffView({
         <Badge variant="outline">{suggestion.type.replace("_", " ")}</Badge>
         <Badge variant="secondary">{suggestion.status}</Badge>
         <span className="text-sm text-muted-foreground">
-          Submitted {new Date(suggestion.createdAt).toLocaleString()}
+          Submitted {formatDatePH(suggestion.createdAt)}
         </span>
       </div>
 

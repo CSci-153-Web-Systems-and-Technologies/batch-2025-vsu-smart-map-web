@@ -1,7 +1,17 @@
+"use client";
+
 import Link from "next/link";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import type { Suggestion } from "@/lib/types/suggestion";
 import { cn } from "@/lib/utils";
+import { formatDatePH } from "@/lib/utils/date";
+import { bulkRejectSuggestions } from "@/app/admin/suggestions/actions";
+import { ConfirmDialog } from "@/components/admin/confirm-dialog";
+import { toast } from "sonner";
+import { useRealtimeSuggestions } from "@/hooks/use-realtime-suggestions";
 
 interface SuggestionsTableProps {
   suggestions: Suggestion[];
@@ -24,6 +34,54 @@ const formatType = (type: Suggestion["type"]) => {
 };
 
 export function SuggestionsTable({ suggestions, facilityNames }: SuggestionsTableProps) {
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [pending, startTransition] = useTransition();
+  const router = useRouter();
+
+  useRealtimeSuggestions();
+
+  const allSelected = suggestions.length > 0 && selectedIds.size === suggestions.length;
+  const someSelected = selectedIds.size > 0;
+
+  const toggleAll = () => {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(suggestions.map((s) => s.id)));
+    }
+  };
+
+  const toggleOne = (id: string) => {
+    const next = new Set(selectedIds);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
+    setSelectedIds(next);
+  };
+
+  const handleBulkReject = () => {
+    setShowRejectDialog(false);
+    startTransition(async () => {
+      const ids = Array.from(selectedIds);
+      const result = await bulkRejectSuggestions(ids);
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+      const { processed, failed } = result.data!;
+      if (failed > 0) {
+        toast.warning(`Rejected ${processed} suggestions, ${failed} failed`);
+      } else {
+        toast.success(`Rejected ${processed} suggestions`);
+      }
+      setSelectedIds(new Set());
+      router.refresh();
+    });
+  };
+
   if (!suggestions.length) {
     return (
       <div className="rounded-lg border border-dashed border-border bg-muted/30 p-6 text-sm text-muted-foreground">
@@ -33,66 +91,120 @@ export function SuggestionsTable({ suggestions, facilityNames }: SuggestionsTabl
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border">
-      <table className="w-full text-sm">
-        <thead className="bg-muted/40">
-          <tr className="text-left text-muted-foreground">
-            <th className="px-4 py-3 font-medium">Type</th>
-            <th className="px-4 py-3 font-medium">Target</th>
-            <th className="px-4 py-3 font-medium">Submitted</th>
-            <th className="px-4 py-3 font-medium text-right">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {suggestions.map((suggestion) => {
-            let targetName = "New facility";
-            const payload = suggestion.payload as Record<string, unknown>;
+    <div className="space-y-4">
+      {someSelected && (
+        <div className="flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
+          <span className="text-sm font-medium">
+            {selectedIds.size} selected
+          </span>
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={() => setShowRejectDialog(true)}
+            disabled={pending}
+          >
+            {pending ? "Processing..." : "Reject Selected"}
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setSelectedIds(new Set())}
+            disabled={pending}
+          >
+            Clear Selection
+          </Button>
+        </div>
+      )}
 
-            if (suggestion.targetId && facilityNames[suggestion.targetId]) {
-              targetName = facilityNames[suggestion.targetId];
-            } else if (typeof payload.name === "string" && payload.name) {
-              targetName = payload.name;
-            }
+      <div className="overflow-hidden rounded-lg border border-border">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/40">
+            <tr className="text-left text-muted-foreground">
+              <th className="px-4 py-3 w-10">
+                <Checkbox
+                  checked={allSelected}
+                  onCheckedChange={toggleAll}
+                  aria-label="Select all"
+                />
+              </th>
+              <th className="px-4 py-3 font-medium">Type</th>
+              <th className="px-4 py-3 font-medium">Target</th>
+              <th className="px-4 py-3 font-medium">Submitted</th>
+              <th className="px-4 py-3 font-medium text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {suggestions.map((suggestion) => {
+              let targetName = "New facility";
+              const payload = suggestion.payload as Record<string, unknown>;
 
-            if (suggestion.type === "ADD_ROOM" || suggestion.type === "EDIT_ROOM") {
-              if (payload.roomCode) {
-                targetName = `Room ${payload.roomCode}`;
-              } else if (payload.name) {
-                targetName = String(payload.name);
-              } else {
-                targetName = "Room";
+              if (suggestion.targetId && facilityNames[suggestion.targetId]) {
+                targetName = facilityNames[suggestion.targetId];
+              } else if (typeof payload.name === "string" && payload.name) {
+                targetName = payload.name;
               }
-            }
 
-            return (
-              <tr
-                key={suggestion.id}
-                className={cn(
-                  "border-t border-border/70",
-                  "hover:bg-muted/30 transition-colors"
-                )}
-              >
-                <td className="px-4 py-3 align-middle font-medium text-foreground">
-                  {formatType(suggestion.type)}
-                </td>
-                <td className="px-4 py-3 align-middle text-foreground">
-                  {targetName}
-                </td>
-                <td className="px-4 py-3 align-middle text-muted-foreground">
-                  {new Date(suggestion.createdAt).toLocaleString()}
-                </td>
-                <td className="px-4 py-3 align-middle text-right">
-                  <Link href={`/admin/suggestions/${suggestion.id}`}>
-                    <Button size="sm" variant="outline">
-                      Review
-                    </Button>
-                  </Link>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+              if (suggestion.type === "ADD_ROOM" || suggestion.type === "EDIT_ROOM") {
+                if (payload.roomCode) {
+                  targetName = `Room ${payload.roomCode}`;
+                } else if (payload.name) {
+                  targetName = String(payload.name);
+                } else {
+                  targetName = "Room";
+                }
+              }
+
+              const isSelected = selectedIds.has(suggestion.id);
+
+              return (
+                <tr
+                  key={suggestion.id}
+                  className={cn(
+                    "border-t border-border/70",
+                    "hover:bg-muted/30 transition-colors",
+                    isSelected && "bg-primary/5"
+                  )}
+                >
+                  <td className="px-4 py-3 align-middle">
+                    <Checkbox
+                      checked={isSelected}
+                      onCheckedChange={() => toggleOne(suggestion.id)}
+                      aria-label={`Select suggestion ${suggestion.id}`}
+                    />
+                  </td>
+                  <td className="px-4 py-3 align-middle font-medium text-foreground">
+                    {formatType(suggestion.type)}
+                  </td>
+                  <td className="px-4 py-3 align-middle text-foreground">
+                    {targetName}
+                  </td>
+                  <td className="px-4 py-3 align-middle text-muted-foreground">
+                    {formatDatePH(suggestion.createdAt)}
+                  </td>
+                  <td className="px-4 py-3 align-middle text-right">
+                    <Link href={`/admin/suggestions/${suggestion.id}`}>
+                      <Button size="sm" variant="outline">
+                        Review
+                      </Button>
+                    </Link>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <ConfirmDialog
+        open={showRejectDialog}
+        title="Reject Selected Suggestions"
+        description={`Are you sure you want to reject ${selectedIds.size} suggestion${selectedIds.size > 1 ? "s" : ""}? This action cannot be undone.`}
+        confirmLabel="Reject All"
+        confirmVariant="destructive"
+        onConfirm={handleBulkReject}
+        onCancel={() => setShowRejectDialog(false)}
+        loading={pending}
+      />
     </div>
   );
 }

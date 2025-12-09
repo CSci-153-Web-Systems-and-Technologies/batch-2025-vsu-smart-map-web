@@ -210,3 +210,31 @@ export async function rejectSuggestion(id: string, reason?: string) {
 
   return { data: true };
 }
+
+export async function bulkRejectSuggestions(ids: string[], reason?: string) {
+  try {
+    const admin = await getSupabaseAdminClient({ requireServiceRole: true });
+    if (!admin.isServiceRole) {
+      return { error: "Service role key is required." };
+    }
+  } catch (error) {
+    console.error("Failed to get admin client for bulk rejection:", error);
+    return { error: "Service role key is required." };
+  }
+
+  const results = await Promise.allSettled(
+    ids.map((id) => rejectSuggestion(id, reason))
+  );
+
+  const failed = results.filter(
+    (r) => r.status === "rejected" || (r.status === "fulfilled" && r.value.error)
+  ).length;
+
+  revalidatePath("/admin/suggestions");
+
+  if (failed > 0) {
+    return { data: { processed: ids.length - failed, failed } };
+  }
+
+  return { data: { processed: ids.length, failed: 0 } };
+}

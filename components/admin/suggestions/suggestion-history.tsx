@@ -13,6 +13,7 @@ import { History, Clock } from "lucide-react";
 import type { Suggestion } from "@/lib/types/suggestion";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { formatDatePH } from "@/lib/utils/date";
 
 interface SuggestionHistoryProps {
   suggestions: Suggestion[];
@@ -84,7 +85,7 @@ export function SuggestionHistory({ suggestions, facilityNames, currentId }: Sug
                       </div>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
                         <Clock className="h-3 w-3" />
-                        {new Date(suggestion.createdAt).toLocaleString()}
+                        {formatDatePH(suggestion.createdAt)}
                       </div>
                       {suggestion.adminNote && (
                         <p className="mt-2 text-xs text-muted-foreground border-l-2 border-muted pl-2 italic">

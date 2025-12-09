@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { AdminSubmission } from "@/lib/admin/dashboard";
 import { cn } from "@/lib/utils";
+import { formatDateShortPH } from "@/lib/utils/date";
 
 interface RecentSubmissionsProps {
   submissions: AdminSubmission[];
@@ -55,7 +56,7 @@ export function RecentActivity({ submissions }: RecentSubmissionsProps) {
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <span className="capitalize">{typeLabel}</span>
                     <span>•</span>
-                    <span>{new Date(submission.createdAt).toLocaleDateString()}</span>
+                    <span>{formatDateShortPH(submission.createdAt)}</span>
                   </div>
                 </div>
                 <span
