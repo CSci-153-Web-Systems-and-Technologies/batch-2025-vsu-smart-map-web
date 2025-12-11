@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { ChatView } from "@/components/chat/chat-view";
 
 export const metadata: Metadata = {
-  title: "Chat | VSU SmartMap",
+  title: "Chat",
   description: "Ask the Campus Assistant about campus buildings, offices, and services.",
 };
 

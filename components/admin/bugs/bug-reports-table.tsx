@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { BugReport, BugStatus } from "@/lib/types/bug-report";
 import { format } from "date-fns";
-import { Loader2, Bug, CheckCircle2, AlertCircle, XCircle, Clock, ExternalLink } from "lucide-react";
+import { Loader2, Bug, CheckCircle2, AlertCircle, XCircle, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 
@@ -236,17 +236,7 @@ export function BugReportsTable() {
               {/* Screenshot Section */}
               {selectedReport?.screenshot_url && (
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-medium text-muted-foreground">Screenshot</h3>
-                    <a
-                      href={selectedReport.screenshot_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs flex items-center gap-1 text-primary hover:underline"
-                    >
-                      Open original <ExternalLink className="w-3 h-3" />
-                    </a>
-                  </div>
+                  <h3 className="text-sm font-medium text-muted-foreground">Screenshot</h3>
                   <div className="relative rounded-lg border overflow-hidden bg-muted/20">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img

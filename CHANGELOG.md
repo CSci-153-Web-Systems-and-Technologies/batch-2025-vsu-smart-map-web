@@ -1,5 +1,39 @@
 # Changelog
 
+## v1.2.3
+- Fix chat page duplicate title suffix
+- Add Turnstile captcha to bug report dialog
+- Hide exposed database URLs in admin bug reports
+- Force fresh data on admin dashboard for recent activity
+- Add pinch-to-zoom gesture support for all image dialogs
+- Improve image dialog mobile sizing (85vh height)
+- Optimize dialog animations with GPU acceleration
+- Add Google site verification meta tag
+
+## v1.2.2
+- Fix revalidate admin suggestions after submissions
+- Fix preserve room suggestion fields when adding images
+- Fix stabilize PH date formatting for hydration
+- Fix fallback upload for suggestion images
+- Fix suggestions flow and map loading hotfix
+- Add Vercel Analytics
+- Add Open Graph and Twitter card metadata
+
+## v1.2.0
+- Add Cloudflare Turnstile captcha to suggestion modals
+- Add bulk reject action for admin suggestions
+- Add Supabase realtime subscription for suggestions
+- Add Philippine timezone date formatting
+- Refactor Turnstile to use native API with idempotency support
+
+## v1.1.0
+- Add satellite map view toggle in settings
+- Optimize mobile pinch-to-zoom smoothness
+- Fix mobile modal stacking with Select z-index
+- Fix RLS for public suggestion submissions
+- Add CSS touch and GPU optimizations for mobile zoom
+- Update branding icons
+
 ## v1.0.0
 - Campus map with category pins, selection, and directory handoff
 - Directory search/filter with URL sync and cached facilities
