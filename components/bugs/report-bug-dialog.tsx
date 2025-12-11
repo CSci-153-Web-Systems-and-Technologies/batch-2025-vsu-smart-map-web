@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition, useRef } from "react";
+import { useEffect, useState, useTransition, useRef, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -8,6 +8,9 @@ import { Loader2, Bug, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { uploadBugScreenshotClient } from "@/lib/supabase/storage-client";
+import { TurnstileWidget } from "@/components/ui/turnstile-widget";
+import type { TurnstileToken } from "@/lib/types/turnstile";
+import { verifyTurnstileToken } from "@/lib/turnstile";
 
 
 import { Button } from "@/components/ui/button";
@@ -46,8 +49,36 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
   const [isPending, startTransition] = useTransition();
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [captchaError, setCaptchaError] = useState<string | null>(null);
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const turnstileTokenRef = useRef<TurnstileToken | null>(null);
   const supabase = createClient();
+
+  const resetTurnstile = useCallback(() => {
+    turnstileTokenRef.current = null;
+    setTurnstileResetKey((value) => value + 1);
+  }, []);
+
+  const handleTurnstileVerify = useCallback((payload: TurnstileToken) => {
+    turnstileTokenRef.current = payload;
+    setCaptchaError(null);
+  }, []);
+
+  const handleTurnstileError = useCallback((code?: string) => {
+    if (code) {
+      setCaptchaError(`Captcha error (code ${code}). Please try again.`);
+    }
+  }, []);
+
+  const handleTurnstileExpire = useCallback(() => {
+    turnstileTokenRef.current = null;
+    setCaptchaError("Captcha expired. Please complete it again.");
+  }, []);
+
+  const handleTurnstileReset = useCallback(() => {
+    turnstileTokenRef.current = null;
+  }, []);
 
   const {
     register,
@@ -72,12 +103,14 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
     if (!open) {
       reset();
       setSelectedImage(null);
+      setCaptchaError(null);
+      resetTurnstile();
       if (imagePreview) {
         URL.revokeObjectURL(imagePreview);
         setImagePreview(null);
       }
     }
-  }, [open, reset, imagePreview]);
+  }, [open, reset, imagePreview, resetTurnstile]);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -118,8 +151,26 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
   };
 
   const onSubmit = (values: BugReportFormValues) => {
+    // Verify turnstile token before submission
+    const turnstilePayload = turnstileTokenRef.current;
+    if (!turnstilePayload?.token) {
+      setCaptchaError("Please complete the captcha verification.");
+      return;
+    }
+
     startTransition(async () => {
       try {
+        // Verify turnstile token server-side
+        const verifyResult = await verifyTurnstileToken(
+          turnstilePayload.token,
+          turnstilePayload.idempotencyKey
+        );
+        if (!verifyResult.success) {
+          setCaptchaError(verifyResult.error || "Captcha verification failed.");
+          resetTurnstile();
+          return;
+        }
+
         const reportId = crypto.randomUUID();
         let screenshotUrl = null;
 
@@ -177,6 +228,7 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
       } catch (error) {
         console.error("Failed to submit bug report:", error);
         toast.error("Failed to submit bug report. Please try again.");
+        resetTurnstile();
       }
     });
   };
@@ -303,6 +355,19 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
               accept="image/*"
               onChange={handleImageSelect}
             />
+          </div>
+
+          <div className="space-y-2">
+            <TurnstileWidget
+              onVerify={handleTurnstileVerify}
+              onError={handleTurnstileError}
+              onExpire={handleTurnstileExpire}
+              onReset={handleTurnstileReset}
+              resetSignal={turnstileResetKey}
+            />
+            {captchaError && (
+              <p className="text-sm font-medium text-destructive">{captchaError}</p>
+            )}
           </div>
 
           <DialogFooter>
