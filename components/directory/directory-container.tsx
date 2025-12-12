@@ -1,13 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { DirectoryList } from "./directory-list";
 
 import { CategoryFilters } from "../map/category-filters";
 import { Button } from "@/components/ui/button";
 import type { Facility } from "@/lib/types/facility";
 import { useApp } from "@/lib/context/app-context";
+import { searchRooms } from "@/lib/supabase/queries/rooms";
 
 
 export interface DirectoryContainerProps {
@@ -24,23 +25,60 @@ export function DirectoryContainer({ facilities }: DirectoryContainerProps) {
     selectFacility,
   } = useApp();
 
+  const [roomMatchFacilityIds, setRoomMatchFacilityIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const searchLower = searchQuery.toLowerCase().trim();
+    if (searchLower.length < 2) {
+      setRoomMatchFacilityIds(new Set());
+      return;
+    }
+
+    let cancelled = false;
+    const doRoomSearch = async () => {
+      const { data } = await searchRooms({ term: searchLower, includeFacility: true });
+      if (cancelled) return;
+
+      if (data && data.length > 0) {
+        const ids = new Set<string>();
+        for (const room of data) {
+          const roomWithFacility = room as { facility_id?: string; facility?: { id?: string } };
+          const fid = roomWithFacility.facility?.id ?? roomWithFacility.facility_id;
+          if (fid) ids.add(fid);
+        }
+        setRoomMatchFacilityIds(ids);
+      } else {
+        setRoomMatchFacilityIds(new Set());
+      }
+    };
+
+    const timer = setTimeout(() => void doRoomSearch(), 150);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [searchQuery]);
 
   const filteredFacilities = useMemo(() => {
     return facilities.filter((facility) => {
       const searchLower = searchQuery.toLowerCase().trim();
 
-      const matchesSearch =
+      const matchesFacilitySearch =
         searchLower === "" ||
         facility.name.toLowerCase().includes(searchLower) ||
         facility.code?.toLowerCase().includes(searchLower) ||
         facility.description?.toLowerCase().includes(searchLower);
+
+      const matchesRoomSearch = roomMatchFacilityIds.has(facility.id);
+
+      const matchesSearch = matchesFacilitySearch || matchesRoomSearch;
 
       const matchesCategory =
         selectedCategory === null || facility.category === selectedCategory;
 
       return matchesSearch && matchesCategory;
     });
-  }, [facilities, searchQuery, selectedCategory]);
+  }, [facilities, searchQuery, selectedCategory, roomMatchFacilityIds]);
 
   const hasActiveFilters = searchQuery !== "" || selectedCategory !== null;
 
