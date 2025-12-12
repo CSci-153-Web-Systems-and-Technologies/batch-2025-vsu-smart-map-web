@@ -14,6 +14,7 @@ import {
 } from '@/app/admin/facilities/actions';
 import { uploadFacilityHeroClient } from '@/lib/supabase/storage-client';
 import { ConfirmDialog } from './confirm-dialog';
+import { toast } from 'sonner';
 
 interface FacilitiesPageClientProps {
   facilities: Facility[];
@@ -100,6 +101,7 @@ export function FacilitiesPageClient({ facilities }: FacilitiesPageClientProps) 
             setItems((prev) => [...prev, created]);
             router.refresh();
           });
+          toast.success('Facility created successfully');
           setDialogOpen(false);
         }
         return;
@@ -126,10 +128,12 @@ export function FacilitiesPageClient({ facilities }: FacilitiesPageClientProps) 
         setItems((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
         router.refresh();
       });
+      toast.success('Facility updated successfully');
       setDialogOpen(false);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'An unexpected error occurred.';
       setMessage(message);
+      toast.error('Failed to save facility');
     }
   };
 
@@ -148,6 +152,7 @@ export function FacilitiesPageClient({ facilities }: FacilitiesPageClientProps) 
 
     if (result.error) {
       setMessage(result.error);
+      toast.error('Failed to delete facility');
       setDeleteLoading(false);
       setPendingDelete(null);
       return;
@@ -158,6 +163,7 @@ export function FacilitiesPageClient({ facilities }: FacilitiesPageClientProps) 
       router.refresh();
     });
 
+    toast.success('Facility deleted successfully');
     setDeleteLoading(false);
     setPendingDelete(null);
   };

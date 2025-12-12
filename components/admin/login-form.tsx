@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -25,6 +26,7 @@ export function LoginForm() {
     const result = await login(formData);
     if (result?.error) {
       setError(result.error);
+      toast.error('Login failed');
     }
   }
 
