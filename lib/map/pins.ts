@@ -30,9 +30,9 @@ type PinAsset = {
   tooltipAnchor: [number, number];
 };
 
-const PIN_SIZE: [number, number] = [48, 52]; // Height increased to accommodate selection ring
-const PIN_ANCHOR: [number, number] = [24, 50]; // Anchor at the pin tip
-const TOOLTIP_ANCHOR: [number, number] = [0, -50];
+const PIN_SIZE: [number, number] = [42, 46]; // Slightly smaller pins for better map density
+const PIN_ANCHOR: [number, number] = [21, 44]; // Anchor at the pin tip (width/2, height-2)
+const TOOLTIP_ANCHOR: [number, number] = [0, -44];
 
 // Centralize the icon paths. All icons are designed for a 24x24 grid, centered in the map pin.
 const PIN_LIBRARY: Record<PinId, { path: string; scale?: number; translateY?: number }> = {
@@ -169,9 +169,11 @@ export function getPinAssetForCategory(
     ? `<circle cx="32" cy="22" r="23" fill="none" stroke="#FFB81C" stroke-width="3" />`
     : "";
 
+  const [pinWidth, pinHeight] = PIN_SIZE;
+
   // viewBox expanded: -2 on y to account for ring top, height becomes 68
   const html = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="52" viewBox="0 -4 64 70">
+    <svg xmlns="http://www.w3.org/2000/svg" width="${pinWidth}" height="${pinHeight}" viewBox="0 -4 64 70">
       ${selectedRing}
       
       <path 
