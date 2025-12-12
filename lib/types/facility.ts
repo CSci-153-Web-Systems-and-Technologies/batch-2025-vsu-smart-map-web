@@ -25,7 +25,8 @@ export const FACILITY_CATEGORIES = [
   'utility',
   'commercial',
   'transportation',
-  'atm'
+  'atm',
+  'other'
 ] as const;
 
 export type FacilityCategory = typeof FACILITY_CATEGORIES[number];
@@ -38,7 +39,7 @@ export const BUILDING_FACILITY_CATEGORIES: readonly FacilityCategory[] = [
 /** Categories that typically represent POIs without rooms */
 export const POI_FACILITY_CATEGORIES: readonly FacilityCategory[] = [
   'sports', 'dining', 'medical', 'parking', 'landmark',
-  'religious', 'utility', 'commercial', 'transportation', 'atm'
+  'religious', 'utility', 'commercial', 'transportation', 'atm', 'other'
 ] as const;
 
 /**
