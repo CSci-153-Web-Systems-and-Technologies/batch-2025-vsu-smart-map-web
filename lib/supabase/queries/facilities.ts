@@ -73,7 +73,14 @@ function mapUpdatePayload(input: FacilityUpdate) {
   return patch;
 }
 
-export type FacilityChatContext = Pick<Facility, "id" | "name" | "category" | "description" | "code">;
+export type RoomChatContext = {
+  roomCode: string;
+  name?: string;
+};
+
+export type FacilityChatContext = Pick<Facility, "id" | "name" | "category" | "description" | "code"> & {
+  rooms?: RoomChatContext[];
+};
 
 export async function getFacilitiesForChat(
   client?: MaybeClient
@@ -81,13 +88,28 @@ export async function getFacilitiesForChat(
   const resolved = await resolveClient(client);
   const { data, error } = await resolved
     .from("facilities")
-    .select("id, name, code, category, description")
+    .select("id, name, code, category, description, rooms:rooms(room_code, name)")
     .order("name", { ascending: true });
 
-  return {
-    data: data as FacilityChatContext[] | null,
-    error: normalizeError(error),
-  };
+  if (error || !data) {
+    return { data: null, error: normalizeError(error) };
+  }
+
+  const mapped = data.map((f) => ({
+    id: f.id as string,
+    name: f.name as string,
+    code: (f.code ?? undefined) as string | undefined,
+    category: f.category as FacilityCategory,
+    description: (f.description ?? undefined) as string | undefined,
+    rooms: Array.isArray(f.rooms) && f.rooms.length > 0
+      ? (f.rooms as Array<{ room_code: string; name: string | null }>).map((r) => ({
+        roomCode: r.room_code,
+        name: r.name ?? undefined,
+      }))
+      : undefined,
+  }));
+
+  return { data: mapped, error: null };
 }
 
 export async function getFacilities(params?: {
