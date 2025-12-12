@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.2.4
+- Add image credits and contact fields for facilities and rooms
+- Display photo credits in facility, room, and zoom views
+- Extend admin and suggestion flows to capture credits and contacts
+- Improve image uploads with adaptive compression and old-image cleanup
+- Tighten facility sheet layout and reduce map pin size
+- Bump facilities and service worker cache versions
+
 ## v1.2.3
 - Fix chat page duplicate title suffix
 - Add Turnstile captcha to bug report dialog
