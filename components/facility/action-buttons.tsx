@@ -35,6 +35,7 @@ export function ActionButtons({ facility, className }: ActionButtonsProps) {
             <div className="grid grid-cols-2 gap-3">
                 <Button
                     variant="outline"
+                    size="sm"
                     className="w-full gap-2"
                     onClick={handleShare}
                 >
@@ -45,7 +46,7 @@ export function ActionButtons({ facility, className }: ActionButtonsProps) {
                     )}
                     {copied ? "Copied" : "Share"}
                 </Button>
-                <Button className="w-full gap-2" onClick={handleDirections}>
+                <Button size="sm" className="w-full gap-2" onClick={handleDirections}>
                     <Navigation className="h-4 w-4" />
                     Directions
                 </Button>
@@ -53,4 +54,3 @@ export function ActionButtons({ facility, className }: ActionButtonsProps) {
         </div>
     );
 }
-
