@@ -1,6 +1,6 @@
-const CACHE_NAME = 'vsu-smartmap-v6';
+const CACHE_NAME = 'vsu-smartmap-v7';
 const TILE_CACHE_NAME = 'map-tiles-v1';
-const API_CACHE_NAME = 'api-cache-v1';
+const API_CACHE_NAME = 'api-cache-v2';
 
 const STATIC_ASSETS = [
   '/offline',
