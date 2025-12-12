@@ -97,6 +97,11 @@ export const FACILITY_CATEGORY_META: Record<FacilityCategory, FacilityCategoryMe
     color: "#22c55e", // green-500
     pinAsset: "/pins/atm.svg",
   },
+  other: {
+    label: "Other",
+    color: "#9ca3af", // gray-400
+    pinAsset: "/pins/other.svg",
+  },
 };
 
 export function getCategoryMeta(category: FacilityCategory): FacilityCategoryMeta {

@@ -32,6 +32,7 @@ function hasRoomChanges(
   if ((values.description ?? "") !== (initialData.description ?? "")) return true;
   if (values.floor !== initialData.floor) return true;
   if ((values.imageUrl ?? "") !== (initialData.imageUrl ?? "")) return true;
+  if ((values.imageCredit ?? "") !== (initialData.imageCredit ?? "")) return true;
   return false;
 }
 
@@ -62,6 +63,7 @@ export function SuggestRoomModal({
     description: initialData?.description ?? "",
     floor: initialData?.floor ?? undefined,
     imageUrl: initialData?.imageUrl ?? undefined,
+    imageCredit: initialData?.imageCredit ?? "",
   });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -85,6 +87,7 @@ export function SuggestRoomModal({
           description: initialData.description ?? "",
           floor: initialData.floor,
           imageUrl: initialData.imageUrl,
+          imageCredit: initialData.imageCredit ?? "",
         });
         if (initialData.imageUrl) {
           setPreview(initialData.imageUrl);
@@ -96,6 +99,7 @@ export function SuggestRoomModal({
           name: "",
           description: "",
           floor: undefined,
+          imageCredit: "",
         });
         setFile(null);
         setPreview((prev) => {
@@ -192,11 +196,9 @@ export function SuggestRoomModal({
 
   const clearImage = () => {
     setFile(null);
-    // Only revoke if it's a blob URL we created
     if (preview?.startsWith("blob:")) URL.revokeObjectURL(preview);
     setPreview(null);
-    // Explicitly set imageUrl to empty string to indicate removal
-    setValues({ ...values, imageUrl: "" });
+    setValues({ ...values, imageUrl: "", imageCredit: "" });
   };
 
   const handleTurnstileReset = useCallback(() => {
@@ -333,6 +335,21 @@ export function SuggestRoomModal({
               </div>
             )}
           </div>
+
+          {preview && (
+            <div className="space-y-1.5">
+              <Label htmlFor="imageCredit">Photo credit (optional)</Label>
+              <Input
+                id="imageCredit"
+                value={values.imageCredit ?? ""}
+                onChange={(event) => setValues({ ...values, imageCredit: event.target.value })}
+                placeholder="Your name"
+              />
+              <p className="text-xs text-muted-foreground">
+                Credit will be displayed with the image.
+              </p>
+            </div>
+          )}
 
           <TurnstileWidget
             onVerify={handleTurnstileVerify}

@@ -4,6 +4,8 @@ import { RecentActivity } from '@/components/admin/recent-activity';
 import { StatsCards } from '@/components/admin/stats-cards';
 import { getAdminStats, getRecentSubmissions } from '@/lib/admin/dashboard';
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminDashboard() {
   const [stats, submissions] = await Promise.all([getAdminStats(), getRecentSubmissions(10)]);
 

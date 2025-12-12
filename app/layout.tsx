@@ -65,7 +65,10 @@ export const metadata: Metadata = {
     title: "VSU SmartMap",
     description: "Interactive campus map for Visayas State University. AI-powered navigation and facility directory.",
     images: ["/og-image.png"],
-    creator: "@VSU", // or remove if not applicable, keeping generic for now or user handle
+    creator: "@VSU",
+  },
+  verification: {
+    google: "QEaVt0p58N8prtIVnsV9aIZV3Ezp_Q1JycBe2A81hR8",
   },
 };
 

@@ -19,6 +19,7 @@ import {
   getRoomById,
 } from "@/lib/supabase/queries/rooms";
 import { getSupabaseServerClient, getSupabaseAdminClient } from "@/lib/supabase/server-client";
+import { deleteImage } from "@/lib/supabase/storage";
 import type { Facility } from "@/lib/types/facility";
 
 const MAX_HISTORY_ITEMS = 5;
@@ -87,6 +88,12 @@ export async function updateFacilityAction(id: string, input: unknown) {
   const client = await getSupabaseServerClient();
 
   const { data: currentFacility } = await getFacilityById({ id, client });
+
+  // Delete old image if being replaced with a new one
+  const inputData = parsed.data as Record<string, unknown>;
+  if (currentFacility?.imageUrl && inputData.imageUrl && inputData.imageUrl !== currentFacility.imageUrl) {
+    await deleteImage(currentFacility.imageUrl, true);
+  }
 
   const { data, error } = await updateFacility(id, parsed.data, client);
   if (error) {
@@ -192,6 +199,11 @@ export async function updateRoomAction(id: string, input: unknown) {
   const client = await getSupabaseServerClient();
 
   const { data: currentRoom } = await getRoomById({ id, client });
+
+  // Delete old room image if being replaced with a new one
+  if (currentRoom && !("facility" in currentRoom) && currentRoom.image_url && parsed.data.imageUrl && parsed.data.imageUrl !== currentRoom.image_url) {
+    await deleteImage(currentRoom.image_url, true);
+  }
 
   const { data, error } = await updateRoom({ id, ...parsed.data }, client);
   if (error) {

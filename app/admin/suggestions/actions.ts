@@ -11,6 +11,7 @@ import { getSupabaseAdminClient } from "@/lib/supabase/server-client";
 import type { FacilityCategory, FacilityInsert, FacilityUpdate } from "@/lib/types/facility";
 import { deleteImage } from "@/lib/supabase/storage";
 import { getFacilityById } from "@/lib/supabase/queries/facilities";
+import { getRoomById } from "@/lib/supabase/queries/rooms";
 import { revalidateFacilitiesCache } from "@/lib/supabase/queries/facilities.server";
 
 const GENERIC_ERROR = "Unable to process suggestion. Please try again.";
@@ -23,6 +24,10 @@ const mapFacilityInsert = (input: FacilityInsert): FacilityInsert => ({
   hasRooms: input.hasRooms,
   coordinates: input.coordinates,
   imageUrl: input.imageUrl ?? undefined,
+  imageCredit: input.imageCredit ?? undefined,
+  website: input.website ?? undefined,
+  facebook: input.facebook ?? undefined,
+  phone: input.phone ?? undefined,
   slug: input.slug,
 });
 
@@ -35,6 +40,10 @@ const mapFacilityUpdate = (input: FacilityUpdate): FacilityUpdate => {
   if (input.hasRooms !== undefined) update.hasRooms = input.hasRooms;
   if (input.coordinates) update.coordinates = input.coordinates;
   if (input.imageUrl !== undefined) update.imageUrl = input.imageUrl ?? undefined;
+  if (input.imageCredit !== undefined) update.imageCredit = input.imageCredit ?? undefined;
+  if (input.website !== undefined) update.website = input.website ?? undefined;
+  if (input.facebook !== undefined) update.facebook = input.facebook ?? undefined;
+  if (input.phone !== undefined) update.phone = input.phone ?? undefined;
   if (input.slug !== undefined) update.slug = input.slug;
   return update;
 };
@@ -93,6 +102,17 @@ export async function approveSuggestion(id: string, overridePayload?: unknown) {
         return { error: "Suggestion payload is invalid." };
       }
 
+      // Delete old image if being replaced with a new one
+      if (typeof parsed.data.imageUrl === "string" && parsed.data.imageUrl) {
+        const { data: currentFacility } = await getFacilityById({
+          id: suggestion.targetId,
+          client,
+        });
+        if (currentFacility?.imageUrl && currentFacility.imageUrl !== parsed.data.imageUrl) {
+          await deleteImage(currentFacility.imageUrl, true);
+        }
+      }
+
       const updatePayload = mapFacilityUpdate(parsed.data);
       const { error: updateError } = await updateFacility(suggestion.targetId, updatePayload, client);
       if (updateError) {
@@ -127,6 +147,17 @@ export async function approveSuggestion(id: string, overridePayload?: unknown) {
       const parsed = roomSchema.partial().safeParse(payloadToUse);
       if (!parsed.success) {
         return { error: "Room payload is invalid." };
+      }
+
+      // Delete old room image if being replaced with a new one
+      if (typeof parsed.data.imageUrl === "string" && parsed.data.imageUrl) {
+        const { data: currentRoom } = await getRoomById({
+          id: suggestion.targetId,
+          client,
+        });
+        if (currentRoom && "image_url" in currentRoom && currentRoom.image_url && currentRoom.image_url !== parsed.data.imageUrl) {
+          await deleteImage(currentRoom.image_url, true);
+        }
       }
 
       const { error: editRoomError } = await updateRoom(

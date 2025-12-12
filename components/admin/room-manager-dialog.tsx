@@ -16,6 +16,7 @@ import { uploadRoomImageClient } from '@/lib/supabase/storage-client';
 import { useRouter } from 'next/navigation';
 import type { RoomFormValues } from '@/lib/validation/room';
 import { ConfirmDialog } from './confirm-dialog';
+import { toast } from 'sonner';
 
 interface RoomManagerDialogProps {
   open: boolean;
@@ -129,17 +130,20 @@ export function RoomManagerDialog({ open, facility, onOpenChange }: RoomManagerD
         const result = await createRoomAction({ ...values, facilityId: facility.id });
         if (result.error) {
           setError(result.error);
+          toast.error('Failed to create room');
           return;
         }
         if (result.data) {
           const created = await syncRoomImage(result.data as RoomRowLike, file, clearImage);
           setRooms((prev) => [...prev, created]);
+          toast.success('Room created successfully');
         }
       } else if (selectedRoom) {
 
         const result = await updateRoomAction(selectedRoom.id, { ...values, facilityId: facility.id });
         if (result.error) {
           setError(result.error);
+          toast.error('Failed to update room');
           return;
         }
 
@@ -147,6 +151,7 @@ export function RoomManagerDialog({ open, facility, onOpenChange }: RoomManagerD
         updated = await syncRoomImage(updated, file, clearImage);
 
         setRooms((prev) => prev.map((room) => (room.id === updated.id ? updated : room)));
+        toast.success('Room updated successfully');
       }
 
       setFormOpen(false);
@@ -154,6 +159,7 @@ export function RoomManagerDialog({ open, facility, onOpenChange }: RoomManagerD
     } catch (err) {
       const message = err instanceof Error ? err.message : 'An unexpected error occurred.';
       setError(message);
+      toast.error('Failed to save room');
     }
   };
 
@@ -171,6 +177,7 @@ export function RoomManagerDialog({ open, facility, onOpenChange }: RoomManagerD
     const result = await deleteRoomAction(roomToDelete.id);
     if (result.error) {
       setError(result.error);
+      toast.error('Failed to delete room');
       setDeleteLoading(false);
       setRoomToDelete(null);
       return;
@@ -181,6 +188,7 @@ export function RoomManagerDialog({ open, facility, onOpenChange }: RoomManagerD
       router.refresh();
     });
 
+    toast.success('Room deleted successfully');
     setDeleteLoading(false);
     setRoomToDelete(null);
   };

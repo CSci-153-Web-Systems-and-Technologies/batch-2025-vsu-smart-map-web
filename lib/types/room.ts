@@ -8,6 +8,8 @@ export interface Room extends AuditFields {
   readonly description?: string;
   readonly floor?: number;
   readonly imageUrl?: string;
+  readonly imageCredit?: string;
 }
 
 export type RoomSummary = Pick<Room, "id" | "roomCode" | "name" | "facilityId">;
+

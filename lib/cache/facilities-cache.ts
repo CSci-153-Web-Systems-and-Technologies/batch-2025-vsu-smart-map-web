@@ -1,6 +1,6 @@
 import type { Facility } from "@/lib/types";
 
-const FACILITIES_STORAGE_KEY = "vsu-smartmap-facilities";
+const FACILITIES_STORAGE_KEY = "vsu-smartmap-facilities-v3";
 const CACHE_MAX_AGE_MS = 30 * 60 * 1000; // 30 minutes
 
 interface CachedFacilities {

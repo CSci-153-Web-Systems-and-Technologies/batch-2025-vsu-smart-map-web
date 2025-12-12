@@ -19,7 +19,8 @@ type PinId =
   | "utility"
   | "commercial"
   | "transportation"
-  | "atm";
+  | "atm"
+  | "other";
 
 type PinAsset = {
   html: string;
@@ -29,9 +30,9 @@ type PinAsset = {
   tooltipAnchor: [number, number];
 };
 
-const PIN_SIZE: [number, number] = [48, 52]; // Height increased to accommodate selection ring
-const PIN_ANCHOR: [number, number] = [24, 50]; // Anchor at the pin tip
-const TOOLTIP_ANCHOR: [number, number] = [0, -50];
+const PIN_SIZE: [number, number] = [42, 46]; // Slightly smaller pins for better map density
+const PIN_ANCHOR: [number, number] = [21, 44]; // Anchor at the pin tip (width/2, height-2)
+const TOOLTIP_ANCHOR: [number, number] = [0, -44];
 
 // Centralize the icon paths. All icons are designed for a 24x24 grid, centered in the map pin.
 const PIN_LIBRARY: Record<PinId, { path: string; scale?: number; translateY?: number }> = {
@@ -123,6 +124,10 @@ const PIN_LIBRARY: Record<PinId, { path: string; scale?: number; translateY?: nu
     // Dollar Sign
     path: "M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z",
   },
+  other: {
+    // Ellipsis / More Horizontal (three dots)
+    path: "M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z",
+  },
 };
 
 const FACILITY_CATEGORY_TO_PIN: Record<FacilityCategory, PinId> = {
@@ -144,6 +149,7 @@ const FACILITY_CATEGORY_TO_PIN: Record<FacilityCategory, PinId> = {
   commercial: "commercial",
   transportation: "transportation",
   atm: "atm",
+  other: "other",
 };
 
 export function getPinAssetForCategory(
@@ -163,9 +169,11 @@ export function getPinAssetForCategory(
     ? `<circle cx="32" cy="22" r="23" fill="none" stroke="#FFB81C" stroke-width="3" />`
     : "";
 
+  const [pinWidth, pinHeight] = PIN_SIZE;
+
   // viewBox expanded: -2 on y to account for ring top, height becomes 68
   const html = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="52" viewBox="0 -4 64 70">
+    <svg xmlns="http://www.w3.org/2000/svg" width="${pinWidth}" height="${pinHeight}" viewBox="0 -4 64 70">
       ${selectedRing}
       
       <path 

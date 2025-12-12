@@ -15,7 +15,7 @@ type BaseResult<T> = { data: T | null; error: PostgrestError | null };
 type MaybeClient = SupabaseClient | Promise<SupabaseClient>;
 
 const selectBase = () =>
-  "id, code, name, slug, description, category, has_rooms, latitude, longitude, image_url, created_at, updated_at";
+  "id, code, name, slug, description, category, has_rooms, latitude, longitude, image_url, image_credit, website, facebook, phone, created_at, updated_at";
 
 export const normalizeError = (error: PostgrestError | null) =>
   error ? { ...error, message: "Unable to complete facility request" } : null;
@@ -33,6 +33,10 @@ function toFacility(row: FacilityRow): Facility {
     category: row.category as FacilityCategory,
     coordinates: { lat: row.latitude, lng: row.longitude },
     imageUrl: row.image_url ?? undefined,
+    imageCredit: row.image_credit ?? undefined,
+    website: row.website ?? undefined,
+    facebook: row.facebook ?? undefined,
+    phone: row.phone ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -54,6 +58,10 @@ function mapInsertPayload(input: FacilityInsert) {
     latitude: input.coordinates.lat,
     longitude: input.coordinates.lng,
     image_url: input.imageUrl ?? null,
+    image_credit: input.imageCredit ?? null,
+    website: input.website ?? null,
+    facebook: input.facebook ?? null,
+    phone: input.phone ?? null,
   };
 }
 
@@ -70,10 +78,21 @@ function mapUpdatePayload(input: FacilityUpdate) {
     patch.longitude = input.coordinates.lng;
   }
   if (input.imageUrl !== undefined) patch.image_url = input.imageUrl ?? null;
+  if (input.imageCredit !== undefined) patch.image_credit = input.imageCredit ?? null;
+  if (input.website !== undefined) patch.website = input.website ?? null;
+  if (input.facebook !== undefined) patch.facebook = input.facebook ?? null;
+  if (input.phone !== undefined) patch.phone = input.phone ?? null;
   return patch;
 }
 
-export type FacilityChatContext = Pick<Facility, "id" | "name" | "category" | "description" | "code">;
+export type RoomChatContext = {
+  roomCode: string;
+  name?: string;
+};
+
+export type FacilityChatContext = Pick<Facility, "id" | "name" | "category" | "description" | "code"> & {
+  rooms?: RoomChatContext[];
+};
 
 export async function getFacilitiesForChat(
   client?: MaybeClient
@@ -81,13 +100,28 @@ export async function getFacilitiesForChat(
   const resolved = await resolveClient(client);
   const { data, error } = await resolved
     .from("facilities")
-    .select("id, name, code, category, description")
+    .select("id, name, code, category, description, rooms:rooms(room_code, name)")
     .order("name", { ascending: true });
 
-  return {
-    data: data as FacilityChatContext[] | null,
-    error: normalizeError(error),
-  };
+  if (error || !data) {
+    return { data: null, error: normalizeError(error) };
+  }
+
+  const mapped = data.map((f) => ({
+    id: f.id as string,
+    name: f.name as string,
+    code: (f.code ?? undefined) as string | undefined,
+    category: f.category as FacilityCategory,
+    description: (f.description ?? undefined) as string | undefined,
+    rooms: Array.isArray(f.rooms) && f.rooms.length > 0
+      ? (f.rooms as Array<{ room_code: string; name: string | null }>).map((r) => ({
+        roomCode: r.room_code,
+        name: r.name ?? undefined,
+      }))
+      : undefined,
+  }));
+
+  return { data: mapped, error: null };
 }
 
 export async function getFacilities(params?: {

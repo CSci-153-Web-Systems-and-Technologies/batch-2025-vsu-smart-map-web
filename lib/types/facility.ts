@@ -25,7 +25,8 @@ export const FACILITY_CATEGORIES = [
   'utility',
   'commercial',
   'transportation',
-  'atm'
+  'atm',
+  'other'
 ] as const;
 
 export type FacilityCategory = typeof FACILITY_CATEGORIES[number];
@@ -38,7 +39,7 @@ export const BUILDING_FACILITY_CATEGORIES: readonly FacilityCategory[] = [
 /** Categories that typically represent POIs without rooms */
 export const POI_FACILITY_CATEGORIES: readonly FacilityCategory[] = [
   'sports', 'dining', 'medical', 'parking', 'landmark',
-  'religious', 'utility', 'commercial', 'transportation', 'atm'
+  'religious', 'utility', 'commercial', 'transportation', 'atm', 'other'
 ] as const;
 
 /**
@@ -53,6 +54,10 @@ export interface BaseFacility extends AuditFields {
   readonly category: FacilityCategory;
   readonly coordinates: LatLng;
   readonly imageUrl?: string;
+  readonly imageCredit?: string;
+  readonly website?: string;
+  readonly facebook?: string;
+  readonly phone?: string;
 }
 
 /**
@@ -118,6 +123,10 @@ export interface FacilityRow {
   latitude: number;
   longitude: number;
   image_url: string | null;
+  image_credit: string | null;
+  website: string | null;
+  facebook: string | null;
+  phone: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -133,6 +142,10 @@ export interface FacilityInsert {
   hasRooms: boolean;
   coordinates: LatLng;
   imageUrl?: string;
+  imageCredit?: string;
+  website?: string;
+  facebook?: string;
+  phone?: string;
 }
 
 export type FacilityUpdate = Partial<FacilityInsert>;

@@ -1,8 +1,10 @@
-const CACHE_NAME = 'vsu-smartmap-v5';
+const CACHE_NAME = 'vsu-smartmap-v8';
 const TILE_CACHE_NAME = 'map-tiles-v1';
-const API_CACHE_NAME = 'api-cache-v1';
+const API_CACHE_NAME = 'api-cache-v2';
 
 const STATIC_ASSETS = [
+  '/',
+  '/directory',
   '/offline',
   '/manifest.json',
   '/icons/icon-192x192.png',
@@ -66,7 +68,14 @@ self.addEventListener('fetch', (event) => {
               cache.put(request, response.clone());
             }
             return response;
-          }).catch(() => new Response('', { status: 503 }))
+          }).catch(async () => {
+            // For JS chunks that fail offline, clients will need to reload
+            // Return a proper error that won't crash the app silently
+            return new Response('/* offline */', {
+              status: 503,
+              headers: { 'Content-Type': 'application/javascript' }
+            });
+          })
         )
       )
     );
@@ -130,11 +139,12 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() => {
-          return caches.match('/offline').then((cachedPage) => {
-            if (cachedPage) {
-              return cachedPage;
-            }
-            return new Response('Offline', { status: 503 });
+          return caches.match(request, { ignoreSearch: true }).then((cachedPage) => {
+            if (cachedPage) return cachedPage;
+            return caches.match('/offline').then((offlinePage) => {
+              if (offlinePage) return offlinePage;
+              return new Response('Offline', { status: 503 });
+            });
           });
         })
     );

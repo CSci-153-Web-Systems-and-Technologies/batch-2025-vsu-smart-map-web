@@ -18,6 +18,7 @@ interface RoomRow {
     description: string | null;
     floor: number | null;
     image_url: string | null;
+    image_credit: string | null;
 }
 
 interface RoomListProps {
@@ -32,7 +33,7 @@ export function RoomList({ facilityId, facilityName, facilityCode }: RoomListPro
     const [error, setError] = useState<string | null>(null);
     const [suggestOpen, setSuggestOpen] = useState(false);
     const [selectedRoom, setSelectedRoom] = useState<RoomRow | null>(null);
-    const [zoomImage, setZoomImage] = useState<string | null>(null);
+    const [zoomImage, setZoomImage] = useState<{ src: string; credit?: string } | null>(null);
 
     useEffect(() => {
         let mounted = true;
@@ -148,7 +149,7 @@ export function RoomList({ facilityId, facilityName, facilityCode }: RoomListPro
                                         <button
                                             type="button"
                                             className="h-full w-full cursor-zoom-in"
-                                            onClick={() => setZoomImage(room.image_url!)}
+                                            onClick={() => setZoomImage({ src: room.image_url!, credit: room.image_credit ?? undefined })}
                                         >
                                             <Image
                                                 src={room.image_url}
@@ -205,10 +206,11 @@ export function RoomList({ facilityId, facilityName, facilityCode }: RoomListPro
                 initialData={selectedRoom ? {
                     facilityId,
                     roomCode: selectedRoom.room_code,
-                    name: selectedRoom.name ?? "", // Ensure empty string fallback matching form logic
+                    name: selectedRoom.name ?? "",
                     description: selectedRoom.description ?? "",
                     floor: selectedRoom.floor ?? undefined,
-                    imageUrl: selectedRoom.image_url ?? undefined
+                    imageUrl: selectedRoom.image_url ?? undefined,
+                    imageCredit: selectedRoom.image_credit ?? ""
                 } : undefined}
                 roomId={selectedRoom?.id}
             />
@@ -216,8 +218,9 @@ export function RoomList({ facilityId, facilityName, facilityCode }: RoomListPro
                 <ImageZoomDialog
                     open={!!zoomImage}
                     onOpenChange={(open) => !open && setZoomImage(null)}
-                    src={zoomImage}
+                    src={zoomImage.src}
                     alt="Room image"
+                    credit={zoomImage.credit}
                 />
             )}
         </>

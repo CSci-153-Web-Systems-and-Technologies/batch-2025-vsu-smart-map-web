@@ -158,15 +158,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (isNavigating.current) return;
 
-    const urlSearch = searchParams.get("q") ?? "";
     const urlCategoryParam = searchParams.get("category");
     const urlCategory = isValidCategory(urlCategoryParam) ? urlCategoryParam : null;
     const urlFacilityId = searchParams.get("facility");
 
-    if (urlSearch !== lastSyncedSearch.current && urlSearch !== searchQuery && urlSearch !== debouncedQuery) {
-      setSearchQuery(urlSearch);
-      lastSyncedSearch.current = urlSearch;
-    }
     if (urlCategory !== lastSyncedCategory.current && urlCategory !== selectedCategory) {
       setSelectedCategory(urlCategory);
       lastSyncedCategory.current = urlCategory;
@@ -181,7 +176,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       lastSyncedFacilityId.current = urlFacilityId;
     }
-  }, [searchParams, searchQuery, debouncedQuery, selectedCategory, selectedFacility]);
+  }, [searchParams, selectedCategory, selectedFacility]);
 
   useEffect(() => {
     if (pathname.startsWith("/directory")) setActiveTabState("directory");

@@ -131,6 +131,17 @@ select:focus-visible,
   outline: none;
 }
 
+/* Dialog Performance Optimizations */
+[data-radix-dialog-content] {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+[data-radix-dialog-overlay] {
+  will-change: opacity;
+}
+
 /* Leaflet map z-index override to prevent overlapping with modals and menus.
    Scoped to containers with the map-wrapper class for targeted control. */
 .map-wrapper .leaflet-container,
