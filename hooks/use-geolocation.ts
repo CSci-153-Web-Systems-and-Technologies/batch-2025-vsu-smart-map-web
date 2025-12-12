@@ -22,8 +22,8 @@ interface UseGeolocationOptions {
 
 const defaultOptions: UseGeolocationOptions = {
   enableHighAccuracy: true,
-  timeout: 10000,
-  maximumAge: 0,
+  timeout: 30000,
+  maximumAge: 60000,
 };
 
 export function useGeolocation(options: UseGeolocationOptions = {}) {
@@ -94,16 +94,29 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
 
     setState((prev) => ({ ...prev, isTracking: true, error: null }));
 
-    navigator.geolocation.getCurrentPosition(
-      handleSuccess,
-      handleError,
-      mergedOptions
-    );
+    const fastOptions: PositionOptions = {
+      enableHighAccuracy: false,
+      timeout: 5000,
+      maximumAge: 300000,
+    };
 
-    watchIdRef.current = navigator.geolocation.watchPosition(
-      handleSuccess,
-      handleError,
-      mergedOptions
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        handleSuccess(position);
+        watchIdRef.current = navigator.geolocation.watchPosition(
+          handleSuccess,
+          handleError,
+          mergedOptions
+        );
+      },
+      () => {
+        watchIdRef.current = navigator.geolocation.watchPosition(
+          handleSuccess,
+          handleError,
+          mergedOptions
+        );
+      },
+      fastOptions
     );
 
     if (typeof DeviceOrientationEvent !== "undefined") {
