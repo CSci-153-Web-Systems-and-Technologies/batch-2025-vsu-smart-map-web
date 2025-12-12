@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vsu-smartmap-v5';
+const CACHE_NAME = 'vsu-smartmap-v6';
 const TILE_CACHE_NAME = 'map-tiles-v1';
 const API_CACHE_NAME = 'api-cache-v1';
 
@@ -66,7 +66,14 @@ self.addEventListener('fetch', (event) => {
               cache.put(request, response.clone());
             }
             return response;
-          }).catch(() => new Response('', { status: 503 }))
+          }).catch(async () => {
+            // For JS chunks that fail offline, clients will need to reload
+            // Return a proper error that won't crash the app silently
+            return new Response('/* offline */', {
+              status: 503,
+              headers: { 'Content-Type': 'application/javascript' }
+            });
+          })
         )
       )
     );
