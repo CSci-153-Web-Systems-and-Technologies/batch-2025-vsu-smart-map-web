@@ -41,6 +41,16 @@ export const baseFacilitySchema = z.object({
       )
       .optional(),
   ),
+  imageCredit: z.string().max(80).optional().or(z.literal("")),
+  website: z.preprocess(
+    (value) => (value === "" || value === null ? undefined : value),
+    z.string().url({ message: "Please enter a valid URL" }).optional(),
+  ),
+  facebook: z.preprocess(
+    (value) => (value === "" || value === null ? undefined : value),
+    z.string().url({ message: "Please enter a valid Facebook URL" }).optional(),
+  ),
+  phone: z.string().max(20).optional().or(z.literal("")),
 });
 
 export const facilityWithRoomsSchema = baseFacilitySchema.extend({

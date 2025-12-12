@@ -54,6 +54,10 @@ export interface BaseFacility extends AuditFields {
   readonly category: FacilityCategory;
   readonly coordinates: LatLng;
   readonly imageUrl?: string;
+  readonly imageCredit?: string;
+  readonly website?: string;
+  readonly facebook?: string;
+  readonly phone?: string;
 }
 
 /**
@@ -119,6 +123,10 @@ export interface FacilityRow {
   latitude: number;
   longitude: number;
   image_url: string | null;
+  image_credit: string | null;
+  website: string | null;
+  facebook: string | null;
+  phone: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -134,6 +142,10 @@ export interface FacilityInsert {
   hasRooms: boolean;
   coordinates: LatLng;
   imageUrl?: string;
+  imageCredit?: string;
+  website?: string;
+  facebook?: string;
+  phone?: string;
 }
 
 export type FacilityUpdate = Partial<FacilityInsert>;

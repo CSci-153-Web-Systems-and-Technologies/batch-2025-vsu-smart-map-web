@@ -15,7 +15,7 @@ type BaseResult<T> = { data: T | null; error: PostgrestError | null };
 type MaybeClient = SupabaseClient | Promise<SupabaseClient>;
 
 const selectBase = () =>
-  "id, code, name, slug, description, category, has_rooms, latitude, longitude, image_url, created_at, updated_at";
+  "id, code, name, slug, description, category, has_rooms, latitude, longitude, image_url, image_credit, website, facebook, phone, created_at, updated_at";
 
 export const normalizeError = (error: PostgrestError | null) =>
   error ? { ...error, message: "Unable to complete facility request" } : null;
@@ -33,6 +33,10 @@ function toFacility(row: FacilityRow): Facility {
     category: row.category as FacilityCategory,
     coordinates: { lat: row.latitude, lng: row.longitude },
     imageUrl: row.image_url ?? undefined,
+    imageCredit: row.image_credit ?? undefined,
+    website: row.website ?? undefined,
+    facebook: row.facebook ?? undefined,
+    phone: row.phone ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -54,6 +58,10 @@ function mapInsertPayload(input: FacilityInsert) {
     latitude: input.coordinates.lat,
     longitude: input.coordinates.lng,
     image_url: input.imageUrl ?? null,
+    image_credit: input.imageCredit ?? null,
+    website: input.website ?? null,
+    facebook: input.facebook ?? null,
+    phone: input.phone ?? null,
   };
 }
 
@@ -70,6 +78,10 @@ function mapUpdatePayload(input: FacilityUpdate) {
     patch.longitude = input.coordinates.lng;
   }
   if (input.imageUrl !== undefined) patch.image_url = input.imageUrl ?? null;
+  if (input.imageCredit !== undefined) patch.image_credit = input.imageCredit ?? null;
+  if (input.website !== undefined) patch.website = input.website ?? null;
+  if (input.facebook !== undefined) patch.facebook = input.facebook ?? null;
+  if (input.phone !== undefined) patch.phone = input.phone ?? null;
   return patch;
 }
 
