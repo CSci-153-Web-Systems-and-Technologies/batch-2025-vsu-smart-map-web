@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { ImagePlus } from "lucide-react";
+import { ImagePlus, Globe, Facebook, Phone } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { getCategoryMeta } from "@/lib/constants/facilities";
 import type { Facility } from "@/lib/types/facility";
 import { cn } from "@/lib/utils";
@@ -20,6 +21,8 @@ export function FacilityHeader({ facility, className, onAddPhoto, parentOpen = t
     const meta = getCategoryMeta(facility.category);
     const hasImage = !!facility.imageUrl;
     const [zoomOpen, setZoomOpen] = useState(false);
+
+    const hasContacts = facility.website || facility.facebook || facility.phone;
 
     useEffect(() => {
         if (!parentOpen && zoomOpen) {
@@ -59,6 +62,13 @@ export function FacilityHeader({ facility, className, onAddPhoto, parentOpen = t
                                     Click to zoom
                                 </span>
                             </div>
+                            {facility.imageCredit && (
+                                <div className="absolute bottom-2 right-2 z-10 max-w-[80%]">
+                                    <span className="inline-block truncate text-xs text-white/70 bg-black/25 px-2 py-0.5 rounded backdrop-blur-sm">
+                                        📷 {facility.imageCredit}
+                                    </span>
+                                </div>
+                            )}
                         </button>
                     ) : (
                         <button
@@ -96,6 +106,58 @@ export function FacilityHeader({ facility, className, onAddPhoto, parentOpen = t
                     {facility.description && (
                         <p className="text-sm text-muted-foreground">{facility.description}</p>
                     )}
+
+                    {hasContacts && (
+                        <div className="flex flex-wrap gap-2 pt-2">
+                            {facility.website && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 gap-1.5"
+                                    asChild
+                                >
+                                    <a
+                                        href={facility.website}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        <Globe className="h-3.5 w-3.5" />
+                                        Website
+                                    </a>
+                                </Button>
+                            )}
+                            {facility.facebook && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 gap-1.5"
+                                    asChild
+                                >
+                                    <a
+                                        href={facility.facebook}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        <Facebook className="h-3.5 w-3.5" />
+                                        Facebook
+                                    </a>
+                                </Button>
+                            )}
+                            {facility.phone && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 gap-1.5"
+                                    asChild
+                                >
+                                    <a href={`tel:${facility.phone}`}>
+                                        <Phone className="h-3.5 w-3.5" />
+                                        {facility.phone}
+                                    </a>
+                                </Button>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -105,8 +167,10 @@ export function FacilityHeader({ facility, className, onAddPhoto, parentOpen = t
                     onOpenChange={setZoomOpen}
                     src={facility.imageUrl!}
                     alt={facility.name}
+                    credit={facility.imageCredit}
                 />
             )}
         </>
     );
 }
+

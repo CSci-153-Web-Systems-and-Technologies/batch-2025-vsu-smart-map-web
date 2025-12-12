@@ -12,6 +12,7 @@ interface ImageZoomDialogProps {
   onOpenChange: (open: boolean) => void;
   src: string;
   alt: string;
+  credit?: string;
 }
 
 export function ImageZoomDialog({
@@ -19,6 +20,7 @@ export function ImageZoomDialog({
   onOpenChange,
   src,
   alt,
+  credit,
 }: ImageZoomDialogProps) {
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
@@ -162,6 +164,14 @@ export function ImageZoomDialog({
             />
           </div>
         </div>
+
+        {credit && (
+          <div className="absolute bottom-2 left-2 right-2 z-50 flex justify-center">
+            <span className="text-xs text-muted-foreground bg-background/80 backdrop-blur px-3 py-1 rounded-full">
+              📷 Photo by {credit}
+            </span>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
