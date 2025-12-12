@@ -61,6 +61,10 @@ export function FacilityDialog({
         hasRooms: facility.hasRooms,
         coordinates: facility.coordinates,
         imageUrl: facility.imageUrl ?? '',
+        imageCredit: facility.imageCredit ?? '',
+        website: facility.website ?? '',
+        facebook: facility.facebook ?? '',
+        phone: facility.phone ?? '',
         slug: facility.slug,
       };
     }
@@ -72,6 +76,10 @@ export function FacilityDialog({
       hasRooms: true,
       coordinates: defaultCoordinates,
       imageUrl: '',
+      imageCredit: '',
+      website: '',
+      facebook: '',
+      phone: '',
       slug: undefined,
     };
   }, [facility]);
@@ -273,7 +281,7 @@ export function FacilityDialog({
                           setPreview(null);
                           setFile(null);
                           setClearImage(true);
-                          setValues({ ...values, imageUrl: '' });
+                          setValues({ ...values, imageUrl: '', imageCredit: '' });
                         }}
                       >
                         Remove image
@@ -299,6 +307,57 @@ export function FacilityDialog({
                   <p className="text-xs text-muted-foreground">
                     Max {STORAGE_LIMITS.inputMaxMB}MB. Types: {STORAGE_LIMITS.acceptedTypes.join(', ')}.
                   </p>
+                </div>
+
+                {(preview || values.imageUrl) && (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="imageCredit">Photo credit (optional)</Label>
+                    <Input
+                      id="imageCredit"
+                      value={values.imageCredit ?? ''}
+                      onChange={(event) => setValues({ ...values, imageCredit: event.target.value })}
+                      placeholder="Your name or contributor's name"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Credit will be displayed with the image.
+                    </p>
+                  </div>
+                )}
+
+                <div className="space-y-4 pt-2">
+                  <h4 className="text-sm font-medium text-muted-foreground">Contact Information (optional)</h4>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="website">Website</Label>
+                      <Input
+                        id="website"
+                        type="url"
+                        value={values.website ?? ''}
+                        onChange={(event) => setValues({ ...values, website: event.target.value })}
+                        placeholder="https://example.vsu.edu.ph"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="facebook">Facebook page</Label>
+                      <Input
+                        id="facebook"
+                        type="url"
+                        value={values.facebook ?? ''}
+                        onChange={(event) => setValues({ ...values, facebook: event.target.value })}
+                        placeholder="https://facebook.com/page"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="phone">Phone number</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={values.phone ?? ''}
+                      onChange={(event) => setValues({ ...values, phone: event.target.value })}
+                      placeholder="e.g., (053) 565-0600"
+                    />
+                  </div>
                 </div>
 
                 {error && (

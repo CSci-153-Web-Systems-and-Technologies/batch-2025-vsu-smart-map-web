@@ -35,6 +35,7 @@ interface RoomRow {
   description: string | null;
   floor: number | null;
   image_url: string | null;
+  image_credit: string | null;
 }
 
 interface SuggestionRoomDiffViewProps {
@@ -44,7 +45,7 @@ interface SuggestionRoomDiffViewProps {
   targetFacility: Facility | null;
 }
 
-type FieldKey = "roomCode" | "name" | "description" | "floor" | "imageUrl";
+type FieldKey = "roomCode" | "name" | "description" | "floor" | "imageUrl" | "imageCredit";
 
 const fieldLabels: Record<FieldKey, string> = {
   roomCode: "Room Code",
@@ -52,6 +53,7 @@ const fieldLabels: Record<FieldKey, string> = {
   description: "Description",
   floor: "Floor",
   imageUrl: "Room Image",
+  imageCredit: "Photo Credit",
 };
 
 const formatValue = (value: unknown) => {
@@ -77,6 +79,7 @@ const hasDifference = (
     description: "description",
     floor: "floor",
     imageUrl: "image_url",
+    imageCredit: "image_credit",
   };
 
   const currentValue = currentRoom[keyMap[key]];
@@ -153,6 +156,7 @@ export function SuggestionRoomDiffView({
       description: currentRoom.description ?? "",
       floor: currentRoom.floor ?? undefined,
       imageUrl: currentRoom.image_url ?? undefined,
+      imageCredit: currentRoom.image_credit ?? "",
     }
     : null;
 
