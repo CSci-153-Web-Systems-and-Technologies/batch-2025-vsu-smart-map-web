@@ -158,7 +158,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (isNavigating.current) return;
 
-    const urlSearch = searchParams.get("q") ?? "";
     const urlCategoryParam = searchParams.get("category");
     const urlCategory = isValidCategory(urlCategoryParam) ? urlCategoryParam : null;
     const urlFacilityId = searchParams.get("facility");

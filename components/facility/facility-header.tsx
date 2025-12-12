@@ -59,6 +59,13 @@ export function FacilityHeader({ facility, className, onAddPhoto, parentOpen = t
                                     Click to zoom
                                 </span>
                             </div>
+                            {facility.imageCredit && (
+                                <div className="absolute bottom-2 right-2 z-10 max-w-[80%]">
+                                    <span className="inline-block truncate text-xs text-white/70 bg-black/25 px-2 py-0.5 rounded backdrop-blur-sm">
+                                        📷 {facility.imageCredit}
+                                    </span>
+                                </div>
+                            )}
                         </button>
                     ) : (
                         <button
@@ -96,6 +103,7 @@ export function FacilityHeader({ facility, className, onAddPhoto, parentOpen = t
                     {facility.description && (
                         <p className="text-sm text-muted-foreground">{facility.description}</p>
                     )}
+
                 </div>
             </div>
 
@@ -105,6 +113,7 @@ export function FacilityHeader({ facility, className, onAddPhoto, parentOpen = t
                     onOpenChange={setZoomOpen}
                     src={facility.imageUrl!}
                     alt={facility.name}
+                    credit={facility.imageCredit}
                 />
             )}
         </>

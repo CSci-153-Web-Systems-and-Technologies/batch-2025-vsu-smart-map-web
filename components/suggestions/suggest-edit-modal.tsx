@@ -33,6 +33,10 @@ function hasChanges(
     values.coordinates.lat !== facility.coordinates.lat ||
     values.coordinates.lng !== facility.coordinates.lng
   ) return true;
+  if ((values.imageCredit ?? "") !== (facility.imageCredit ?? "")) return true;
+  if ((values.website ?? "") !== (facility.website ?? "")) return true;
+  if ((values.facebook ?? "") !== (facility.facebook ?? "")) return true;
+  if ((values.phone ?? "") !== (facility.phone ?? "")) return true;
 
   return false;
 }

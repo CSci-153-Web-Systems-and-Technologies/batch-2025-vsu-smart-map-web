@@ -38,7 +38,7 @@ interface SuggestionDiffViewProps {
 
 type FieldKey = keyof Pick<
   UnifiedFacilityFormValues,
-  "name" | "code" | "description" | "category" | "hasRooms" | "coordinates" | "imageUrl"
+  "name" | "code" | "description" | "category" | "hasRooms" | "coordinates" | "imageUrl" | "imageCredit" | "website" | "facebook" | "phone"
 >;
 
 const fieldLabels: Record<FieldKey, string> = {
@@ -49,6 +49,10 @@ const fieldLabels: Record<FieldKey, string> = {
   hasRooms: "Has Rooms",
   coordinates: "Coordinates",
   imageUrl: "Image",
+  imageCredit: "Photo Credit",
+  website: "Website",
+  facebook: "Facebook",
+  phone: "Phone",
 };
 
 const formatValue = (key: FieldKey, value: unknown) => {
@@ -105,6 +109,10 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
       hasRooms: currentFacility.hasRooms,
       coordinates: currentFacility.coordinates,
       imageUrl: currentFacility.imageUrl ?? "",
+      imageCredit: currentFacility.imageCredit ?? "",
+      website: currentFacility.website ?? "",
+      facebook: currentFacility.facebook ?? "",
+      phone: currentFacility.phone ?? "",
       slug: currentFacility.slug,
     }
     : null;
@@ -198,6 +206,10 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
     category: editedPayload.category ?? currentFacility?.category ?? "landmark",
     coordinates: editedPayload.coordinates ?? currentFacility?.coordinates ?? { lat: 0, lng: 0 },
     imageUrl: editedPayload.imageUrl ?? currentFacility?.imageUrl,
+    imageCredit: editedPayload.imageCredit ?? currentFacility?.imageCredit,
+    website: editedPayload.website ?? currentFacility?.website,
+    facebook: editedPayload.facebook ?? currentFacility?.facebook,
+    phone: editedPayload.phone ?? currentFacility?.phone,
     hasRooms: editedPayload.hasRooms ?? currentFacility?.hasRooms ?? false,
     createdAt: currentFacility?.createdAt ?? new Date().toISOString(),
     updatedAt: currentFacility?.updatedAt ?? new Date().toISOString(),
