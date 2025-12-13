@@ -51,11 +51,6 @@ export default async function SuggestionDetailPage(props: { params: Promise<{ id
           <p className="text-muted-foreground">
             Type: {suggestion.type.replace("_", " ")} · Status: {suggestion.status}
           </p>
-          {targetFacility && (
-            <p className="text-sm text-muted-foreground">
-              Target Facility: <span className="font-medium">{targetFacility.name}</span>
-            </p>
-          )}
         </div>
 
         <SuggestionRoomDiffView

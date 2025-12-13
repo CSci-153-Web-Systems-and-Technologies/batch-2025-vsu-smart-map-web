@@ -173,7 +173,7 @@ export function SuggestionRoomDiffView({
       {targetFacility && (
         <div className="rounded-md border border-border bg-muted/30 p-3">
           <p className="text-sm">
-            <span className="text-muted-foreground">Target Building:</span>{" "}
+            <span className="text-muted-foreground">Target Facility:</span>{" "}
             <span className="font-medium">{targetFacility.name}</span>
           </p>
         </div>
