@@ -8,12 +8,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
-  DialogContent,
   DialogDescription,
-  DialogFooter,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DialogScaffoldBody,
+  DialogScaffoldContent,
+  DialogScaffoldFooter,
+  DialogScaffoldHeader,
+} from "@/components/ui/dialog-scaffold";
 import { roomSchema, type RoomFormValues } from "@/lib/validation/room";
 import { createSuggestionAction } from "@/app/actions/suggestions";
 import { ImagePlus, X } from "lucide-react";
@@ -225,8 +228,8 @@ export function SuggestRoomModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[85dvh] p-0 flex flex-col gap-0 overflow-hidden">
-        <DialogHeader className="p-6 pb-2 shrink-0">
+      <DialogScaffoldContent className="sm:max-w-md">
+        <DialogScaffoldHeader>
           <DialogTitle>{isEditing ? "Suggest edit" : "Suggest a room"}</DialogTitle>
           <DialogDescription>
             {isEditing
@@ -235,10 +238,10 @@ export function SuggestRoomModal({
             }
             An admin will review your suggestion before it is applied.
           </DialogDescription>
-        </DialogHeader>
+        </DialogScaffoldHeader>
 
         <form className="flex flex-col flex-1 min-h-0" onSubmit={handleSubmit}>
-          <div className="flex-1 overflow-y-auto px-6 py-2 min-h-0">
+          <DialogScaffoldBody>
             <div className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-1.5">
@@ -368,9 +371,9 @@ export function SuggestRoomModal({
                 </p>
               )}
             </div>
-          </div>
+          </DialogScaffoldBody>
 
-          <DialogFooter className="p-6 pt-2 shrink-0 border-t">
+          <DialogScaffoldFooter>
             <Button
               type="button"
               variant="ghost"
@@ -382,9 +385,9 @@ export function SuggestRoomModal({
             <Button type="submit" disabled={submitting}>
               {submitting ? "Submitting..." : "Submit suggestion"}
             </Button>
-          </DialogFooter>
+          </DialogScaffoldFooter>
         </form>
-      </DialogContent>
+      </DialogScaffoldContent>
     </Dialog>
   );
 }
