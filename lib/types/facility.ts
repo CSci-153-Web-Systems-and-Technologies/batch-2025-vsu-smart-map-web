@@ -134,7 +134,7 @@ export interface FacilityRow {
 
 
 export interface FacilityInsert {
-  code?: string;
+  code?: string | null;
   name: string;
   slug?: string;
   description?: string;

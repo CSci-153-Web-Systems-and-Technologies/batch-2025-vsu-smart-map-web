@@ -10,6 +10,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -224,8 +225,8 @@ export function SuggestRoomModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md max-h-[85dvh] p-0 flex flex-col gap-0 overflow-hidden">
+        <DialogHeader className="p-6 pb-2 shrink-0">
           <DialogTitle>{isEditing ? "Suggest edit" : "Suggest a room"}</DialogTitle>
           <DialogDescription>
             {isEditing
@@ -236,136 +237,140 @@ export function SuggestRoomModal({
           </DialogDescription>
         </DialogHeader>
 
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="roomCode">Room code *</Label>
-              <Input
-                id="roomCode"
-                value={values.roomCode}
-                onChange={(event) =>
-                  setValues({ ...values, roomCode: event.target.value })
-                }
-                placeholder="e.g., 101, Lab-A"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="floor">Floor (optional)</Label>
-              <Input
-                id="floor"
-                type="number"
-                placeholder="e.g. 1"
-                value={values.floor ?? ""}
-                onChange={(e) =>
-                  setValues({
-                    ...values,
-                    floor: e.target.value ? parseInt(e.target.value) : undefined,
-                  })
-                }
-                disabled={submitting}
-              />
-            </div>
-          </div>
+        <form className="flex flex-col flex-1 min-h-0" onSubmit={handleSubmit}>
+          <div className="flex-1 overflow-y-auto px-6 py-2 min-h-0">
+            <div className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="roomCode">Room code *</Label>
+                  <Input
+                    id="roomCode"
+                    value={values.roomCode}
+                    onChange={(event) =>
+                      setValues({ ...values, roomCode: event.target.value })
+                    }
+                    placeholder="e.g., 101, Lab-A"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="floor">Floor (optional)</Label>
+                  <Input
+                    id="floor"
+                    type="number"
+                    placeholder="e.g. 1"
+                    value={values.floor ?? ""}
+                    onChange={(e) =>
+                      setValues({
+                        ...values,
+                        floor: e.target.value ? parseInt(e.target.value) : undefined,
+                      })
+                    }
+                    disabled={submitting}
+                  />
+                </div>
+              </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="name">Name (optional)</Label>
-            <Input
-              id="name"
-              value={values.name ?? ""}
-              onChange={(event) =>
-                setValues({ ...values, name: event.target.value })
-              }
-              placeholder="e.g., Computer Lab, Conference Room"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="description">Description (optional)</Label>
-            <Textarea
-              id="description"
-              value={values.description ?? ""}
-              onChange={(event) =>
-                setValues({ ...values, description: event.target.value })
-              }
-              placeholder="What is this room used for?"
-              rows={3}
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Room Image (optional)</Label>
-            {!preview ? (
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="w-full gap-2 text-muted-foreground"
-                  onClick={() => document.getElementById("room-image-upload")?.click()}
-                >
-                  <ImagePlus className="h-4 w-4" />
-                  Select image
-                </Button>
-                <input
-                  id="room-image-upload"
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  className="hidden"
-                  onChange={handleFileChange}
+              <div className="space-y-1.5">
+                <Label htmlFor="name">Name (optional)</Label>
+                <Input
+                  id="name"
+                  value={values.name ?? ""}
+                  onChange={(event) =>
+                    setValues({ ...values, name: event.target.value })
+                  }
+                  placeholder="e.g., Computer Lab, Conference Room"
                 />
               </div>
-            ) : (
-              <div className="relative mt-2 aspect-video w-full overflow-hidden rounded-md border">
-                <Image
-                  src={preview}
-                  alt="Preview"
-                  fill
-                  className="object-cover"
+
+              <div className="space-y-1.5">
+                <Label htmlFor="description">Description (optional)</Label>
+                <Textarea
+                  id="description"
+                  value={values.description ?? ""}
+                  onChange={(event) =>
+                    setValues({ ...values, description: event.target.value })
+                  }
+                  placeholder="What is this room used for?"
+                  rows={3}
                 />
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="destructive"
-                  className="absolute right-2 top-2 h-6 w-6 rounded-full opacity-90 transition-opacity hover:opacity-100"
-                  onClick={clearImage}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
               </div>
-            )}
+
+              <div className="space-y-1.5">
+                <Label>Room Image (optional)</Label>
+                {!preview ? (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-full gap-2 text-muted-foreground"
+                      onClick={() => document.getElementById("room-image-upload")?.click()}
+                    >
+                      <ImagePlus className="h-4 w-4" />
+                      Select image
+                    </Button>
+                    <input
+                      id="room-image-upload"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      onChange={handleFileChange}
+                    />
+                  </div>
+                ) : (
+                  <div className="relative mt-2 aspect-video w-full overflow-hidden rounded-md border">
+                    <Image
+                      src={preview}
+                      alt="Preview"
+                      fill
+                      className="object-cover"
+                    />
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="destructive"
+                      className="absolute right-2 top-2 h-6 w-6 rounded-full opacity-90 transition-opacity hover:opacity-100"
+                      onClick={clearImage}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {preview && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="imageCredit">Photo credit (optional)</Label>
+                  <Input
+                    id="imageCredit"
+                    value={values.imageCredit ?? ""}
+                    onChange={(event) => setValues({ ...values, imageCredit: event.target.value })}
+                    placeholder="Your name"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Credit will be displayed with the image.
+                  </p>
+                </div>
+              )}
+
+              <TurnstileWidget
+                onVerify={handleTurnstileVerify}
+                onError={handleTurnstileError}
+                onExpire={handleTurnstileExpire}
+                onReset={handleTurnstileReset}
+                resetSignal={turnstileResetKey}
+              />
+
+              {error && (
+                <p className="text-sm text-destructive" role="status">
+                  {error}
+                </p>
+              )}
+            </div>
           </div>
 
-          {preview && (
-            <div className="space-y-1.5">
-              <Label htmlFor="imageCredit">Photo credit (optional)</Label>
-              <Input
-                id="imageCredit"
-                value={values.imageCredit ?? ""}
-                onChange={(event) => setValues({ ...values, imageCredit: event.target.value })}
-                placeholder="Your name"
-              />
-              <p className="text-xs text-muted-foreground">
-                Credit will be displayed with the image.
-              </p>
-            </div>
-          )}
-
-          <TurnstileWidget
-            onVerify={handleTurnstileVerify}
-            onError={handleTurnstileError}
-            onExpire={handleTurnstileExpire}
-            onReset={handleTurnstileReset}
-            resetSignal={turnstileResetKey}
-          />
-
-          {error && (
-            <p className="text-sm text-destructive" role="status">
-              {error}
-            </p>
-          )}
-
-          <div className="flex justify-end gap-2 pt-2">
+          <DialogFooter className="p-6 pt-2 shrink-0 border-t">
             <Button
               type="button"
               variant="ghost"
@@ -377,7 +382,7 @@ export function SuggestRoomModal({
             <Button type="submit" disabled={submitting}>
               {submitting ? "Submitting..." : "Submit suggestion"}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

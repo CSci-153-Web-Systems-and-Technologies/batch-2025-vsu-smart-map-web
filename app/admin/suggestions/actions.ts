@@ -33,7 +33,7 @@ const mapFacilityInsert = (input: FacilityInsert): FacilityInsert => ({
 
 const mapFacilityUpdate = (input: FacilityUpdate): FacilityUpdate => {
   const update: FacilityUpdate = {};
-  if (input.code !== undefined) update.code = input.code ?? undefined;
+  if (input.code !== undefined) update.code = input.code;
   if (input.name !== undefined) update.name = input.name;
   if (input.description !== undefined) update.description = input.description ?? undefined;
   if (input.category !== undefined) update.category = input.category as FacilityCategory;
