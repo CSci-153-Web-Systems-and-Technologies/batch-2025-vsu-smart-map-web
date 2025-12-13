@@ -12,7 +12,6 @@ import { TurnstileWidget } from "@/components/ui/turnstile-widget";
 import type { TurnstileToken } from "@/lib/types/turnstile";
 import { verifyTurnstileToken } from "@/lib/turnstile";
 
-
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -235,8 +234,8 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[500px] max-h-[85dvh] p-0 flex flex-col gap-0 overflow-hidden">
+        <DialogHeader className="p-6 pb-2 shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Bug className="h-5 w-5" />
             Report a Bug
@@ -246,131 +245,135 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <label htmlFor="title" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-              Title
-            </label>
-            <Input
-              id="title"
-              placeholder="Brief summary of the issue"
-              {...register("title")}
-            />
-            {errors.title && (
-              <p className="text-sm font-medium text-destructive">{errors.title.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <label htmlFor="severity" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-              Severity
-            </label>
-            <Select
-              value={severityValue}
-              onValueChange={(value) => setValue("severity", value as "LOW" | "MEDIUM" | "HIGH" | "CRITICAL")}
-            >
-              <SelectTrigger id="severity">
-                <SelectValue placeholder="Select severity" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="LOW">Low - Minor cosmetic issue</SelectItem>
-                <SelectItem value="MEDIUM">Medium - Feature not working as expected</SelectItem>
-                <SelectItem value="HIGH">High - Feature broken / Cannot use app</SelectItem>
-                <SelectItem value="CRITICAL">Critical - Data loss / Security issue</SelectItem>
-              </SelectContent>
-            </Select>
-            {errors.severity && (
-              <p className="text-sm font-medium text-destructive">{errors.severity.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <label htmlFor="description" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-              Description
-            </label>
-            <Textarea
-              id="description"
-              placeholder="Please emphasize details on what happened..."
-              className="resize-none min-h-[100px]"
-              {...register("description")}
-            />
-            {errors.description && (
-              <p className="text-sm font-medium text-destructive">{errors.description.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-              Screenshot (Optional)
-            </label>
-
-            {!imagePreview ? (
-              <div
-                className="border-2 border-dashed rounded-md p-4 flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors"
-                onClick={() => fileInputRef.current?.click()}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    fileInputRef.current?.click();
-                  }
-                }}
-                role="button"
-                tabIndex={0}
-                aria-label="Upload screenshot"
-              >
-                <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                <p className="text-sm text-muted-foreground text-center">
-                  Click to upload a screenshot
-                  <br />
-                  <span className="text-xs text-muted-foreground/70">(Max 5MB)</span>
-                </p>
-              </div>
-            ) : (
-              <div className="relative rounded-md overflow-hidden border aspect-video group">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  className="w-full h-full object-cover"
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+          <div className="flex-1 overflow-y-auto px-6 py-2 min-h-0">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label htmlFor="title" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  Title
+                </label>
+                <Input
+                  id="title"
+                  placeholder="Brief summary of the issue"
+                  {...register("title")}
                 />
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="icon"
-                  className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeImage();
-                  }}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
+                {errors.title && (
+                  <p className="text-sm font-medium text-destructive">{errors.title.message}</p>
+                )}
               </div>
-            )}
 
-            <input
-              type="file"
-              ref={fileInputRef}
-              className="hidden"
-              accept="image/*"
-              onChange={handleImageSelect}
-            />
+              <div className="space-y-2">
+                <label htmlFor="severity" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  Severity
+                </label>
+                <Select
+                  value={severityValue}
+                  onValueChange={(value) => setValue("severity", value as "LOW" | "MEDIUM" | "HIGH" | "CRITICAL")}
+                >
+                  <SelectTrigger id="severity">
+                    <SelectValue placeholder="Select severity" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="LOW">Low - Minor cosmetic issue</SelectItem>
+                    <SelectItem value="MEDIUM">Medium - Feature not working as expected</SelectItem>
+                    <SelectItem value="HIGH">High - Feature broken / Cannot use app</SelectItem>
+                    <SelectItem value="CRITICAL">Critical - Data loss / Security issue</SelectItem>
+                  </SelectContent>
+                </Select>
+                {errors.severity && (
+                  <p className="text-sm font-medium text-destructive">{errors.severity.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="description" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  Description
+                </label>
+                <Textarea
+                  id="description"
+                  placeholder="Please emphasize details on what happened..."
+                  className="resize-none min-h-[100px]"
+                  {...register("description")}
+                />
+                {errors.description && (
+                  <p className="text-sm font-medium text-destructive">{errors.description.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  Screenshot (Optional)
+                </label>
+
+                {!imagePreview ? (
+                  <div
+                    className="border-2 border-dashed rounded-md p-4 flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => fileInputRef.current?.click()}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        fileInputRef.current?.click();
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Upload screenshot"
+                  >
+                    <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground text-center">
+                      Click to upload a screenshot
+                      <br />
+                      <span className="text-xs text-muted-foreground/70">(Max 5MB)</span>
+                    </p>
+                  </div>
+                ) : (
+                  <div className="relative rounded-md overflow-hidden border aspect-video group">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeImage();
+                      }}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
+
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <TurnstileWidget
+                  onVerify={handleTurnstileVerify}
+                  onError={handleTurnstileError}
+                  onExpire={handleTurnstileExpire}
+                  onReset={handleTurnstileReset}
+                  resetSignal={turnstileResetKey}
+                />
+                {captchaError && (
+                  <p className="text-sm font-medium text-destructive">{captchaError}</p>
+                )}
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <TurnstileWidget
-              onVerify={handleTurnstileVerify}
-              onError={handleTurnstileError}
-              onExpire={handleTurnstileExpire}
-              onReset={handleTurnstileReset}
-              resetSignal={turnstileResetKey}
-            />
-            {captchaError && (
-              <p className="text-sm font-medium text-destructive">{captchaError}</p>
-            )}
-          </div>
-
-          <DialogFooter>
+          <DialogFooter className="p-6 pt-2 shrink-0 border-t">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
               Cancel
             </Button>
