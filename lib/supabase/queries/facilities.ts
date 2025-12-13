@@ -24,9 +24,10 @@ const resolveClient = async (client?: MaybeClient) =>
   Promise.resolve(client ?? getSupabaseBrowserClient());
 
 function toFacility(row: FacilityRow): Facility {
+  const code = row.code?.trim();
   const base = {
     id: row.id,
-    code: row.code ?? undefined,
+    code: code ? code : undefined,
     name: row.name,
     slug: row.slug,
     description: row.description ?? undefined,

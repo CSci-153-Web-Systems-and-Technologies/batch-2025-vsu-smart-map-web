@@ -102,7 +102,7 @@ const hasDifference = (
 export function SuggestionDiffView({ suggestion, payload, currentFacility }: SuggestionDiffViewProps) {
   const currentValues: Partial<UnifiedFacilityFormValues> | null = currentFacility
     ? {
-      code: currentFacility.code ?? "",
+      code: currentFacility.code ?? null,
       name: currentFacility.name,
       description: currentFacility.description ?? "",
       category: currentFacility.category,
