@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.2.5
+- Standardize admin dialog layouts with a shared scaffold
+- Fix bug report and room suggestion dialogs overflowing when images are attached
+- Remove duplicate target facility label in suggestion review
+- Allow clearing optional facility codes (store as NULL)
+
 ## v1.2.4
 - Add image credits and contact fields for facilities and rooms
 - Display photo credits in facility, room, and zoom views
@@ -7,6 +13,8 @@
 - Improve image uploads with adaptive compression and old-image cleanup
 - Tighten facility sheet layout and reduce map pin size
 - Bump facilities and service worker cache versions
+- Fix offline cached map navigation loop on mobile
+- Improve mobile geolocation reliability with low-accuracy fallback
 
 ## v1.2.3
 - Fix chat page duplicate title suffix

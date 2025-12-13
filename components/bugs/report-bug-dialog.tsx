@@ -15,12 +15,15 @@ import { verifyTurnstileToken } from "@/lib/turnstile";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogContent,
   DialogDescription,
-  DialogFooter,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DialogScaffoldBody,
+  DialogScaffoldContent,
+  DialogScaffoldFooter,
+  DialogScaffoldHeader,
+} from "@/components/ui/dialog-scaffold";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -234,8 +237,8 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[85dvh] p-0 flex flex-col gap-0 overflow-hidden">
-        <DialogHeader className="p-6 pb-2 shrink-0">
+      <DialogScaffoldContent className="sm:max-w-[500px]">
+        <DialogScaffoldHeader>
           <DialogTitle className="flex items-center gap-2">
             <Bug className="h-5 w-5" />
             Report a Bug
@@ -243,10 +246,10 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
           <DialogDescription>
             Found an issue? Let us know so we can fix it.
           </DialogDescription>
-        </DialogHeader>
+        </DialogScaffoldHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
-          <div className="flex-1 overflow-y-auto px-6 py-2 min-h-0">
+          <DialogScaffoldBody>
             <div className="space-y-4">
               <div className="space-y-2">
                 <label htmlFor="title" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
@@ -371,9 +374,9 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
                 )}
               </div>
             </div>
-          </div>
+          </DialogScaffoldBody>
 
-          <DialogFooter className="p-6 pt-2 shrink-0 border-t">
+          <DialogScaffoldFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
               Cancel
             </Button>
@@ -381,9 +384,9 @@ export function ReportBugDialog({ open, onOpenChange }: ReportBugDialogProps) {
               {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Submit Report
             </Button>
-          </DialogFooter>
+          </DialogScaffoldFooter>
         </form>
-      </DialogContent>
+      </DialogScaffoldContent>
     </Dialog>
   );
 }

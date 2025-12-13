@@ -7,7 +7,13 @@ import { FACILITY_CATEGORIES } from '@/lib/types/facility';
 import { STORAGE_LIMITS } from '@/lib/constants/storage';
 import { unifiedFacilitySchema, type UnifiedFacilityFormValues } from '@/lib/validation/facility';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import {
+  DialogScaffoldBody,
+  DialogScaffoldContent,
+  DialogScaffoldFooter,
+  DialogScaffoldHeader,
+} from '@/components/ui/dialog-scaffold';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -147,16 +153,16 @@ export function FacilityDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-3xl max-h-[85dvh] p-0 flex flex-col gap-0 overflow-hidden">
-          <DialogHeader className="p-6 pb-2 shrink-0">
+        <DialogScaffoldContent className="sm:max-w-3xl">
+          <DialogScaffoldHeader>
             <DialogTitle>{resolvedTitle}</DialogTitle>
             <DialogDescription>
               {resolvedDescription}
             </DialogDescription>
-          </DialogHeader>
+          </DialogScaffoldHeader>
 
           <form className="flex flex-col flex-1 min-h-0" onSubmit={handleSubmit}>
-            <div className="flex-1 overflow-y-auto px-6 py-2">
+            <DialogScaffoldBody>
               <div className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-1.5">
@@ -367,9 +373,9 @@ export function FacilityDialog({
                 )}
                 {children}
               </div>
-            </div>
+            </DialogScaffoldBody>
 
-            <DialogFooter className="p-6 pt-2 shrink-0 gap-2 sm:gap-0">
+            <DialogScaffoldFooter className="gap-2 sm:gap-0">
               {mode === 'edit' && values.hasRooms && onManageRooms && (
                 <div className="flex-1 flex justify-start">
                   <Button type="button" variant="outline" onClick={onManageRooms}>
@@ -385,9 +391,9 @@ export function FacilityDialog({
                   {submitting ? resolvedSubmitting : resolvedSubmit}
                 </Button>
               </div>
-            </DialogFooter>
+            </DialogScaffoldFooter>
           </form>
-        </DialogContent>
+        </DialogScaffoldContent>
       </Dialog>
 
       {

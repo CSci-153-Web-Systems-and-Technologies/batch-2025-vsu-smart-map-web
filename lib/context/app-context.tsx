@@ -18,6 +18,7 @@ import { useMapStyle } from "@/lib/context/map-style-context";
 interface AppState {
   selectedFacility: Facility | null;
   pendingFacilityId: string | null;
+  facilitySheetOpen: boolean;
   searchQuery: string;
   debouncedQuery: string;
   selectedCategory: FacilityCategory | null;
@@ -28,6 +29,7 @@ interface AppState {
 interface AppContextValue extends AppState {
   selectFacility: (facility: Facility | null) => void;
   resolvePendingFacility: (facility: Facility) => void;
+  setFacilitySheetOpen: (open: boolean) => void;
   setSearchQuery: (query: string) => void;
   setCategory: (category: FacilityCategory | null) => void;
   setActiveTab: (
@@ -67,6 +69,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const [selectedFacility, setSelectedFacility] = useState<Facility | null>(null);
   const [pendingFacilityId, setPendingFacilityId] = useState<string | null>(initialFacilityId);
+  const [facilitySheetOpen, setFacilitySheetOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [debouncedQuery, setDebouncedQuery] = useState(initialSearch);
   const [selectedCategory, setSelectedCategory] = useState<FacilityCategory | null>(initialCategory);
@@ -184,10 +187,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     else setActiveTabState("map");
   }, [pathname]);
 
+  useEffect(() => {
+    if (pathname !== "/") {
+      setFacilitySheetOpen(false);
+    }
+  }, [pathname]);
+
   const selectFacility = useCallback((facility: Facility | null) => {
     if (facility === null) {
       isUserClosing.current = true;
       setTimeout(() => { isUserClosing.current = false; }, CLOSE_GUARD_MS);
+      setFacilitySheetOpen(false);
     }
     setSelectedFacility(facility);
     setPendingFacilityId(facility?.id ?? null);
@@ -249,6 +259,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AppContextValue>(() => ({
     selectedFacility,
     pendingFacilityId,
+    facilitySheetOpen,
     searchQuery,
     debouncedQuery,
     selectedCategory,
@@ -256,6 +267,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     mapStyle,
     selectFacility,
     resolvePendingFacility,
+    setFacilitySheetOpen,
     setSearchQuery,
     setCategory: setSelectedCategory,
     setActiveTab,
@@ -264,6 +276,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }), [
     selectedFacility,
     pendingFacilityId,
+    facilitySheetOpen,
     searchQuery,
     debouncedQuery,
     selectedCategory,
@@ -271,6 +284,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     mapStyle,
     selectFacility,
     resolvePendingFacility,
+    setFacilitySheetOpen,
     setActiveTab,
     setMapStyle,
     clearFilters,

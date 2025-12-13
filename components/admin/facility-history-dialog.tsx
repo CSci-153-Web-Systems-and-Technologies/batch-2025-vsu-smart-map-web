@@ -3,11 +3,14 @@
 import { useEffect, useState } from "react";
 import {
   Dialog,
-  DialogContent,
   DialogDescription,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DialogScaffoldBody,
+  DialogScaffoldContent,
+  DialogScaffoldHeader,
+} from "@/components/ui/dialog-scaffold";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Loader2, History } from "lucide-react";
 import { getFacilityHistory } from "@/app/admin/facilities/actions";
@@ -45,8 +48,8 @@ export function FacilityHistoryDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl max-h-[85dvh] p-0 flex flex-col gap-0 overflow-hidden">
-        <DialogHeader className="p-6 pb-2 shrink-0">
+      <DialogScaffoldContent className="sm:max-w-xl">
+        <DialogScaffoldHeader>
           <DialogTitle className="flex items-center gap-2">
             <History className="h-5 w-5" />
             Edit History
@@ -54,9 +57,9 @@ export function FacilityHistoryDialog({
           <DialogDescription>
             Approved changes for <span className="font-medium text-foreground">{facilityName}</span>.
           </DialogDescription>
-        </DialogHeader>
+        </DialogScaffoldHeader>
 
-        <div className="flex-1 overflow-y-auto px-6 py-4">
+        <DialogScaffoldBody className="py-4">
           {loading ? (
             <div className="flex h-40 items-center justify-center">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -72,8 +75,8 @@ export function FacilityHistoryDialog({
               ))}
             </div>
           )}
-        </div>
-      </DialogContent>
+        </DialogScaffoldBody>
+      </DialogScaffoldContent>
     </Dialog>
   );
 }

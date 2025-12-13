@@ -4,7 +4,12 @@ import { useEffect, useMemo, useState, useTransition } from 'react';
 import type { Facility } from '@/lib/types/facility';
 import { getRoomsByFacility } from '@/lib/supabase/queries/rooms';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import {
+  DialogScaffoldBody,
+  DialogScaffoldContent,
+  DialogScaffoldHeader,
+} from '@/components/ui/dialog-scaffold';
 import { RoomForm } from './room-form';
 import { RoomList, type RoomRecord } from './room-list';
 import {
@@ -201,50 +206,52 @@ export function RoomManagerDialog({ open, facility, onOpenChange }: RoomManagerD
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col overflow-hidden">
-          <DialogHeader>
+        <DialogScaffoldContent className="max-w-4xl">
+          <DialogScaffoldHeader>
             <DialogTitle>Manage rooms</DialogTitle>
             <DialogDescription>
               {title}
             </DialogDescription>
-          </DialogHeader>
+          </DialogScaffoldHeader>
 
-          {!facility && (
-            <p className="text-sm text-muted-foreground">Select a facility to manage rooms.</p>
-          )}
+          <DialogScaffoldBody className="py-4">
+            {!facility && (
+              <p className="text-sm text-muted-foreground">Select a facility to manage rooms.</p>
+            )}
 
-          {facility && (
-            <div className="space-y-4 flex-1 overflow-y-auto min-h-0 pr-2">
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-sm text-muted-foreground">
-                  Rooms linked to {facility.name}
+            {facility && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-sm text-muted-foreground">
+                    Rooms linked to {facility.name}
+                  </div>
+                  <Button size="sm" onClick={handleCreate} disabled={isPending}>
+                    Add room
+                  </Button>
                 </div>
-                <Button size="sm" onClick={handleCreate} disabled={isPending}>
-                  Add room
-                </Button>
+
+                {formOpen && (
+                  <RoomForm
+                    facilityId={facility.id}
+                    facilityCode={facility.code}
+                    initialValues={selectedRoom ?? undefined}
+                    submitting={isPending}
+                    onSubmit={handleRoomSubmit}
+                    onCancel={() => setFormOpen(false)}
+                  />
+                )}
+
+                {error && <p className="text-sm text-destructive">{error}</p>}
+
+                {loading ? (
+                  <p className="text-sm text-muted-foreground">Loading rooms...</p>
+                ) : (
+                  <RoomList rooms={rooms} onEdit={handleEdit} onDelete={handleDelete} disabled={isPending} />
+                )}
               </div>
-
-              {formOpen && (
-                <RoomForm
-                  facilityId={facility.id}
-                  facilityCode={facility.code}
-                  initialValues={selectedRoom ?? undefined}
-                  submitting={isPending}
-                  onSubmit={handleRoomSubmit}
-                  onCancel={() => setFormOpen(false)}
-                />
-              )}
-
-              {error && <p className="text-sm text-destructive">{error}</p>}
-
-              {loading ? (
-                <p className="text-sm text-muted-foreground">Loading rooms...</p>
-              ) : (
-                <RoomList rooms={rooms} onEdit={handleEdit} onDelete={handleDelete} disabled={isPending} />
-              )}
-            </div>
-          )}
-        </DialogContent>
+            )}
+          </DialogScaffoldBody>
+        </DialogScaffoldContent>
       </Dialog>
       <ConfirmDialog
         open={Boolean(roomToDelete)}

@@ -25,12 +25,14 @@ import {
 } from "@/components/ui/select";
 import {
   Dialog,
-  DialogContent,
-  DialogHeader,
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  DialogScaffoldBody,
+  DialogScaffoldContent,
+  DialogScaffoldHeader,
+} from "@/components/ui/dialog-scaffold";
 
 const STATUS_ICONS = {
   OPEN: AlertCircle,
@@ -202,8 +204,8 @@ export function BugReportsTable() {
       </Table>
 
       <Dialog open={!!selectedReport} onOpenChange={(open) => !open && setSelectedReport(null)}>
-        <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
-          <DialogHeader>
+        <DialogScaffoldContent className="max-w-3xl max-h-[90vh]">
+          <DialogScaffoldHeader>
             <DialogTitle className="flex items-start justify-between gap-4">
               <span className="text-xl flex-1 truncate">{selectedReport?.title}</span>
               {selectedReport && (
@@ -215,9 +217,9 @@ export function BugReportsTable() {
             <DialogDescription>
               Reported on {selectedReport && format(new Date(selectedReport.created_at), "PPP p")}
             </DialogDescription>
-          </DialogHeader>
+          </DialogScaffoldHeader>
 
-          <ScrollArea className="flex-1 -mx-6 px-6">
+          <DialogScaffoldBody className="py-4">
             <div className="space-y-6">
               {/* Status Section */}
               <div className="flex items-center gap-2 text-sm">
@@ -263,8 +265,8 @@ export function BugReportsTable() {
                 </div>
               )}
             </div>
-          </ScrollArea>
-        </DialogContent>
+          </DialogScaffoldBody>
+        </DialogScaffoldContent>
       </Dialog>
     </div>
   );
