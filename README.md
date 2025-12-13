@@ -4,6 +4,13 @@ Smart, offline-friendly campus navigation for Visayas State University. Browse f
 
 ![VSU SmartMap Banner](public/vsu-banner-21x9.png)
 
+## Quick Links
+- Map: `/`
+- Directory: `/directory`
+- Chat: `/chat`
+- Admin: `/admin`
+- Offline page: `/offline`
+
 ## Overview
 - Interactive Leaflet map with category pins and selection sheet
 - Directory with search/filter and map handoff
@@ -27,7 +34,7 @@ Smart, offline-friendly campus navigation for Visayas State University. Browse f
 - MapTiler key for tiles
 - Gemini API keys (CSV) for chat
 
-## Setup
+## Getting Started
 1. Install dependencies
    ```bash
    npm install
@@ -41,7 +48,16 @@ Smart, offline-friendly campus navigation for Visayas State University. Browse f
    npm run dev
    ```
 
+## Supabase Setup
+- Apply SQL migrations in `supabase/migrations/` (run in timestamp order).
+- Optional: seed data via `supabase/seed.sql` (safe to re-run for dev).
+- Storage bucket `smartmap-bucket` is created by migrations and must remain public for image reads.
+
 ## Environment Variables
+Notes:
+- Variables prefixed with `NEXT_PUBLIC_` are exposed to the browser.
+- Keep `SUPABASE_SERVICE_ROLE_KEY` server-only (never expose it in the client).
+
 ```
 NEXT_PUBLIC_SUPABASE_URL=...           # Supabase project URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...      # Supabase anon/publishable key
@@ -76,6 +92,12 @@ GEMINI_MODEL=gemini-flash-lite-latest  # Gemini model name
 - Admin console at `/admin` (Supabase Auth protected)
 - Facilities/rooms CRUD, image upload (Supabase Storage), suggestion approvals, activity history
 - Server actions require `SUPABASE_SERVICE_ROLE_KEY`
+
+## Contributing (Gitflow)
+- Base branch: `develop`
+- Branch naming: `feature/<slug>`, `fix/<slug>`, `hotfix/<slug>`
+- Commits: Conventional Commits (`feat(scope): ...`, `fix(scope): ...`, `docs(scope): ...`, `chore(scope): ...`)
+- Keep PRs small, avoid redundant commits, and run `npm run lint` + `npm run build` before opening a PR
 
 ## QA & Verification
 - Lint: `npm run lint`
