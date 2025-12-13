@@ -3,11 +3,14 @@
 import { useState } from "react";
 import {
   Dialog,
-  DialogContent,
   DialogDescription,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DialogScaffoldBody,
+  DialogScaffoldContent,
+  DialogScaffoldHeader,
+} from "@/components/ui/dialog-scaffold";
 import { Button } from "@/components/ui/button";
 import { History, Clock } from "lucide-react";
 import type { Suggestion } from "@/lib/types/suggestion";
@@ -32,15 +35,15 @@ export function SuggestionHistory({ suggestions, facilityNames, currentId }: Sug
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-xl max-h-[85dvh] p-0 flex flex-col gap-0 overflow-hidden">
-          <DialogHeader className="p-6 pb-2 shrink-0">
+        <DialogScaffoldContent className="sm:max-w-xl">
+          <DialogScaffoldHeader>
             <DialogTitle>Suggestion History</DialogTitle>
             <DialogDescription>
               Past suggestions and their resolutions.
             </DialogDescription>
-          </DialogHeader>
+          </DialogScaffoldHeader>
 
-          <div className="flex-1 overflow-y-auto px-6 py-4">
+          <DialogScaffoldBody className="py-4">
             <div className="space-y-4">
               {suggestions.length === 0 ? (
                 <p className="text-center text-sm text-muted-foreground py-8">
@@ -97,8 +100,8 @@ export function SuggestionHistory({ suggestions, facilityNames, currentId }: Sug
                 })
               )}
             </div>
-          </div>
-        </DialogContent>
+          </DialogScaffoldBody>
+        </DialogScaffoldContent>
       </Dialog>
     </>
   );

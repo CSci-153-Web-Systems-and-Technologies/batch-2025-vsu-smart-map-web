@@ -7,13 +7,16 @@ import { MAP_DEFAULT_CENTER } from '@/lib/constants/map';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
-  DialogContent,
   DialogDescription,
-  DialogFooter,
-  DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  DialogScaffoldBody,
+  DialogScaffoldContent,
+  DialogScaffoldFooter,
+  DialogScaffoldHeader,
+} from '@/components/ui/dialog-scaffold';
 
 const CoordinatePickerMap = dynamic(() => import('./coordinate-picker-map').then((m) => m.CoordinatePickerMap), {
   ssr: false,
@@ -56,31 +59,35 @@ export function CoordinatePicker({ value, onChange }: CoordinatePickerProps) {
           {formatted}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-4xl">
-        <DialogHeader>
+      <DialogScaffoldContent className="max-w-4xl">
+        <DialogScaffoldHeader>
           <DialogTitle>Select location</DialogTitle>
           <DialogDescription>Click on the map to set coordinates.</DialogDescription>
-        </DialogHeader>
+        </DialogScaffoldHeader>
 
-        <div className="h-[420px] overflow-hidden rounded-lg border">
-          <CoordinatePickerMap value={tempCoords} onChange={setTempCoords} />
-        </div>
+        <DialogScaffoldBody className="py-4">
+          <div className="space-y-4">
+            <div className="h-[420px] overflow-hidden rounded-lg border">
+              <CoordinatePickerMap value={tempCoords} onChange={setTempCoords} />
+            </div>
 
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>
-            Lat: {tempCoords.lat.toFixed(5)}, Lng: {tempCoords.lng.toFixed(5)}
-          </span>
-        </div>
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <span>
+                Lat: {tempCoords.lat.toFixed(5)}, Lng: {tempCoords.lng.toFixed(5)}
+              </span>
+            </div>
+          </div>
+        </DialogScaffoldBody>
 
-        <DialogFooter>
+        <DialogScaffoldFooter>
           <Button variant="ghost" onClick={() => setOpen(false)}>
             Cancel
           </Button>
           <Button onClick={handleConfirm}>
             Use coordinates
           </Button>
-        </DialogFooter>
-      </DialogContent>
+        </DialogScaffoldFooter>
+      </DialogScaffoldContent>
     </Dialog>
   );
 }

@@ -1,6 +1,11 @@
 'use client';
 
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import {
+  DialogScaffoldContent,
+  DialogScaffoldFooter,
+  DialogScaffoldHeader,
+} from '@/components/ui/dialog-scaffold';
 import { Button } from '@/components/ui/button';
 
 interface ConfirmDialogProps {
@@ -36,20 +41,20 @@ export function ConfirmDialog({
         if (!next) onCancel();
       }}
     >
-      <DialogContent className={contentClassName}>
-        <DialogHeader>
+      <DialogScaffoldContent className={contentClassName}>
+        <DialogScaffoldHeader>
           <DialogTitle>{title}</DialogTitle>
           {description ? <DialogDescription>{description}</DialogDescription> : null}
-        </DialogHeader>
-        <DialogFooter className="gap-2 sm:gap-0">
+        </DialogScaffoldHeader>
+        <DialogScaffoldFooter className="gap-2 sm:gap-0 border-t-0">
           <Button type="button" variant="ghost" onClick={onCancel} disabled={loading}>
             {cancelLabel}
           </Button>
           <Button type="button" variant={confirmVariant} onClick={onConfirm} disabled={loading}>
             {loading ? 'Working...' : confirmLabel}
           </Button>
-        </DialogFooter>
-      </DialogContent>
+        </DialogScaffoldFooter>
+      </DialogScaffoldContent>
     </Dialog>
   );
 }

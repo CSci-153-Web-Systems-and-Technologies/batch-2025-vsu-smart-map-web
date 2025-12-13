@@ -1,6 +1,11 @@
 "use client";
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogTitle } from "@/components/ui/dialog";
+import {
+  DialogScaffoldBody,
+  DialogScaffoldContent,
+  DialogScaffoldHeader,
+} from "@/components/ui/dialog-scaffold";
 import dynamic from "next/dynamic";
 import type { LatLng } from "@/lib/types/common";
 
@@ -23,17 +28,21 @@ interface LocationPreviewDialogProps {
 export function LocationPreviewDialog({ open, onOpenChange, coordinates, title }: LocationPreviewDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
+      <DialogScaffoldContent className="sm:max-w-lg">
+        <DialogScaffoldHeader>
           <DialogTitle>{title ?? "Location Preview"}</DialogTitle>
-        </DialogHeader>
-        <div className="h-[300px] w-full rounded-md overflow-hidden border">
-          <LocationPreviewMap coordinates={coordinates} />
-        </div>
-        <p className="text-sm text-muted-foreground text-center">
-          {coordinates.lat.toFixed(5)}, {coordinates.lng.toFixed(5)}
-        </p>
-      </DialogContent>
+        </DialogScaffoldHeader>
+        <DialogScaffoldBody className="py-4">
+          <div className="space-y-4">
+            <div className="h-[300px] w-full rounded-md overflow-hidden border">
+              <LocationPreviewMap coordinates={coordinates} />
+            </div>
+            <p className="text-sm text-muted-foreground text-center">
+              {coordinates.lat.toFixed(5)}, {coordinates.lng.toFixed(5)}
+            </p>
+          </div>
+        </DialogScaffoldBody>
+      </DialogScaffoldContent>
     </Dialog>
   );
 }
