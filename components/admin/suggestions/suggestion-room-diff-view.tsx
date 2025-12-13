@@ -16,12 +16,15 @@ import { Pencil } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
-  DialogContent,
   DialogDescription,
-  DialogFooter,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DialogScaffoldBody,
+  DialogScaffoldContent,
+  DialogScaffoldFooter,
+  DialogScaffoldHeader,
+} from "@/components/ui/dialog-scaffold";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import Image from "next/image";
@@ -173,7 +176,7 @@ export function SuggestionRoomDiffView({
       {targetFacility && (
         <div className="rounded-md border border-border bg-muted/30 p-3">
           <p className="text-sm">
-            <span className="text-muted-foreground">Target Building:</span>{" "}
+            <span className="text-muted-foreground">Target Facility:</span>{" "}
             <span className="font-medium">{targetFacility.name}</span>
           </p>
         </div>
@@ -340,14 +343,14 @@ export function SuggestionRoomDiffView({
       />
 
       <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
-        <DialogContent>
-          <DialogHeader>
+        <DialogScaffoldContent className="sm:max-w-md">
+          <DialogScaffoldHeader>
             <DialogTitle>Reject Room Suggestion</DialogTitle>
             <DialogDescription>
               Are you sure you want to reject this room suggestion? This action cannot be undone.
             </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
+          </DialogScaffoldHeader>
+          <DialogScaffoldBody className="py-4">
             <div className="grid gap-2">
               <Label htmlFor="reason">Rejection Reason (Optional)</Label>
               <Textarea
@@ -357,27 +360,27 @@ export function SuggestionRoomDiffView({
                 onChange={(e) => setRejectionReason(e.target.value)}
               />
             </div>
-          </div>
-          <DialogFooter>
+          </DialogScaffoldBody>
+          <DialogScaffoldFooter>
             <Button variant="ghost" onClick={() => setShowRejectDialog(false)} disabled={pending}>
               Cancel
             </Button>
             <Button variant="destructive" onClick={executeReject} disabled={pending}>
               {pending ? "Rejecting..." : "Reject Suggestion"}
             </Button>
-          </DialogFooter>
-        </DialogContent>
+          </DialogScaffoldFooter>
+        </DialogScaffoldContent>
       </Dialog>
 
       <Dialog open={isEditing} onOpenChange={setIsEditing}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
+        <DialogScaffoldContent className="sm:max-w-md">
+          <DialogScaffoldHeader>
             <DialogTitle>Edit Room Suggestion</DialogTitle>
             <DialogDescription>
               Modify the proposed room details before approving.
             </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
+          </DialogScaffoldHeader>
+          <DialogScaffoldBody className="py-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="grid gap-2">
                 <Label htmlFor="edit-roomCode">Room Code *</Label>
@@ -425,16 +428,16 @@ export function SuggestionRoomDiffView({
                 rows={3}
               />
             </div>
-          </div>
-          <DialogFooter>
+          </DialogScaffoldBody>
+          <DialogScaffoldFooter>
             <Button variant="ghost" onClick={() => setIsEditing(false)}>
               Cancel
             </Button>
             <Button onClick={() => setIsEditing(false)}>
               Update Proposal
             </Button>
-          </DialogFooter>
-        </DialogContent>
+          </DialogScaffoldFooter>
+        </DialogScaffoldContent>
       </Dialog>
       {zoomImage && (
         <ImageZoomDialog

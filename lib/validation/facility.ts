@@ -8,13 +8,19 @@ const coordsSchema = z.object({
 });
 
 const codeSchema = z.preprocess((value) => {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
   if (typeof value !== "string") return value;
   const trimmed = value.trim();
-  return trimmed === "" ? undefined : trimmed;
+  return trimmed === "" ? null : trimmed;
 }, z
-  .string()
-  .min(VALIDATION_LIMITS.facility.code.min)
-  .max(VALIDATION_LIMITS.facility.code.max)
+  .union([
+    z
+      .string()
+      .min(VALIDATION_LIMITS.facility.code.min)
+      .max(VALIDATION_LIMITS.facility.code.max),
+    z.null(),
+  ])
   .optional());
 
 export const baseFacilitySchema = z.object({

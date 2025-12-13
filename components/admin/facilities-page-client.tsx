@@ -118,9 +118,14 @@ export function FacilitiesPageClient({ facilities }: FacilitiesPageClientProps) 
         throw new Error(updateResult.error);
       }
 
+      const optimisticValues: UnifiedFacilityFormValues = {
+        ...values,
+        code: values.code ?? undefined,
+      };
+
       let updated: Facility =
         (updateResult.data as Facility | undefined) ??
-        ({ ...selected, ...values, ...(clearImage && !file ? { imageUrl: undefined } : {}) } as Facility);
+        ({ ...selected, ...optimisticValues, ...(clearImage && !file ? { imageUrl: undefined } : {}) } as Facility);
 
       updated = await syncImage(updated, file, false);
 

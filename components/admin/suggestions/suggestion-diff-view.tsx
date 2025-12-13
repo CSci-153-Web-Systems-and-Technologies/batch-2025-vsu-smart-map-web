@@ -21,12 +21,15 @@ import type { LatLng } from "@/lib/types/common";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 import {
   Dialog,
-  DialogContent,
   DialogDescription,
-  DialogFooter,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DialogScaffoldBody,
+  DialogScaffoldContent,
+  DialogScaffoldFooter,
+  DialogScaffoldHeader,
+} from "@/components/ui/dialog-scaffold";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
@@ -102,7 +105,7 @@ const hasDifference = (
 export function SuggestionDiffView({ suggestion, payload, currentFacility }: SuggestionDiffViewProps) {
   const currentValues: Partial<UnifiedFacilityFormValues> | null = currentFacility
     ? {
-      code: currentFacility.code ?? "",
+      code: currentFacility.code ?? null,
       name: currentFacility.name,
       description: currentFacility.description ?? "",
       category: currentFacility.category,
@@ -382,14 +385,14 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
       />
 
       <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
-        <DialogContent>
-          <DialogHeader>
+        <DialogScaffoldContent className="sm:max-w-md">
+          <DialogScaffoldHeader>
             <DialogTitle>Reject Suggestion</DialogTitle>
             <DialogDescription>
               Are you sure you want to reject this suggestion? This action cannot be undone.
             </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
+          </DialogScaffoldHeader>
+          <DialogScaffoldBody className="py-4">
             <div className="grid gap-2">
               <Label htmlFor="reason">Rejection Reason (Optional)</Label>
               <Textarea
@@ -399,16 +402,16 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
                 onChange={(e) => setRejectionReason(e.target.value)}
               />
             </div>
-          </div>
-          <DialogFooter>
+          </DialogScaffoldBody>
+          <DialogScaffoldFooter>
             <Button variant="ghost" onClick={() => setShowRejectDialog(false)} disabled={pending}>
               Cancel
             </Button>
             <Button variant="destructive" onClick={executeReject} disabled={pending}>
               {pending ? "Rejecting..." : "Reject Suggestion"}
             </Button>
-          </DialogFooter>
-        </DialogContent>
+          </DialogScaffoldFooter>
+        </DialogScaffoldContent>
       </Dialog>
 
       <FacilityDialog
