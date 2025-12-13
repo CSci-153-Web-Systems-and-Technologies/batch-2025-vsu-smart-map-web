@@ -1,10 +1,11 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import type { Facility } from "@/lib/types/facility";
 import { Share2, Navigation, Check } from "lucide-react";
 import { useState } from "react";
+import { useApp } from "@/lib/context/app-context";
 
 interface ActionButtonsProps {
     facility: Facility;
@@ -13,6 +14,8 @@ interface ActionButtonsProps {
 
 export function ActionButtons({ facility, className }: ActionButtonsProps) {
     const router = useRouter();
+    const pathname = usePathname();
+    const { setFacilitySheetOpen } = useApp();
     const [copied, setCopied] = useState(false);
 
     const handleShare = async () => {
@@ -27,6 +30,10 @@ export function ActionButtons({ facility, className }: ActionButtonsProps) {
     };
 
     const handleDirections = () => {
+        if (pathname === "/") {
+            setFacilitySheetOpen(false);
+            return;
+        }
         router.push(`/?facility=${facility.id}`);
     };
 

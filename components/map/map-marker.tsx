@@ -16,7 +16,7 @@ type MapMarkerProps = {
 };
 
 export function MapMarker({ item, isSelected = false, onSelect }: MapMarkerProps) {
-  const { setActiveTab } = useApp();
+  const { setFacilitySheetOpen } = useApp();
 
   const icon: DivIcon = useMemo(() => {
     const category = item.category ?? "academic";
@@ -45,7 +45,7 @@ export function MapMarker({ item, isSelected = false, onSelect }: MapMarkerProps
   }, [isSelected]);
 
   const handleViewDetails = () => {
-    setActiveTab("directory");
+    setFacilitySheetOpen(true);
   };
 
   return (
