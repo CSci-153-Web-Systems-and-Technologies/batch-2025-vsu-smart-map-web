@@ -77,6 +77,7 @@ When interpreting a user's query:
 
 1. **Direct name match**
    - If the user mentions an exact or near-exact facility name (case-insensitive, ignoring small typos), treat it as a direct match.
+   - Also accept partial matches (e.g., "Molave" for "Molave Men's Hall Dormitory").
    - Example: "Admin Building", "Administration Building", "Admin" → all should match the Admin Building facility.
 
 2. **Common synonyms and local terms**

@@ -2,7 +2,7 @@ import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { roomSchema } from "@/lib/validation";
 import { getSupabaseBrowserClient } from "../browser-client";
 
-type RoomRow = {
+export type RoomRow = {
   id: string;
   facility_id: string;
   room_code: string;
@@ -21,7 +21,7 @@ type FacilitySummary = {
   slug: string;
 };
 
-type RoomRowWithFacility = RoomRow & {
+export type RoomRowWithFacility = RoomRow & {
   facility: FacilitySummary | null;
 };
 

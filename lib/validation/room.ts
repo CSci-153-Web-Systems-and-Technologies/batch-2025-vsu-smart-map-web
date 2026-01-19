@@ -7,15 +7,23 @@ export const roomSchema = z.object({
     .string()
     .min(VALIDATION_LIMITS.room.code.min)
     .max(VALIDATION_LIMITS.room.code.max),
-  name: z.string().max(VALIDATION_LIMITS.room.name.max).optional().or(z.literal("")),
-  description: z
-    .string()
-    .max(VALIDATION_LIMITS.room.description.max)
-    .optional()
-    .or(z.literal("")),
+  name: z.preprocess(
+    (val) => (val === "" ? null : val),
+    z.string().max(VALIDATION_LIMITS.room.name.max).nullable().optional()
+  ),
+  description: z.preprocess(
+    (val) => (val === "" ? null : val),
+    z.string().max(VALIDATION_LIMITS.room.description.max).nullable().optional()
+  ),
   floor: z.number().int().optional(),
-  imageUrl: z.string().url().optional().or(z.literal("")),
-  imageCredit: z.string().max(80).optional().or(z.literal("")),
+  imageUrl: z.preprocess(
+    (val) => (val === "" ? null : val),
+    z.string().url().nullable().optional()
+  ),
+  imageCredit: z.preprocess(
+    (val) => (val === "" ? null : val),
+    z.string().max(80).nullable().optional()
+  ),
 });
 
 export type RoomFormValues = z.infer<typeof roomSchema>;

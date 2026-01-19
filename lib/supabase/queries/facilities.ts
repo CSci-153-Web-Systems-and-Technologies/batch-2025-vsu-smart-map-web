@@ -18,7 +18,7 @@ const selectBase = () =>
   "id, code, name, slug, description, category, has_rooms, latitude, longitude, image_url, image_credit, website, facebook, phone, created_at, updated_at";
 
 export const normalizeError = (error: PostgrestError | null) =>
-  error ? { ...error, message: "Unable to complete facility request" } : null;
+  error ? { ...error, message: `Unable to request: ${error.message}` } : null;
 
 const resolveClient = async (client?: MaybeClient) =>
   Promise.resolve(client ?? getSupabaseBrowserClient());
