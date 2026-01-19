@@ -265,7 +265,7 @@ export function RoomManagerDialog({ open, facility, onOpenChange }: RoomManagerD
         loading={deleteLoading}
         onConfirm={confirmDelete}
         onCancel={cancelDelete}
-        contentClassName="z-[110]"
+        contentClassName="z-[3100]"
       />
     </>
   );
