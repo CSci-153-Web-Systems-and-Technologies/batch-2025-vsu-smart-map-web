@@ -4,11 +4,15 @@ import { FACILITY_CATEGORIES, type FacilityCategory } from "@/lib/types/facility
 import { FACILITY_CATEGORY_META } from "@/lib/constants/facilities";
 
 type CategoryFiltersProps = {
-  value: FacilityCategory | null;
-  onChange: (value: FacilityCategory | null) => void;
+  value: FacilityCategory[];
+  onChange: (value: FacilityCategory[]) => void;
+  onToggle: (value: FacilityCategory) => void;
 };
 
-export function CategoryFilters({ value, onChange }: CategoryFiltersProps) {
+export function CategoryFilters({ value, onChange, onToggle }: CategoryFiltersProps) {
+  const isAllSelected = value.length === FACILITY_CATEGORIES.length;
+  const isNoneSelected = value.length === 0;
+
   return (
     <div className="relative group">
       <div
@@ -18,26 +22,34 @@ export function CategoryFilters({ value, onChange }: CategoryFiltersProps) {
       >
         <button
           type="button"
-          role="radio"
-          aria-checked={value === null}
-          onClick={() => onChange(null)}
-          className={`flex-none rounded-full border px-3 py-1.5 text-xs font-medium transition-all ${value === null
+          onClick={() => onChange([...FACILITY_CATEGORIES])}
+          className={`flex-none rounded-full border px-3 py-1.5 text-xs font-medium transition-all ${isAllSelected
             ? "border-primary bg-primary text-primary-foreground shadow-sm"
             : "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground"
             }`}
         >
-          All
+          Select All
+        </button>
+        <button
+          type="button"
+          onClick={() => onChange([])}
+          className={`flex-none rounded-full border px-3 py-1.5 text-xs font-medium transition-all ${isNoneSelected
+            ? "border-primary bg-primary text-primary-foreground shadow-sm"
+            : "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+        >
+          Clear All
         </button>
         {FACILITY_CATEGORIES.map((cat) => {
           const meta = FACILITY_CATEGORY_META[cat];
-          const isActive = value === cat;
+          const isActive = value.includes(cat);
           return (
             <button
               key={cat}
               type="button"
-              role="radio"
+              role="checkbox"
               aria-checked={isActive}
-              onClick={() => onChange(isActive ? null : cat)}
+              onClick={() => onToggle(cat)}
               className={`flex-none inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-all ${isActive
                 ? "border-transparent text-white shadow-sm ring-1 ring-black/5"
                 : "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground"

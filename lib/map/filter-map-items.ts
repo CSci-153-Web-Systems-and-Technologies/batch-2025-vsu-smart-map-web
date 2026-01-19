@@ -4,14 +4,15 @@ import type { FacilityCategory } from "@/lib/types/facility";
 export function filterMapItems(
   items: readonly MapItem[],
   term: string,
-  selectedCategory?: FacilityCategory | null,
+  selectedCategories?: FacilityCategory[],
   roomMatchedIds?: Set<string>,
 ) {
   const normalizedTerm = term.trim().toLowerCase();
   const filtered = items.filter((item) => {
-    const matchesCategory = selectedCategory
-      ? item.category === selectedCategory
-      : true;
+    // If no categories selected, show all items. Otherwise, filter by selected categories.
+    const matchesCategory = !selectedCategories || selectedCategories.length === 0
+      ? true
+      : (item.category ? selectedCategories.includes(item.category) : false);
 
     const matchesFacilityTerm =
       normalizedTerm.length === 0 ||

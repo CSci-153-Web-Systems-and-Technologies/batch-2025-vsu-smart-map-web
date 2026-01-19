@@ -19,8 +19,9 @@ export function DirectoryContainer({ facilities }: DirectoryContainerProps) {
   const router = useRouter();
   const {
     searchQuery,
-    selectedCategory,
-    setCategory,
+    selectedCategories,
+    setCategories,
+    toggleCategory,
     clearFilters,
     selectFacility,
   } = useApp();
@@ -74,13 +75,13 @@ export function DirectoryContainer({ facilities }: DirectoryContainerProps) {
       const matchesSearch = matchesFacilitySearch || matchesRoomSearch;
 
       const matchesCategory =
-        selectedCategory === null || facility.category === selectedCategory;
+        selectedCategories.length === 0 || selectedCategories.includes(facility.category);
 
       return matchesSearch && matchesCategory;
     });
-  }, [facilities, searchQuery, selectedCategory, roomMatchFacilityIds]);
+  }, [facilities, searchQuery, selectedCategories, roomMatchFacilityIds]);
 
-  const hasActiveFilters = searchQuery !== "" || selectedCategory !== null;
+  const hasActiveFilters = searchQuery !== "" || selectedCategories.length > 0;
 
   const handleViewOnMap = (facility: Facility) => {
     router.push(`/?facility=${facility.id}`, { scroll: false });
@@ -96,8 +97,9 @@ export function DirectoryContainer({ facilities }: DirectoryContainerProps) {
 
 
             <CategoryFilters
-              value={selectedCategory}
-              onChange={setCategory}
+              value={selectedCategories}
+              onChange={setCategories}
+              onToggle={toggleCategory}
             />
           </div>
         </div>

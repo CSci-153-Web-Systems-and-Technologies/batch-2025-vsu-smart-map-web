@@ -22,8 +22,9 @@ export function MapSearchPanel({
 }: MapSearchPanelProps) {
   const {
     debouncedQuery,
-    selectedCategory,
-    setCategory,
+    selectedCategories,
+    setCategories,
+    toggleCategory,
   } = useApp();
 
   const [roomMatchFacilityIds, setRoomMatchFacilityIds] = useState<Set<string>>(new Set());
@@ -46,7 +47,7 @@ export function MapSearchPanel({
           const roomName = room.name?.toLowerCase() ?? "";
           const roomCode = room.room_code?.toLowerCase() ?? "";
           if (roomName.includes(term) || roomCode.includes(term)) {
-            const fid = (room as any).facility?.id ?? room.facility_id;
+            const fid = (room as { facility?: { id: string } }).facility?.id ?? room.facility_id;
             if (fid) ids.add(fid);
           }
         }
@@ -82,8 +83,8 @@ export function MapSearchPanel({
   }, [debouncedQuery]);
 
   const { results, matchCount } = useMemo(
-    () => filterMapItems(items, debouncedQuery, selectedCategory, roomMatchFacilityIds),
-    [items, debouncedQuery, selectedCategory, roomMatchFacilityIds],
+    () => filterMapItems(items, debouncedQuery, selectedCategories, roomMatchFacilityIds),
+    [items, debouncedQuery, selectedCategories, roomMatchFacilityIds],
   );
 
   useEffect(() => {
@@ -97,6 +98,10 @@ export function MapSearchPanel({
   }, [matchCount, onMatchCountChange]);
 
   return (
-    <CategoryFilters value={selectedCategory} onChange={setCategory} />
+    <CategoryFilters
+      value={selectedCategories}
+      onChange={setCategories}
+      onToggle={toggleCategory}
+    />
   );
 }
