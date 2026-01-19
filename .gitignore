@@ -45,6 +45,7 @@ next-env.d.ts
 .mentor-guide.md
 /.vscode
 /.mentor-guide
+/.maba
 
 # supabase temp files
 supabase/.temp/

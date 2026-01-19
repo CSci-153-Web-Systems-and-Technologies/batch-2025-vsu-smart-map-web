@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MoreHorizontal, Pencil, Trash2, Home, History } from 'lucide-react';
 import type { Facility } from '@/lib/types/facility';
 import {
@@ -28,10 +28,25 @@ export function FacilityRowActions({
   onDelete,
   disabled,
 }: FacilityRowActionsProps) {
+  const [mounted, setMounted] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const handleEdit = () => onEdit?.(facility);
   const handleRooms = () => onManageRooms?.(facility);
   const handleDelete = () => onDelete?.(facility);
+
+  if (!mounted) {
+    return (
+      <Button variant="ghost" size="icon" className="h-8 w-8" disabled>
+        <MoreHorizontal className="h-4 w-4" aria-hidden />
+        <span className="sr-only">Open row actions</span>
+      </Button>
+    );
+  }
 
   return (
     <>

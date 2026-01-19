@@ -27,12 +27,24 @@ export const findLocationFlow = flow(
     const contextData = input.context || {};
     const summary = contextData.summary || "None";
 
-    // Optimization: Limit history to last 6 messages
+    // Optimization: Limit history to last 6 messages and only include text response for Assistant
     const conversationHistory = contextData.conversationHistory?.length
       ? contextData.conversationHistory
         .slice(-6)
-        .map((msg) => `${msg.role === "user" ? "User" : "Assistant"}: ${msg.content}`)
-        .join("\n") // Use single newline for compactness
+        .map((msg) => {
+          let content = msg.content;
+          if (msg.role === "assistant") {
+            try {
+              // Extract only the response text if it's JSON
+              const parsed = JSON.parse(msg.content);
+              content = parsed.response || msg.content;
+            } catch {
+              // Fallback to original content if not JSON
+            }
+          }
+          return `${msg.role === "user" ? "User" : "Assistant"}: ${content}`;
+        })
+        .join("\n")
       : "None";
 
     const prompt = `
@@ -78,11 +90,23 @@ export async function streamFindLocation(input: LocationQuery) {
 
   const userQuery = input.query;
   const contextData = input.context || {};
-  // Optimization: Limit history
+  // Optimization: Limit history to last 6 messages and only include text response for Assistant
   const conversationHistory = contextData.conversationHistory?.length
     ? contextData.conversationHistory
       .slice(-6)
-      .map((msg) => `${msg.role === "user" ? "User" : "Assistant"}: ${msg.content}`)
+      .map((msg) => {
+        let content = msg.content;
+        if (msg.role === "assistant") {
+          try {
+            // Extract only the response text if it's JSON
+            const parsed = JSON.parse(msg.content);
+            content = parsed.response || msg.content;
+          } catch {
+            // Fallback to original content if not JSON
+          }
+        }
+        return `${msg.role === "user" ? "User" : "Assistant"}: ${content}`;
+      })
       .join("\n")
     : "None";
   const summary = contextData.summary || "None";

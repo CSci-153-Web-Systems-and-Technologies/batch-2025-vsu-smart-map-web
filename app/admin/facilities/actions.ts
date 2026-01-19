@@ -63,6 +63,7 @@ export async function createFacilityAction(input: unknown) {
   }
 
   if (data) {
+    const { client: adminClient } = await getSupabaseAdminClient({ requireServiceRole: true });
     await createSuggestion(
       {
         type: "ADD_FACILITY",
@@ -70,7 +71,7 @@ export async function createFacilityAction(input: unknown) {
         status: "APPROVED",
         payload: { ...parsed.data, source: "ADMIN" },
       },
-      client
+      adminClient
     );
   }
 
@@ -117,8 +118,10 @@ export async function updateFacilityAction(id: string, input: unknown) {
           changes[key] = { from: currentCoords, to: newCoords };
         }
       } else if (!isDeepEqual(newValue, currentValue)) {
+        // Record the change if newValue is not undefined
+        // null is a valid change (clearing a field)
         if (newValue !== undefined) {
-          changes[key] = { from: currentValue, to: newValue };
+          changes[key] = { from: currentValue ?? null, to: newValue };
         }
       }
     });
@@ -127,6 +130,7 @@ export async function updateFacilityAction(id: string, input: unknown) {
   }
 
   if (Object.keys(changes).length > 0) {
+    const { client: adminClient } = await getSupabaseAdminClient({ requireServiceRole: true });
     await createSuggestion(
       {
         type: "EDIT_FACILITY",
@@ -134,14 +138,14 @@ export async function updateFacilityAction(id: string, input: unknown) {
         status: "APPROVED",
         payload: { ...changes, source: "ADMIN" },
       },
-      client
+      adminClient
     );
 
     await pruneHistory({
       targetId: id,
       type: "EDIT_FACILITY",
       limit: MAX_HISTORY_ITEMS,
-      client,
+      client: adminClient,
     });
   }
 
@@ -175,6 +179,7 @@ export async function createRoomAction(input: unknown) {
   }
 
   if (data) {
+    const { client: adminClient } = await getSupabaseAdminClient({ requireServiceRole: true });
     await createSuggestion(
       {
         type: "ADD_ROOM",
@@ -182,7 +187,7 @@ export async function createRoomAction(input: unknown) {
         status: "APPROVED",
         payload: { ...parsed.data, roomId: data.id, roomCode: data.room_code, source: "ADMIN" },
       },
-      client
+      adminClient
     );
   }
 
@@ -215,25 +220,26 @@ export async function updateRoomAction(id: string, input: unknown) {
     const inputData = parsed.data;
 
     if (inputData.roomCode !== undefined && inputData.roomCode !== currentRoom.room_code) {
-      changes.roomCode = { from: currentRoom.room_code, to: inputData.roomCode };
+      changes.roomCode = { from: currentRoom.room_code ?? null, to: inputData.roomCode };
     }
     if (inputData.name !== undefined && inputData.name !== currentRoom.name) {
-      changes.name = { from: currentRoom.name, to: inputData.name };
+      changes.name = { from: currentRoom.name ?? null, to: inputData.name };
     }
     if (inputData.description !== undefined && inputData.description !== currentRoom.description) {
-      changes.description = { from: currentRoom.description, to: inputData.description };
+      changes.description = { from: currentRoom.description ?? null, to: inputData.description };
     }
     if (inputData.floor !== undefined && inputData.floor !== currentRoom.floor) {
-      changes.floor = { from: currentRoom.floor, to: inputData.floor };
+      changes.floor = { from: currentRoom.floor ?? null, to: inputData.floor };
     }
     if (inputData.facilityId !== undefined && inputData.facilityId !== currentRoom.facility_id) {
-      changes.facilityId = { from: currentRoom.facility_id, to: inputData.facilityId };
+      changes.facilityId = { from: currentRoom.facility_id ?? null, to: inputData.facilityId };
     }
     if (inputData.imageUrl !== undefined && inputData.imageUrl !== currentRoom.image_url) {
-      changes.imageUrl = { from: currentRoom.image_url, to: inputData.imageUrl };
+      changes.imageUrl = { from: currentRoom.image_url ?? null, to: inputData.imageUrl };
     }
 
     if (Object.keys(changes).length > 0) {
+      const { client: adminClient } = await getSupabaseAdminClient({ requireServiceRole: true });
       await createSuggestion(
         {
           type: "EDIT_ROOM",
@@ -241,17 +247,18 @@ export async function updateRoomAction(id: string, input: unknown) {
           status: "APPROVED",
           payload: { ...changes, roomId: id, roomCode: data.room_code, source: "ADMIN" },
         },
-        client
+        adminClient
       );
 
       await pruneHistory({
         targetId: data.facility_id,
         type: "EDIT_ROOM",
         limit: MAX_HISTORY_ITEMS,
-        client,
+        client: adminClient,
       });
     }
   } else if (data) {
+    const { client: adminClient } = await getSupabaseAdminClient({ requireServiceRole: true });
     await createSuggestion(
       {
         type: "EDIT_ROOM",
@@ -259,14 +266,14 @@ export async function updateRoomAction(id: string, input: unknown) {
         status: "APPROVED",
         payload: { ...parsed.data, roomId: id, roomCode: data.room_code, source: "ADMIN" },
       },
-      client
+      adminClient
     );
 
     await pruneHistory({
       targetId: data.facility_id,
       type: "EDIT_ROOM",
       limit: MAX_HISTORY_ITEMS,
-      client,
+      client: adminClient,
     });
   }
 

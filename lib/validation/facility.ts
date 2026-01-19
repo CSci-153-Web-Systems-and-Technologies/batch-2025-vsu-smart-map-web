@@ -35,7 +35,7 @@ export const baseFacilitySchema = z.object({
   category: z.enum(FACILITY_CATEGORIES),
   coordinates: coordsSchema,
   imageUrl: z.preprocess(
-    (value) => (value === "" || value === null ? undefined : value),
+    (value) => (value === "" || value === null ? null : value),
     z
       .string()
       .refine(
@@ -45,16 +45,17 @@ export const baseFacilitySchema = z.object({
           val.startsWith("/"),
         { message: "Image URL must be absolute (http/https) or a relative path." }
       )
+      .nullable()
       .optional(),
   ),
   imageCredit: z.string().max(80).optional().or(z.literal("")),
   website: z.preprocess(
-    (value) => (value === "" || value === null ? undefined : value),
-    z.string().url({ message: "Please enter a valid URL" }).optional(),
+    (value) => (value === "" || value === null ? null : value),
+    z.string().url({ message: "Please enter a valid URL" }).nullable().optional(),
   ),
   facebook: z.preprocess(
-    (value) => (value === "" || value === null ? undefined : value),
-    z.string().url({ message: "Please enter a valid Facebook URL" }).optional(),
+    (value) => (value === "" || value === null ? null : value),
+    z.string().url({ message: "Please enter a valid Facebook URL" }).nullable().optional(),
   ),
   phone: z.string().max(20).optional().or(z.literal("")),
 });
