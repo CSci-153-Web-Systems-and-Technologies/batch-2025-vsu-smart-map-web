@@ -266,6 +266,7 @@ export function RoomManagerDialog({ open, facility, onOpenChange }: RoomManagerD
         onConfirm={confirmDelete}
         onCancel={cancelDelete}
         contentClassName="z-[3100]"
+        overlayClassName="z-[3099]"
       />
     </>
   );

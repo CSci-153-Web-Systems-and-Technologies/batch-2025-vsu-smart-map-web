@@ -6,10 +6,11 @@ import { DialogContent, DialogFooter, DialogHeader } from "@/components/ui/dialo
 
 const DialogScaffoldContent = React.forwardRef<
   React.ElementRef<typeof DialogContent>,
-  React.ComponentPropsWithoutRef<typeof DialogContent>
->(({ className, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof DialogContent> & { overlayClassName?: string }
+>(({ className, overlayClassName, ...props }, ref) => (
   <DialogContent
     ref={ref}
+    overlayClassName={overlayClassName}
     className={cn("max-h-[85dvh] p-0 flex flex-col gap-0 overflow-hidden", className)}
     {...props}
   />

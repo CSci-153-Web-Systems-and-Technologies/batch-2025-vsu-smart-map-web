@@ -31,6 +31,19 @@ function isCacheableApiRequest(url, request) {
   return CACHEABLE_API_PATTERNS.some(pattern => url.pathname.includes(pattern));
 }
 
+async function fetchWithTimeout(request, timeout = 3000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  try {
+    const response = await fetch(request, { signal: controller.signal });
+    clearTimeout(id);
+    return response;
+  } catch (error) {
+    clearTimeout(id);
+    throw error;
+  }
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -108,7 +121,8 @@ self.addEventListener('fetch', (event) => {
   if (isCacheableApiRequest(url, request)) {
     event.respondWith(
       caches.open(API_CACHE_NAME).then((cache) => {
-        return fetch(request)
+        // Use a timeout for network requests so they don't block forever on slow connections
+        return fetchWithTimeout(request, 3000)
           .then((networkResponse) => {
             if (networkResponse.ok) {
               cache.put(request, networkResponse.clone());

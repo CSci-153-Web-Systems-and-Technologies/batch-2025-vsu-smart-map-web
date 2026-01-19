@@ -154,11 +154,36 @@ const FACILITY_CATEGORY_TO_PIN: Record<FacilityCategory, PinId> = {
 
 export function getPinAssetForCategory(
   category: FacilityCategory,
-  options: { selected?: boolean } = {}
+  options: { selected?: boolean; minimized?: boolean; label?: string } = {}
 ): PinAsset {
   const pinId = FACILITY_CATEGORY_TO_PIN[category] ?? "office";
   const pinDef = PIN_LIBRARY[pinId] ?? PIN_LIBRARY.office;
   const color = getCategoryColor(category);
+
+  if (options.minimized && !options.selected) {
+    const dotSize = 12;
+    const padding = 2;
+    const totalSize = dotSize + padding * 2;
+    const html = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="${totalSize}" height="${totalSize}" viewBox="0 0 ${totalSize} ${totalSize}">
+        <circle 
+          cx="${totalSize / 2}" 
+          cy="${totalSize / 2}" 
+          r="${dotSize / 2}" 
+          fill="${color}" 
+          stroke="#ffffff" 
+          stroke-width="1.5"
+        />
+      </svg>
+    `;
+    return {
+      html,
+      className: `vsu-pin-dot pin-${category}`,
+      iconSize: [totalSize, totalSize],
+      iconAnchor: [totalSize / 2, totalSize / 2],
+      tooltipAnchor: [0, -totalSize / 2],
+    };
+  }
 
   const scale = pinDef.scale ?? 1;
   const translateY = pinDef.translateY ?? 0;
@@ -171,26 +196,40 @@ export function getPinAssetForCategory(
 
   const [pinWidth, pinHeight] = PIN_SIZE;
 
-  // viewBox expanded: -2 on y to account for ring top, height becomes 68
-  const html = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${pinWidth}" height="${pinHeight}" viewBox="0 -4 64 70">
+  // ViewBox expanded: -4 on y to account for ring top, height becomes 70
+  const pinSvg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${pinWidth}" height="${pinHeight}" viewBox="0 -4 64 70" class="pin-svg">
       ${selectedRing}
-      
       <path 
         d="${pinPath}" 
         fill="${color}" 
         stroke="#ffffff" 
         stroke-width="${options.selected ? 2 : 1.5}"
       />
-      
       <g transform="translate(32, 22) scale(${1.15 * scale}) translate(-12, -12) translate(0, ${translateY})" fill="white">
         <path d="${pinDef.path}"/>
       </g>
     </svg>
   `;
 
+  if (options.label) {
+    const html = `
+      <div class="vsu-pin-with-label">
+        ${pinSvg}
+        <span class="vsu-pin-label">${options.label}</span>
+      </div>
+    `;
+    return {
+      html,
+      className: `vsu-pin-container pin-${category}${options.selected ? " pin-selected" : ""}`,
+      iconSize: [300, pinHeight], // Room for wrapped labels
+      iconAnchor: [21, 44], // Default pin anchor (center-bottom of the SVG at the left)
+      tooltipAnchor: [0, TOOLTIP_ANCHOR[1]],
+    };
+  }
+
   return {
-    html,
+    html: pinSvg,
     className: `vsu-pin pin-${category}${options.selected ? " pin-selected" : ""}`,
     iconSize: PIN_SIZE,
     iconAnchor: PIN_ANCHOR,

@@ -40,6 +40,7 @@ interface FacilityDialogProps {
   submitLabel?: string;
   submittingLabel?: string;
   children?: ReactNode;
+  showSlug?: boolean;
 }
 
 const defaultCoordinates = MAP_DEFAULT_CENTER;
@@ -56,6 +57,7 @@ export function FacilityDialog({
   submitLabel,
   submittingLabel,
   children,
+  showSlug = false,
 }: FacilityDialogProps) {
   const initialValues = useMemo<UnifiedFacilityFormValues>(() => {
     if (facility) {
@@ -183,6 +185,21 @@ export function FacilityDialog({
                       required
                     />
                   </div>
+
+                  {showSlug && (
+                    <div className="space-y-1.5 md:col-span-2">
+                      <Label htmlFor="slug">Slug (URL identifier)</Label>
+                      <Input
+                        id="slug"
+                        value={values.slug ?? ''}
+                        onChange={(event) => setValues({ ...values, slug: event.target.value })}
+                        placeholder="e.g., plant-science-building"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Leave blank to auto-generate from name. Must be unique.
+                      </p>
+                    </div>
+                  )}
 
                   <div className="space-y-1.5">
                     <Label htmlFor="category">Category</Label>

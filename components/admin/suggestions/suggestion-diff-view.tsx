@@ -423,6 +423,7 @@ export function SuggestionDiffView({ suggestion, payload, currentFacility }: Sug
         title="Edit Suggestion"
         description="Modify the proposed details before approving."
         submitLabel="Update Proposal"
+        showSlug={true}
       />
 
       {zoomImage && (
