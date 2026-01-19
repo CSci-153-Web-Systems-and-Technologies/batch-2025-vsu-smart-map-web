@@ -12,7 +12,7 @@ interface MapStyleContextValue {
 const MapStyleContext = createContext<MapStyleContextValue | null>(null);
 
 export function MapStyleProvider({ children }: { children: ReactNode }) {
-  const [mapStyle, setMapStyleState] = useState<MapStyle>("vector");
+  const [mapStyle, setMapStyleState] = useState<MapStyle>("satellite");
 
   const setMapStyle = useCallback((style: MapStyle) => {
     setMapStyleState(style);
