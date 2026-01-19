@@ -74,8 +74,9 @@ export function DirectoryContainer({ facilities }: DirectoryContainerProps) {
 
       const matchesSearch = matchesFacilitySearch || matchesRoomSearch;
 
+      // If no categories selected, show NO items. Otherwise, filter by selected categories.
       const matchesCategory =
-        selectedCategories.length === 0 || selectedCategories.includes(facility.category);
+        selectedCategories.length > 0 && selectedCategories.includes(facility.category);
 
       return matchesSearch && matchesCategory;
     });
