@@ -154,7 +154,8 @@ select:focus-visible,
   will-change: transform;
 }
 
-.vsu-pin svg {
+.vsu-pin svg,
+.vsu-pin-dot svg {
   backface-visibility: hidden;
   transform: translateZ(0);
 }

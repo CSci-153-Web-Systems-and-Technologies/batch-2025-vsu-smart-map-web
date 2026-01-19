@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useEffect, useRef } from "react";
-import { Marker, Tooltip, Popup } from "react-leaflet";
+import { useMemo, useEffect, useRef, useState } from "react";
+import { Marker, Tooltip, Popup, useMapEvents } from "react-leaflet";
 import { divIcon, type DivIcon, type Marker as LeafletMarker } from "leaflet";
 import { getPinAssetForCategory } from "@/lib/map/pins";
 import type { MapItem } from "@/lib/types/map";
@@ -17,10 +17,27 @@ type MapMarkerProps = {
 
 export function MapMarker({ item, isSelected = false, onSelect }: MapMarkerProps) {
   const { setFacilitySheetOpen } = useApp();
+  const [zoom, setZoom] = useState(16);
+
+  const map = useMapEvents({
+    zoomend: () => {
+      setZoom(map.getZoom());
+    },
+  });
+
+  // Initialize zoom
+  useEffect(() => {
+    setZoom(map.getZoom());
+  }, [map]);
+
+  const isMinimized = zoom < 16;
 
   const icon: DivIcon = useMemo(() => {
     const category = item.category ?? "academic";
-    const pin = getPinAssetForCategory(category, { selected: isSelected });
+    const pin = getPinAssetForCategory(category, {
+      selected: isSelected,
+      minimized: isMinimized
+    });
     return divIcon({
       html: pin.html,
       className: pin.className,
@@ -28,7 +45,7 @@ export function MapMarker({ item, isSelected = false, onSelect }: MapMarkerProps
       iconAnchor: pin.iconAnchor,
       tooltipAnchor: pin.tooltipAnchor,
     });
-  }, [item.category, isSelected]);
+  }, [item.category, isSelected, isMinimized]);
 
   const position: [number, number] = [item.coordinates.lat, item.coordinates.lng];
   const markerRef = useRef<LeafletMarker>(null);
