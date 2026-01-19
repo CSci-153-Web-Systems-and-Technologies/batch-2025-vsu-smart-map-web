@@ -9,9 +9,9 @@ export function filterMapItems(
 ) {
   const normalizedTerm = term.trim().toLowerCase();
   const filtered = items.filter((item) => {
-    // If no categories selected, show all items. Otherwise, filter by selected categories.
+    // If no categories selected, show NO items. Otherwise, filter by selected categories.
     const matchesCategory = !selectedCategories || selectedCategories.length === 0
-      ? true
+      ? false
       : (item.category ? selectedCategories.includes(item.category) : false);
 
     const matchesFacilityTerm =
