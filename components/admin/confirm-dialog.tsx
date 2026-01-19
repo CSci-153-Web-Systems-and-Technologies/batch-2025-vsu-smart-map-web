@@ -17,6 +17,7 @@ interface ConfirmDialogProps {
   confirmVariant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
   loading?: boolean;
   contentClassName?: string;
+  overlayClassName?: string;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -30,6 +31,7 @@ export function ConfirmDialog({
   confirmVariant = 'destructive',
   loading = false,
   contentClassName,
+  overlayClassName,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -41,7 +43,7 @@ export function ConfirmDialog({
         if (!next) onCancel();
       }}
     >
-      <DialogScaffoldContent className={contentClassName}>
+      <DialogScaffoldContent className={contentClassName} overlayClassName={overlayClassName}>
         <DialogScaffoldHeader>
           <DialogTitle>{title}</DialogTitle>
           {description ? <DialogDescription>{description}</DialogDescription> : null}

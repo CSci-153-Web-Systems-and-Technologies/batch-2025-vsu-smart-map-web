@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { SuggestAddModal } from "@/components/suggestions/suggest-add-modal";
 import { getCachedFacilities, setCachedFacilities } from "@/lib/cache/facilities-cache";
+import { searchRooms } from "@/lib/supabase/queries/rooms";
+import { setCachedRooms } from "@/lib/cache/rooms-cache";
 
 const MapSelectionLayer = dynamic(
   () => import("@/components/map/map-selection-layer").then((m) => m.MapSelectionLayer),
@@ -52,33 +54,51 @@ function MapTab() {
 
   useEffect(() => {
     const load = async () => {
-      setIsLoading(true);
-
       const cached = getCachedFacilities();
       if (cached && cached.length > 0) {
         setItems(cached);
         setFiltered(cached);
+        setIsLoading(false); // Stop showing full page loader if we have cache
+      } else {
+        setIsLoading(true);
       }
 
-      const { data, error: fetchError } = await getFacilities();
-
-      if (fetchError || !data) {
-        if (cached && cached.length > 0) {
-          setError(null);
-        } else {
-          setError("Unable to load map data. Please try again later.");
-          setItems([]);
-          setFiltered([]);
+      // Pre-fetch rooms for search indexing/offline use
+      // This is done in the background to avoid blocking facility loading
+      const loadRooms = async () => {
+        try {
+          const { data: roomData } = await searchRooms({ term: "", includeFacility: true });
+          if (roomData) {
+            setCachedRooms(roomData);
+          }
+        } catch (e) {
+          console.warn("Failed to pre-fetch rooms for offline cache", e);
         }
-        setIsLoading(false);
-        return;
-      }
+      };
 
-      setCachedFacilities(data as Facility[]);
-      setItems(data);
-      setFiltered(data);
-      setError(null);
-      setIsLoading(false);
+      const fetchFacilities = async () => {
+        const { data, error: fetchError } = await getFacilities();
+
+        if (fetchError || !data) {
+          if (cached && cached.length > 0) {
+            setError(null);
+          } else {
+            setError("Unable to load map data. Please try again later.");
+            setItems([]);
+            setFiltered([]);
+          }
+          setIsLoading(false);
+          return;
+        }
+
+        setCachedFacilities(data as Facility[]);
+        setItems(data);
+        setFiltered(data);
+        setError(null);
+        setIsLoading(false);
+      };
+
+      void Promise.all([fetchFacilities(), loadRooms()]);
     };
 
     void load();

@@ -205,6 +205,7 @@ export function FacilitiesPageClient({ facilities }: FacilitiesPageClientProps) 
         onOpenChange={setDialogOpen}
         onSubmit={handleSubmit}
         onManageRooms={dialogFacility ? () => handleManageRooms(dialogFacility) : undefined}
+        showSlug={true}
       />
       <RoomManagerDialog
         open={roomsOpen}

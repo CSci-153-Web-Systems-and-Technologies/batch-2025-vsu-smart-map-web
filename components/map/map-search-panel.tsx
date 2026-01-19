@@ -6,6 +6,7 @@ import { filterMapItems } from "@/lib/map/filter-map-items";
 import { useApp } from "@/lib/context/app-context";
 import { CategoryFilters } from "./category-filters";
 import { searchRooms } from "@/lib/supabase/queries/rooms";
+import { getCachedRooms } from "@/lib/cache/rooms-cache";
 
 
 type MapSearchPanelProps = {
@@ -36,6 +37,26 @@ export function MapSearchPanel({
 
     let cancelled = false;
     const doRoomSearch = async () => {
+      // Try cache first for immediate (and offline) results
+      const cachedRooms = getCachedRooms();
+      if (cachedRooms && cachedRooms.length > 0) {
+        const ids = new Set<string>();
+        const term = searchLower;
+        for (const room of cachedRooms) {
+          const roomName = room.name?.toLowerCase() ?? "";
+          const roomCode = room.room_code?.toLowerCase() ?? "";
+          if (roomName.includes(term) || roomCode.includes(term)) {
+            const fid = (room as any).facility?.id ?? room.facility_id;
+            if (fid) ids.add(fid);
+          }
+        }
+        if (ids.size > 0) {
+          setRoomMatchFacilityIds(ids);
+          // If we found results in cache and we're offline, we're done
+          if (!navigator.onLine) return;
+        }
+      }
+
       const { data } = await searchRooms({ term: searchLower, includeFacility: true });
       if (cancelled) return;
 
@@ -47,7 +68,8 @@ export function MapSearchPanel({
           if (fid) ids.add(fid);
         }
         setRoomMatchFacilityIds(ids);
-      } else {
+      } else if (!cachedRooms || cachedRooms.length === 0) {
+        // Only clear if we didn't have cache results either
         setRoomMatchFacilityIds(new Set());
       }
     };
