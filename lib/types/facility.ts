@@ -137,15 +137,15 @@ export interface FacilityInsert {
   code?: string | null;
   name: string;
   slug?: string;
-  description?: string;
+  description?: string | null;
   category: FacilityCategory;
   hasRooms: boolean;
   coordinates: LatLng;
-  imageUrl?: string;
-  imageCredit?: string;
-  website?: string;
-  facebook?: string;
-  phone?: string;
+  imageUrl?: string | null;
+  imageCredit?: string | null;
+  website?: string | null;
+  facebook?: string | null;
+  phone?: string | null;
 }
 
 export type FacilityUpdate = Partial<FacilityInsert>;
