@@ -185,7 +185,10 @@ function MapView({
   onSelect: (id: string) => void;
   onClearSelection: () => void;
 }) {
+  const { selectedCategories, debouncedQuery } = useApp();
   const hasResults = filtered.length > 0;
+  // Only show "No locations found" when filters are active (categories selected or search query)
+  const hasActiveFilters = selectedCategories.length > 0 || debouncedQuery.trim().length > 0;
 
   return (
     <div className="relative h-full w-full">
@@ -200,7 +203,7 @@ function MapView({
           <UserLocationControl />
         </MapContainerClient>
 
-        {!hasResults && !error && !isLoading && (
+        {!hasResults && !error && !isLoading && hasActiveFilters && (
           <div className="pointer-events-none absolute bottom-12 left-1/2 -translate-x-1/2 z-10 rounded-full bg-background/90 px-4 py-2 shadow-md backdrop-blur">
             <p className="text-sm font-medium text-foreground">No locations found.</p>
           </div>
