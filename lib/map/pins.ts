@@ -154,11 +154,36 @@ const FACILITY_CATEGORY_TO_PIN: Record<FacilityCategory, PinId> = {
 
 export function getPinAssetForCategory(
   category: FacilityCategory,
-  options: { selected?: boolean } = {}
+  options: { selected?: boolean; minimized?: boolean } = {}
 ): PinAsset {
   const pinId = FACILITY_CATEGORY_TO_PIN[category] ?? "office";
   const pinDef = PIN_LIBRARY[pinId] ?? PIN_LIBRARY.office;
   const color = getCategoryColor(category);
+
+  if (options.minimized && !options.selected) {
+    const dotSize = 12;
+    const padding = 2;
+    const totalSize = dotSize + padding * 2;
+    const html = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="${totalSize}" height="${totalSize}" viewBox="0 0 ${totalSize} ${totalSize}">
+        <circle 
+          cx="${totalSize / 2}" 
+          cy="${totalSize / 2}" 
+          r="${dotSize / 2}" 
+          fill="${color}" 
+          stroke="#ffffff" 
+          stroke-width="1.5"
+        />
+      </svg>
+    `;
+    return {
+      html,
+      className: `vsu-pin-dot pin-${category}`,
+      iconSize: [totalSize, totalSize],
+      iconAnchor: [totalSize / 2, totalSize / 2],
+      tooltipAnchor: [0, -totalSize / 2],
+    };
+  }
 
   const scale = pinDef.scale ?? 1;
   const translateY = pinDef.translateY ?? 0;

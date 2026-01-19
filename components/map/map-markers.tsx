@@ -10,9 +10,13 @@ type MapMarkersProps = {
 };
 
 export function MapMarkers({ items, selectedId, onSelect }: MapMarkersProps) {
+  const displayItems = selectedId
+    ? items.filter(item => item.id === selectedId)
+    : items;
+
   return (
     <>
-      {items.map((item) => (
+      {displayItems.map((item) => (
         <MapMarker
           key={item.id}
           item={item}
