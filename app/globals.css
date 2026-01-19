@@ -160,6 +160,44 @@ select:focus-visible,
   transform: translateZ(0);
 }
 
+/* Integrated Side Labels */
+.vsu-pin-with-label {
+  display: flex !important;
+  align-items: center !important;
+  gap: 2px !important;
+  pointer-events: none !important;
+  width: max-content;
+}
+
+.vsu-pin-label {
+  @apply font-bold text-[10px] leading-tight transition-opacity duration-200;
+  max-width: 120px;
+  white-space: normal;
+  text-align: left;
+  margin-left: -6px;
+  color: #000000;
+  /* Pure black for maximum contrast */
+  text-shadow:
+    -0.5px -0.5px 0 #fff,
+    0.5px -0.5px 0 #fff,
+    -0.5px 0.5px 0 #fff,
+    0.5px 0.5px 0 #fff;
+}
+
+.dark .vsu-pin-label {
+  color: #ffffff;
+  text-shadow:
+    -0.5px -0.5px 0 #000,
+    0.5px -0.5px 0 #000,
+    -0.5px 0.5px 0 #000,
+    0.5px 0.5px 0 #000;
+}
+
+.vsu-pin-container.pin-selected .vsu-pin-label {
+  @apply text-accent-foreground;
+  color: hsl(var(--accent-foreground));
+}
+
 .leaflet-zoom-anim .leaflet-zoom-animated {
   transition: transform 0.03s ease-out !important;
 }
