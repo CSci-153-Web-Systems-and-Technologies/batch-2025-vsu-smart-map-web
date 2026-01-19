@@ -21,7 +21,7 @@ interface AppState {
   facilitySheetOpen: boolean;
   searchQuery: string;
   debouncedQuery: string;
-  selectedCategory: FacilityCategory | null;
+  selectedCategories: FacilityCategory[];
   activeTab: "map" | "directory" | "chat";
   mapStyle: "vector" | "satellite";
 }
@@ -31,7 +31,8 @@ interface AppContextValue extends AppState {
   resolvePendingFacility: (facility: Facility) => void;
   setFacilitySheetOpen: (open: boolean) => void;
   setSearchQuery: (query: string) => void;
-  setCategory: (category: FacilityCategory | null) => void;
+  setCategories: (categories: FacilityCategory[]) => void;
+  toggleCategory: (category: FacilityCategory) => void;
   setActiveTab: (
     tab: AppState["activeTab"],
     options?: { clearSelection?: boolean; selectFacilityAfter?: Facility }
@@ -57,29 +58,67 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const { mapStyle, setMapStyle } = useMapStyle();
 
   const lastSyncedFacilityId = useRef<string | null>(null);
-  const lastSyncedCategory = useRef<FacilityCategory | null>(null);
+  const lastSyncedCategory = useRef<FacilityCategory[]>([]);
   const lastSyncedSearch = useRef<string>("");
   const isUserClosing = useRef(false);
   const isNavigating = useRef(false);
 
   const initialSearch = searchParams.get("q") ?? "";
   const initialFacilityId = searchParams.get("facility") ?? null;
-  const urlCategory = searchParams.get("category");
-  const initialCategory = isValidCategory(urlCategory) ? urlCategory : null;
+
+  // Initialize from URL only (not localStorage to avoid hydration mismatch)
+  const [selectedCategories, setSelectedCategories] = useState<FacilityCategory[]>(() => {
+    const urlCategory = searchParams.get("category");
+    if (urlCategory) {
+      return urlCategory.split(",").filter(isValidCategory);
+    }
+    // Default to academic and administrative if no URL param
+    return ["academic", "administrative"];
+  });
+
+  // Track if initial hydration from localStorage is complete
+  const [isHydrated, setIsHydrated] = useState(false);
 
   const [selectedFacility, setSelectedFacility] = useState<Facility | null>(null);
   const [pendingFacilityId, setPendingFacilityId] = useState<string | null>(initialFacilityId);
   const [facilitySheetOpen, setFacilitySheetOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [debouncedQuery, setDebouncedQuery] = useState(initialSearch);
-  const [selectedCategory, setSelectedCategory] = useState<FacilityCategory | null>(initialCategory);
   const [activeTab, setActiveTabState] = useState<AppState["activeTab"]>("map");
+
+  // Hydrate from localStorage on client-side mount ONCE (not on every searchParams change)
+  useEffect(() => {
+    // Only hydrate from localStorage if there's no URL category param on initial load
+    const urlCategory = new URLSearchParams(window.location.search).get("category");
+    if (!urlCategory) {
+      const stored = localStorage.getItem("map-filters");
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.every(isValidCategory)) {
+            setSelectedCategories(parsed);
+          }
+        } catch {
+          // ignore error
+        }
+      }
+    }
+    setIsHydrated(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency - run only once on mount
+
+  // Persist to local storage (only after hydration to avoid overwriting)
+  useEffect(() => {
+    if (isHydrated) {
+      localStorage.setItem("map-filters", JSON.stringify(selectedCategories));
+    }
+  }, [selectedCategories, isHydrated]);
 
   useEffect(() => {
     lastSyncedFacilityId.current = initialFacilityId;
-    lastSyncedCategory.current = initialCategory;
+    lastSyncedCategory.current = selectedCategories; // sync initial state
     lastSyncedSearch.current = initialSearch;
-  }, [initialFacilityId, initialCategory, initialSearch]);
+  }, [initialFacilityId, initialSearch, selectedCategories]); // Added selectedCategories
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery), DEBOUNCE_MS);
@@ -128,8 +167,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         params.delete("q");
       }
 
-      if (selectedCategory) {
-        params.set("category", selectedCategory);
+      if (selectedCategories.length > 0) {
+        params.set("category", selectedCategories.join(","));
       } else {
         params.delete("category");
       }
@@ -143,32 +182,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const nextQueryString = params.toString();
       if (nextQueryString === searchParams.toString()) {
         lastSyncedFacilityId.current = currentFacilityId;
-        lastSyncedCategory.current = selectedCategory;
+        lastSyncedCategory.current = selectedCategories;
         lastSyncedSearch.current = debouncedQuery.trim();
         return;
       }
 
       lastSyncedFacilityId.current = currentFacilityId;
-      lastSyncedCategory.current = selectedCategory;
+      lastSyncedCategory.current = selectedCategories;
       lastSyncedSearch.current = debouncedQuery.trim();
       const newUrl = nextQueryString ? `${pathname}?${nextQueryString}` : pathname;
       router.replace(newUrl, { scroll: false });
     }, DEBOUNCE_MS);
 
     return () => clearTimeout(handler);
-  }, [debouncedQuery, selectedCategory, currentFacilityId, pathname, router, searchParams]);
+  }, [debouncedQuery, selectedCategories, currentFacilityId, pathname, router, searchParams]);
 
   useEffect(() => {
     if (isNavigating.current) return;
 
-    const urlCategoryParam = searchParams.get("category");
-    const urlCategory = isValidCategory(urlCategoryParam) ? urlCategoryParam : null;
     const urlFacilityId = searchParams.get("facility");
-
-    if (urlCategory !== lastSyncedCategory.current && urlCategory !== selectedCategory) {
-      setSelectedCategory(urlCategory);
-      lastSyncedCategory.current = urlCategory;
-    }
 
     if (isUserClosing.current) return;
 
@@ -179,7 +211,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       lastSyncedFacilityId.current = urlFacilityId;
     }
-  }, [searchParams, selectedCategory, selectedFacility]);
+  }, [searchParams, selectedCategories, selectedFacility]);
 
   useEffect(() => {
     if (pathname.startsWith("/directory")) setActiveTabState("directory");
@@ -210,9 +242,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [pendingFacilityId, selectedFacility?.id]);
 
+  const toggleCategory = useCallback((category: FacilityCategory) => {
+    setSelectedCategories((prev) => {
+      if (prev.includes(category)) {
+        return prev.filter((c) => c !== category);
+      }
+      return [...prev, category];
+    });
+  }, []);
+
   const clearFilters = useCallback(() => {
     setSearchQuery("");
-    setSelectedCategory(null);
+    setSelectedCategories([]);
   }, []);
 
   const setActiveTab = useCallback((
@@ -231,8 +272,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (debouncedQuery.trim()) {
       params.set("q", debouncedQuery.trim());
     }
-    if (selectedCategory) {
-      params.set("category", selectedCategory);
+    if (selectedCategories.length > 0) {
+      params.set("category", selectedCategories.join(","));
     }
 
     // Only include facility ID if not selecting after navigation
@@ -254,7 +295,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     setActiveTabState(tab);
     router.push(fullUrl, { scroll: false });
-  }, [router, debouncedQuery, selectedCategory, selectedFacility?.id, pendingFacilityId]);
+  }, [router, debouncedQuery, selectedCategories, selectedFacility?.id, pendingFacilityId]);
 
   const value = useMemo<AppContextValue>(() => ({
     selectedFacility,
@@ -262,14 +303,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     facilitySheetOpen,
     searchQuery,
     debouncedQuery,
-    selectedCategory,
+    selectedCategories,
+    setCategories: setSelectedCategories,
+    toggleCategory,
     activeTab,
     mapStyle,
     selectFacility,
     resolvePendingFacility,
     setFacilitySheetOpen,
     setSearchQuery,
-    setCategory: setSelectedCategory,
     setActiveTab,
     setMapStyle,
     clearFilters,
@@ -279,12 +321,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     facilitySheetOpen,
     searchQuery,
     debouncedQuery,
-    selectedCategory,
+    selectedCategories,
     activeTab,
     mapStyle,
     selectFacility,
     resolvePendingFacility,
     setFacilitySheetOpen,
+    setSelectedCategories,
+    toggleCategory,
     setActiveTab,
     setMapStyle,
     clearFilters,
