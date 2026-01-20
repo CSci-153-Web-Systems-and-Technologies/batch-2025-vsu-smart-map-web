@@ -123,7 +123,7 @@ function MapTab() {
       tabIndex={0}
     >
       {/* Filter Bar */}
-      <div className="w-full border-b bg-background/95 backdrop-blur z-20 px-4 py-1.5 shrink-0">
+      <div className="w-full border-b bg-background/95 backdrop-blur z-20 px-4 py-1.5 shrink-0 flex justify-center items-center">
         <MapSearchPanel
           items={items}
           onResultsChange={(results) => setFiltered(results as Facility[])}

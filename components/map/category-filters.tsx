@@ -14,11 +14,11 @@ export function CategoryFilters({ value, onChange, onToggle }: CategoryFiltersPr
   const isNoneSelected = value.length === 0;
 
   return (
-    <div className="relative group">
+    <div className="w-full">
       <div
         role="radiogroup"
         aria-label="Filter by category"
-        className="flex overflow-x-auto pb-1 -mx-1 px-1 gap-2 no-scrollbar mask-gradient-right"
+        className="flex items-center overflow-x-auto gap-2 no-scrollbar"
       >
         <button
           type="button"

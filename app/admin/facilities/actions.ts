@@ -90,9 +90,11 @@ export async function updateFacilityAction(id: string, input: unknown) {
 
   const { data: currentFacility } = await getFacilityById({ id, client });
 
-  // Delete old image if being replaced with a new one
+  // Delete old image if being replaced with a new one OR if being cleared
   const inputData = parsed.data as Record<string, unknown>;
-  if (currentFacility?.imageUrl && inputData.imageUrl && inputData.imageUrl !== currentFacility.imageUrl) {
+  const isClearing = inputData.imageUrl === null || inputData.imageUrl === '';
+  const isReplacing = inputData.imageUrl && inputData.imageUrl !== currentFacility?.imageUrl;
+  if (currentFacility?.imageUrl && (isClearing || isReplacing)) {
     await deleteImage(currentFacility.imageUrl, true);
   }
 
@@ -205,9 +207,13 @@ export async function updateRoomAction(id: string, input: unknown) {
 
   const { data: currentRoom } = await getRoomById({ id, client });
 
-  // Delete old room image if being replaced with a new one
-  if (currentRoom && !("facility" in currentRoom) && currentRoom.image_url && parsed.data.imageUrl && parsed.data.imageUrl !== currentRoom.image_url) {
-    await deleteImage(currentRoom.image_url, true);
+  // Delete old room image if being replaced with a new one OR if being cleared
+  if (currentRoom && !("facility" in currentRoom) && currentRoom.image_url) {
+    const isClearing = parsed.data.imageUrl === null || parsed.data.imageUrl === '';
+    const isReplacing = parsed.data.imageUrl && parsed.data.imageUrl !== currentRoom.image_url;
+    if (isClearing || isReplacing) {
+      await deleteImage(currentRoom.image_url, true);
+    }
   }
 
   const { data, error } = await updateRoom({ id, ...parsed.data }, client);

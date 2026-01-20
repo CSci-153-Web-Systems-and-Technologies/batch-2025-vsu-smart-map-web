@@ -112,7 +112,7 @@ export function FacilitiesPageClient({ facilities }: FacilitiesPageClientProps) 
       }
 
       const basePayload =
-        clearImage && !file ? { ...values, imageUrl: undefined } : values;
+        clearImage && !file ? { ...values, imageUrl: null } : values;
       const updateResult = await updateFacilityAction(selected.id, basePayload);
       if (updateResult.error) {
         throw new Error(updateResult.error);
@@ -125,7 +125,7 @@ export function FacilitiesPageClient({ facilities }: FacilitiesPageClientProps) 
 
       let updated: Facility =
         (updateResult.data as Facility | undefined) ??
-        ({ ...selected, ...optimisticValues, ...(clearImage && !file ? { imageUrl: undefined } : {}) } as Facility);
+        ({ ...selected, ...optimisticValues, ...(clearImage && !file ? { imageUrl: null } : {}) } as Facility);
 
       updated = await syncImage(updated, file, false);
 

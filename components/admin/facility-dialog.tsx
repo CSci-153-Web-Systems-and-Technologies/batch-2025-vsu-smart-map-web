@@ -22,6 +22,7 @@ import { ImageZoomDialog } from '@/components/ui/image-zoom-dialog';
 import { cn } from '@/lib/utils';
 import { CoordinatePicker } from './coordinate-picker';
 import { MAP_DEFAULT_CENTER } from '@/lib/constants/map';
+import { FieldHelp } from '@/components/ui/field-help';
 
 type Mode = 'create' | 'edit';
 
@@ -111,6 +112,10 @@ export function FacilityDialog({
     submitLabel ?? (mode === 'create' ? 'Create' : 'Save changes');
   const resolvedSubmitting = submittingLabel ?? `${resolvedSubmit}...`;
 
+  const isDefaultLocation =
+    values.coordinates.lat === MAP_DEFAULT_CENTER.lat &&
+    values.coordinates.lng === MAP_DEFAULT_CENTER.lng;
+
   useEffect(() => {
     if (preview && preview.startsWith('blob:')) {
       return () => URL.revokeObjectURL(preview);
@@ -168,7 +173,10 @@ export function FacilityDialog({
               <div className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-1.5">
-                    <Label htmlFor="code">Code (optional)</Label>
+                    <div className="flex items-center gap-1">
+                      <Label htmlFor="code">Code (optional)</Label>
+                      <FieldHelp content="A short unique identifier for the facility (e.g., ICT, CAS, DALL)." />
+                    </div>
                     <Input
                       id="code"
                       value={values.code ?? ''}
@@ -177,7 +185,10 @@ export function FacilityDialog({
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="name">Name</Label>
+                    <div className="flex items-center gap-1">
+                      <Label htmlFor="name">Name</Label>
+                      <FieldHelp content="The full name of the building or point of interest." />
+                    </div>
                     <Input
                       id="name"
                       value={values.name}
@@ -188,7 +199,10 @@ export function FacilityDialog({
 
                   {showSlug && (
                     <div className="space-y-1.5 md:col-span-2">
-                      <Label htmlFor="slug">Slug (URL identifier)</Label>
+                      <div className="flex items-center gap-1">
+                        <Label htmlFor="slug">Slug (URL identifier)</Label>
+                        <FieldHelp content="The URL-friendly identifier. If left blank, it will be automatically generated from the name." />
+                      </div>
                       <Input
                         id="slug"
                         value={values.slug ?? ''}
@@ -202,7 +216,10 @@ export function FacilityDialog({
                   )}
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="category">Category</Label>
+                    <div className="flex items-center gap-1">
+                      <Label htmlFor="category">Category</Label>
+                      <FieldHelp content="The classification of this facility to help with filtering and icon selection." />
+                    </div>
                     <Select
                       value={values.category}
                       onValueChange={(value) =>
@@ -226,7 +243,10 @@ export function FacilityDialog({
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label id="facility-type-label">Type</Label>
+                    <div className="flex items-center gap-1">
+                      <Label id="facility-type-label">Type</Label>
+                      <FieldHelp content="Buildings can contain rooms, while Points of Interest (POI) are markers for specific locations." />
+                    </div>
                     <div
                       className="flex rounded-lg border bg-muted/40 p-1"
                       role="radiogroup"
@@ -261,7 +281,10 @@ export function FacilityDialog({
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="description">Description</Label>
+                  <div className="flex items-center gap-1">
+                    <Label htmlFor="description">Description</Label>
+                    <FieldHelp content="Publicly visible information about the facility's purpose, history, or features." />
+                  </div>
                   <Textarea
                     id="description"
                     value={values.description ?? ''}
@@ -270,15 +293,37 @@ export function FacilityDialog({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Location</Label>
-                  <CoordinatePicker
-                    value={values.coordinates}
-                    onChange={(coords) => setValues({ ...values, coordinates: coords })}
-                  />
+                  <div className="flex items-center gap-1">
+                    <Label>Location</Label>
+                    <FieldHelp content="Select the precise location on the map where this facility is located." />
+                  </div>
+                  <div className="relative">
+                    <CoordinatePicker
+                      value={values.coordinates}
+                      onChange={(coords) => setValues({ ...values, coordinates: coords })}
+                    />
+                    <input
+                      tabIndex={-1}
+                      autoComplete="off"
+                      value={isDefaultLocation ? '' : 'present'}
+                      onChange={() => { }}
+                      required={mode === 'create'}
+                      className="absolute inset-0 w-full h-full opacity-0 pointer-events-none"
+                      onInvalid={(e) => {
+                        e.currentTarget.setCustomValidity('Please select a specific location on the map.');
+                      }}
+                      onInput={(e) => {
+                        e.currentTarget.setCustomValidity('');
+                      }}
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="image">Hero image</Label>
+                  <div className="flex items-center gap-1">
+                    <Label htmlFor="image">Hero image</Label>
+                    <FieldHelp content="An attractive photo of the facility's exterior or main entrance. Max 5MB." />
+                  </div>
                   {preview && (
                     <div className="rounded-lg border p-3 flex items-center gap-3">
                       <button
@@ -334,7 +379,10 @@ export function FacilityDialog({
 
                 {(preview || values.imageUrl) && (
                   <div className="space-y-1.5">
-                    <Label htmlFor="imageCredit">Photo credit (optional)</Label>
+                    <div className="flex items-center gap-1">
+                      <Label htmlFor="imageCredit">Photo credit (optional)</Label>
+                      <FieldHelp content="Mention the photographer or source of the image." />
+                    </div>
                     <Input
                       id="imageCredit"
                       value={values.imageCredit ?? ''}
