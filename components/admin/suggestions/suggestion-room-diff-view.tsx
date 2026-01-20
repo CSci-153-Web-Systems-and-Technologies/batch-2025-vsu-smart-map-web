@@ -29,6 +29,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import Image from "next/image";
 import { ImageZoomDialog } from "@/components/ui/image-zoom-dialog";
+import { FieldHelp } from "@/components/ui/field-help";
 
 interface RoomRow {
   id: string;
@@ -383,7 +384,10 @@ export function SuggestionRoomDiffView({
           <DialogScaffoldBody className="py-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="grid gap-2">
-                <Label htmlFor="edit-roomCode">Room Code *</Label>
+                <div className="flex items-center gap-1">
+                  <Label htmlFor="edit-roomCode">Room Code *</Label>
+                  <FieldHelp content="The unique identifier for the room (e.g., ICT101, Lab-A)." />
+                </div>
                 <Input
                   id="edit-roomCode"
                   value={editedPayload.roomCode ?? ""}
@@ -393,7 +397,10 @@ export function SuggestionRoomDiffView({
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="edit-floor">Floor</Label>
+                <div className="flex items-center gap-1">
+                  <Label htmlFor="edit-floor">Floor</Label>
+                  <FieldHelp content="The floor level where this room is located." />
+                </div>
                 <Input
                   id="edit-floor"
                   type="number"
@@ -408,7 +415,10 @@ export function SuggestionRoomDiffView({
               </div>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="edit-name">Name</Label>
+              <div className="flex items-center gap-1">
+                <Label htmlFor="edit-name">Name</Label>
+                <FieldHelp content="A descriptive name for the room (e.g., Computer Lab, Conference Room)." />
+              </div>
               <Input
                 id="edit-name"
                 value={editedPayload.name ?? ""}
@@ -418,7 +428,10 @@ export function SuggestionRoomDiffView({
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="edit-description">Description</Label>
+              <div className="flex items-center gap-1">
+                <Label htmlFor="edit-description">Description</Label>
+                <FieldHelp content="Additional details about the room's purpose or availability." />
+              </div>
               <Textarea
                 id="edit-description"
                 value={editedPayload.description ?? ""}
