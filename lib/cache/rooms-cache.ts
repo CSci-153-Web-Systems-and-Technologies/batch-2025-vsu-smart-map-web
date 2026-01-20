@@ -1,5 +1,27 @@
 import type { RoomRow, RoomRowWithFacility } from "@/lib/supabase/queries/rooms";
-import { db } from "@/lib/db";
+import { db, type CacheMetaEntry } from "@/lib/db";
+
+const ROOMS_META_KEY = "rooms" as const;
+
+export async function getRoomsCacheMeta(): Promise<CacheMetaEntry | null> {
+  if (typeof window === "undefined") return null;
+
+  try {
+    return (await db.cache_meta.get(ROOMS_META_KEY)) ?? null;
+  } catch (error) {
+    console.warn("Failed to get rooms cache meta from IDB:", error);
+    return null;
+  }
+}
+
+export async function isRoomsCacheStale(maxAgeMs: number): Promise<boolean> {
+  if (typeof window === "undefined") return true;
+
+  const meta = await getRoomsCacheMeta();
+  if (!meta) return true;
+
+  return Date.now() - meta.updatedAt > maxAgeMs;
+}
 
 export async function getCachedRooms(): Promise<(RoomRow | RoomRowWithFacility)[] | null> {
   if (typeof window === "undefined") return null;
@@ -7,14 +29,7 @@ export async function getCachedRooms(): Promise<(RoomRow | RoomRowWithFacility)[
   try {
     const rooms = await db.rooms.toArray();
     if (rooms.length === 0) return null;
-
-    // Map back to expected structure if needed (though we store flatten structure mostly)
-    // The previous implementation stored mixed types.
-    // For simplicity and search speed, we just return what's in DB.
-    // However, we need to ensure the consumers handle the data correctly.
-    // The current schema in db.ts includes 'facility_id', so we can reconstruct partial objects if needed.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB schema stores union types that are hard to represent strictly with Dexie tables
-    return rooms as any[];
+    return rooms;
   } catch (error) {
     console.warn("Failed to get rooms from IDB:", error);
     return null;
@@ -30,22 +45,21 @@ export async function setCachedRooms(rooms: (RoomRow | RoomRowWithFacility)[]): 
     // The 'db.rooms' table is defined with specific indices. Dexie allow storing arbitrary extra fields.
     // Let's ensure 'facility_id' is present for indexing.
 
-    const processedRooms = rooms.map(room => {
-      // If it has a facility object (RoomRowWithFacility), flatten the ID for indexing
-      let fid = room.facility_id;
-      if ('facility' in room && room.facility?.id) {
-        fid = room.facility.id;
-      }
+    const processedRooms: RoomRowWithFacility[] = rooms.map((room) => {
+      const facility = "facility" in room ? room.facility ?? null : null;
+      const facilityId = facility?.id ?? room.facility_id;
+
       return {
         ...room,
-        facility_id: fid
-      };
+        facility,
+        facility_id: facilityId,
+      } as RoomRowWithFacility;
     });
 
-    await db.transaction('rw', db.rooms, async () => {
+    await db.transaction("rw", db.rooms, db.cache_meta, async () => {
       await db.rooms.clear();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Bulk adding mixed types requires looser typing
-      await db.rooms.bulkAdd(processedRooms as any);
+      await db.rooms.bulkAdd(processedRooms);
+      await db.cache_meta.put({ key: ROOMS_META_KEY, updatedAt: Date.now() });
     });
   } catch (error) {
     console.warn("Failed to cache rooms to IDB:", error);
@@ -56,7 +70,10 @@ export async function clearCachedRooms(): Promise<void> {
   if (typeof window === "undefined") return;
 
   try {
-    await db.rooms.clear();
+    await db.transaction("rw", db.rooms, db.cache_meta, async () => {
+      await db.rooms.clear();
+      await db.cache_meta.delete(ROOMS_META_KEY);
+    });
   } catch (error) {
     console.error("Failed to clear rooms cache:", error);
   }
