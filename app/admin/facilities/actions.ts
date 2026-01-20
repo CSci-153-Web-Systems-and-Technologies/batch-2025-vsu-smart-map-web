@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { unifiedFacilitySchema, partialFacilitySchema } from "@/lib/validation/facility";
 import { roomSchema } from "@/lib/validation/room";
-import { isDeepEqual } from "@/lib/utils";
+import { calculateChanges } from "@/lib/logic/change-tracking";
 import {
   createFacility,
   deleteFacility as deleteFacilityQuery,
@@ -20,14 +20,11 @@ import {
 } from "@/lib/supabase/queries/rooms";
 import { getSupabaseServerClient, getSupabaseAdminClient } from "@/lib/supabase/server-client";
 import { deleteImage } from "@/lib/supabase/storage";
-import type { Facility } from "@/lib/types/facility";
+// import type { Facility } from "@/lib/types/facility";
 
 const MAX_HISTORY_ITEMS = 5;
 
-function getFacilityValue(facility: Facility, key: string): unknown {
-  const facilityRecord = facility as unknown as Record<string, unknown>;
-  return facilityRecord[key];
-}
+
 
 export async function getFacilityHistory(facilityId: string) {
   const { client } = await getSupabaseAdminClient({ requireServiceRole: true });
@@ -103,31 +100,9 @@ export async function updateFacilityAction(id: string, input: unknown) {
     return { error: error.message ?? GENERIC_ERROR };
   }
 
-  const changes: Record<string, unknown> = {};
-  if (currentFacility) {
-    const inputData = parsed.data as Record<string, unknown>;
-    Object.keys(inputData).forEach((key) => {
-      const newValue = inputData[key];
-      const currentValue = getFacilityValue(currentFacility, key);
+  const changes = currentFacility ? calculateChanges(currentFacility as unknown as Record<string, unknown>, parsed.data) : {};
 
-      if (key === "coordinates" && newValue && typeof newValue === "object") {
-        const newCoords = newValue as { lat: number; lng: number };
-        const currentCoords = currentFacility.coordinates;
-        if (
-          newCoords.lat !== currentCoords.lat ||
-          newCoords.lng !== currentCoords.lng
-        ) {
-          changes[key] = { from: currentCoords, to: newCoords };
-        }
-      } else if (!isDeepEqual(newValue, currentValue)) {
-        // Record the change if newValue is not undefined
-        // null is a valid change (clearing a field)
-        if (newValue !== undefined) {
-          changes[key] = { from: currentValue ?? null, to: newValue };
-        }
-      }
-    });
-  } else {
+  if (!currentFacility && !Object.keys(changes).length) {
     Object.assign(changes, parsed.data);
   }
 
@@ -222,27 +197,7 @@ export async function updateRoomAction(id: string, input: unknown) {
   }
 
   if (data && currentRoom && !("facility" in currentRoom)) {
-    const changes: Record<string, unknown> = {};
-    const inputData = parsed.data;
-
-    if (inputData.roomCode !== undefined && inputData.roomCode !== currentRoom.room_code) {
-      changes.roomCode = { from: currentRoom.room_code ?? null, to: inputData.roomCode };
-    }
-    if (inputData.name !== undefined && inputData.name !== currentRoom.name) {
-      changes.name = { from: currentRoom.name ?? null, to: inputData.name };
-    }
-    if (inputData.description !== undefined && inputData.description !== currentRoom.description) {
-      changes.description = { from: currentRoom.description ?? null, to: inputData.description };
-    }
-    if (inputData.floor !== undefined && inputData.floor !== currentRoom.floor) {
-      changes.floor = { from: currentRoom.floor ?? null, to: inputData.floor };
-    }
-    if (inputData.facilityId !== undefined && inputData.facilityId !== currentRoom.facility_id) {
-      changes.facilityId = { from: currentRoom.facility_id ?? null, to: inputData.facilityId };
-    }
-    if (inputData.imageUrl !== undefined && inputData.imageUrl !== currentRoom.image_url) {
-      changes.imageUrl = { from: currentRoom.image_url ?? null, to: inputData.imageUrl };
-    }
+    const changes = calculateChanges(currentRoom as unknown as Record<string, unknown>, parsed.data);
 
     if (Object.keys(changes).length > 0) {
       const { client: adminClient } = await getSupabaseAdminClient({ requireServiceRole: true });
