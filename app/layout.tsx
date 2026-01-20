@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { MapStyleProvider } from "@/lib/context/map-style-context";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/react";
+import { SyncProvider } from "@/components/providers/sync-provider";
 import "./globals.css";
 
 const defaultUrl = process.env.VERCEL_URL
@@ -87,15 +88,17 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <MapStyleProvider>
-            <Script
-              src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
-              strategy="afterInteractive"
-            />
-            <NavigationProgress />
-            <Toaster />
-            <ServiceWorkerRegistration />
-            <SkipLink />
-            {children}
+            <SyncProvider>
+              <Script
+                src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+                strategy="afterInteractive"
+              />
+              <NavigationProgress />
+              <Toaster />
+              <ServiceWorkerRegistration />
+              <SkipLink />
+              {children}
+            </SyncProvider>
             <Analytics />
           </MapStyleProvider>
         </ThemeProvider>

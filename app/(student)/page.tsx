@@ -54,7 +54,7 @@ function MapTab() {
 
   useEffect(() => {
     const load = async () => {
-      const cached = getCachedFacilities();
+      const cached = await getCachedFacilities();
       if (cached && cached.length > 0) {
         setItems(cached);
         setFiltered(cached);
@@ -76,11 +76,11 @@ function MapTab() {
         }
       };
 
-      const fetchFacilities = async () => {
+      const fetchFacilities = async (fallbackCache: Facility[] | null) => {
         const { data, error: fetchError } = await getFacilities();
 
         if (fetchError || !data) {
-          if (cached && cached.length > 0) {
+          if (fallbackCache && fallbackCache.length > 0) {
             setError(null);
           } else {
             setError("Unable to load map data. Please try again later.");
@@ -98,7 +98,7 @@ function MapTab() {
         setIsLoading(false);
       };
 
-      void Promise.all([fetchFacilities(), loadRooms()]);
+      void Promise.all([fetchFacilities(cached), loadRooms()]);
     };
 
     void load();

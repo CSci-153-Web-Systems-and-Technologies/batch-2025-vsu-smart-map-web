@@ -1,58 +1,38 @@
 import type { Facility } from "@/lib/types";
+import { db } from "@/lib/db";
 
-const FACILITIES_STORAGE_KEY = "vsu-smartmap-facilities-v3";
-const CACHE_MAX_AGE_MS = 30 * 60 * 1000; // 30 minutes
-
-interface CachedFacilities {
-  data: Facility[];
-  timestamp: number;
-}
-
-export function getCachedFacilities(): Facility[] | null {
+export async function getCachedFacilities(): Promise<Facility[] | null> {
   if (typeof window === "undefined") return null;
 
   try {
-    const stored = localStorage.getItem(FACILITIES_STORAGE_KEY);
-    if (!stored) return null;
-
-    const parsed: CachedFacilities = JSON.parse(stored);
-    const age = Date.now() - parsed.timestamp;
-
-    if (!navigator.onLine) {
-      return parsed.data;
-    }
-
-    if (age < CACHE_MAX_AGE_MS) {
-      return parsed.data;
-    }
-
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-export function setCachedFacilities(facilities: Facility[]): void {
-  if (typeof window === "undefined") return;
-
-  try {
-    const cached: CachedFacilities = {
-      data: facilities,
-      timestamp: Date.now(),
-    };
-    localStorage.setItem(FACILITIES_STORAGE_KEY, JSON.stringify(cached));
+    const facilities = await db.facilities.toArray();
+    if (facilities.length === 0) return null;
+    return facilities;
   } catch (error) {
-    if (error instanceof DOMException && error.name === "QuotaExceededError") {
-      console.warn("Facilities cache storage quota exceeded");
-    }
+    console.warn("Failed to get facilities from IDB:", error);
+    return null;
   }
 }
 
-export function clearCachedFacilities(): void {
+export async function setCachedFacilities(facilities: Facility[]): Promise<void> {
   if (typeof window === "undefined") return;
 
   try {
-    localStorage.removeItem(FACILITIES_STORAGE_KEY);
-  } catch {
+    await db.transaction('rw', db.facilities, async () => {
+      await db.facilities.clear();
+      await db.facilities.bulkAdd(facilities);
+    });
+  } catch (error) {
+    console.warn("Failed to cache facilities to IDB:", error);
+  }
+}
+
+export async function clearCachedFacilities(): Promise<void> {
+  if (typeof window === "undefined") return;
+
+  try {
+    await db.facilities.clear();
+  } catch (error) {
+    console.error("Failed to clear facilities cache:", error);
   }
 }
