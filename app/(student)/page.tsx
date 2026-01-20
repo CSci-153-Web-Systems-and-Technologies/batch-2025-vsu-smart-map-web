@@ -5,7 +5,7 @@ import { Suspense, useEffect, useState } from "react";
 import { MapContainerClient } from "@/components/map/map-container";
 import { MapSearchPanel } from "@/components/map/map-search-panel";
 import type { Facility } from "@/lib/types/facility";
-import { getFacilities } from "@/lib/supabase/queries/facilities";
+import { getFacilitiesLite } from "@/lib/supabase/queries/facilities";
 import { useApp } from "@/lib/context/app-context";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -77,7 +77,7 @@ function MapTab() {
       };
 
       const fetchFacilities = async (fallbackCache: Facility[] | null) => {
-        const { data, error: fetchError } = await getFacilities();
+        const { data, error: fetchError } = await getFacilitiesLite();
 
         if (fetchError || !data) {
           if (fallbackCache && fallbackCache.length > 0) {
@@ -91,9 +91,12 @@ function MapTab() {
           return;
         }
 
-        setCachedFacilities(data as Facility[]);
-        setItems(data);
-        setFiltered(data);
+        // Cast Lite objects to Facility for now since coordinates/etc match.
+        // The components will need to handle missing descriptions if they try to access them.
+        // We'll fix the cache logic to handle Lite objects in a moment or cast it.
+        setCachedFacilities(data as unknown as Facility[]);
+        setItems(data as unknown as Facility[]);
+        setFiltered(data as unknown as Facility[]);
         setError(null);
         setIsLoading(false);
       };

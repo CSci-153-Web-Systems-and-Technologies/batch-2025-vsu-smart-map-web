@@ -110,6 +110,11 @@ export interface FacilityMarkerPayload {
   readonly hasRooms: boolean;
 }
 
+export type FacilityLite = Pick<
+  Facility,
+  "id" | "code" | "slug" | "name" | "category" | "coordinates" | "hasRooms" | "imageUrl"
+>;
+
 
 
 export interface FacilityRow {

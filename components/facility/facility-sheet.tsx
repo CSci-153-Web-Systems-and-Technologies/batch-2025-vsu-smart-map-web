@@ -17,6 +17,7 @@ import { ActionButtons } from "./action-buttons";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { useApp } from "@/lib/context/app-context";
 import { SuggestEditModal } from "@/components/suggestions/suggest-edit-modal";
+import type { Facility } from "@/lib/types/facility";
 
 export function FacilitySheet() {
   const pathname = usePathname();
@@ -25,11 +26,34 @@ export function FacilitySheet() {
   const open = !!selectedFacility && (!isMapPage || facilitySheetOpen);
   const [suggestOpen, setSuggestOpen] = useState(false);
 
+  const [fullFacility, setFullFacility] = useState<Facility | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+
   useEffect(() => {
     if (!open) {
       setSuggestOpen(false);
+      setFullFacility(null);
+      setLoadingDetails(false);
+      return;
     }
-  }, [open]);
+
+    // Check if we need to fetch full details (e.g. description is missing)
+    if (selectedFacility && !('description' in selectedFacility) && !fullFacility) {
+      setLoadingDetails(true);
+      import("@/lib/supabase/queries/facilities")
+        .then(({ getFacilityById }) => getFacilityById({ id: selectedFacility.id }))
+        .then(({ data }) => {
+          if (data) {
+            setFullFacility(data);
+          }
+        })
+        .finally(() => setLoadingDetails(false));
+    }
+  }, [open, selectedFacility, fullFacility]);
+
+  // Use full details if available, otherwise fall back to passed facility (Lite)
+  const displayFacility = fullFacility?.id === selectedFacility?.id ? fullFacility : selectedFacility;
+
 
   return (
     <>
@@ -48,11 +72,11 @@ export function FacilitySheet() {
       >
         <DialogContent className="flex h-[100dvh] max-h-[100dvh] w-full max-w-full flex-col gap-0 p-0 sm:h-[90dvh] sm:max-h-[90dvh] sm:max-w-lg sm:rounded-lg">
           <VisuallyHidden>
-            <DialogTitle>{selectedFacility?.name ?? "Facility Details"}</DialogTitle>
-            <DialogDescription>Details for {selectedFacility?.name ?? "selected facility"}</DialogDescription>
+            <DialogTitle>{displayFacility?.name ?? "Facility Details"}</DialogTitle>
+            <DialogDescription>Details for {displayFacility?.name ?? "selected facility"}</DialogDescription>
           </VisuallyHidden>
 
-          {selectedFacility && (
+          {displayFacility && (
             <>
               <div className="flex shrink-0 items-center gap-2 px-6 pt-4">
                 <Button
@@ -69,24 +93,30 @@ export function FacilitySheet() {
               <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6">
                 <div className="space-y-6 pb-6 pt-4">
                   <FacilityHeader
-                    facility={selectedFacility}
+                    facility={displayFacility}
                     onAddPhoto={() => setSuggestOpen(true)}
                     parentOpen={open}
                   />
-                  <ActionButtons facility={selectedFacility} />
+                  {loadingDetails && !displayFacility.description && (
+                    <div className="space-y-2 px-1">
+                      <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
+                      <div className="h-4 w-1/2 animate-pulse rounded bg-muted" />
+                    </div>
+                  )}
+                  <ActionButtons facility={displayFacility} />
                   <ContactInfo
                     address="Visayas State University, Baybay City, Leyte"
                     contact={{
-                      website: selectedFacility.website,
-                      facebook: selectedFacility.facebook,
-                      phone: selectedFacility.phone,
+                      website: displayFacility.website,
+                      facebook: displayFacility.facebook,
+                      phone: displayFacility.phone,
                     }}
                   />
 
-                  {selectedFacility.hasRooms && (
+                  {displayFacility.hasRooms && (
                     <>
                       <div className="h-px bg-border" />
-                      <RoomList facilityId={selectedFacility.id} facilityName={selectedFacility.name} facilityCode={selectedFacility.code} />
+                      <RoomList facilityId={displayFacility.id} facilityName={displayFacility.name} facilityCode={displayFacility.code} />
                     </>
                   )}
                 </div>
@@ -96,7 +126,7 @@ export function FacilitySheet() {
         </DialogContent>
       </Dialog>
       <SuggestEditModal
-        facility={selectedFacility ?? null}
+        facility={displayFacility ?? null}
         open={suggestOpen}
         onOpenChange={(isOpen) => setSuggestOpen(isOpen)}
       />

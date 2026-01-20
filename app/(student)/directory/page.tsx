@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getFacilities } from "@/lib/supabase/queries/facilities";
+import { getFacilitiesLite } from "@/lib/supabase/queries/facilities";
 import { DirectoryContainer } from "@/components/directory";
 import { getCachedFacilities, setCachedFacilities } from "@/lib/cache/facilities-cache";
 import type { Facility } from "@/lib/types";
@@ -33,28 +33,33 @@ export default function DirectoryPage() {
     const load = async () => {
       setIsLoading(true);
 
+      const fetchFacilities = async () => {
+        const { data, error: fetchError } = await getFacilitiesLite();
+
+        if (fetchError || !data) {
+          const cached = await getCachedFacilities();
+          if (cached && cached.length > 0) {
+            setError(null);
+          } else {
+            setError("Failed to load facilities. Please try again later.");
+            setFacilities([]);
+          }
+          setIsLoading(false);
+          return;
+        }
+
+        setCachedFacilities(data as unknown as Facility[]);
+        setFacilities(data as unknown as Facility[]);
+        setError(null);
+        setIsLoading(false);
+      };
+
       const cached = await getCachedFacilities();
       if (cached && cached.length > 0) {
         setFacilities(cached);
       }
 
-      const { data, error: fetchError } = await getFacilities();
-
-      if (fetchError || !data) {
-        if (cached && cached.length > 0) {
-          setError(null);
-        } else {
-          setError("Failed to load facilities. Please try again later.");
-          setFacilities([]);
-        }
-        setIsLoading(false);
-        return;
-      }
-
-      setCachedFacilities(data as Facility[]);
-      setFacilities(data as Facility[]);
-      setError(null);
-      setIsLoading(false);
+      void fetchFacilities();
     };
 
     void load();

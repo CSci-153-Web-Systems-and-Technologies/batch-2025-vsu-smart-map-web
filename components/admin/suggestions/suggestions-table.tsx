@@ -39,16 +39,16 @@ export function SuggestionsTable({ suggestions, facilityNames }: SuggestionsTabl
   const [pending, startTransition] = useTransition();
   const router = useRouter();
 
-  useRealtimeSuggestions();
+  const { suggestions: items } = useRealtimeSuggestions(suggestions);
 
-  const allSelected = suggestions.length > 0 && selectedIds.size === suggestions.length;
+  const allSelected = items.length > 0 && selectedIds.size === items.length;
   const someSelected = selectedIds.size > 0;
 
   const toggleAll = () => {
     if (allSelected) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(suggestions.map((s) => s.id)));
+      setSelectedIds(new Set(items.map((s) => s.id)));
     }
   };
 
@@ -82,7 +82,7 @@ export function SuggestionsTable({ suggestions, facilityNames }: SuggestionsTabl
     });
   };
 
-  if (!suggestions.length) {
+  if (!items.length) {
     return (
       <div className="rounded-lg border border-dashed border-border bg-muted/30 p-6 text-sm text-muted-foreground">
         No pending suggestions right now.
@@ -134,7 +134,7 @@ export function SuggestionsTable({ suggestions, facilityNames }: SuggestionsTabl
             </tr>
           </thead>
           <tbody>
-            {suggestions.map((suggestion) => {
+            {items.map((suggestion) => {
               let targetName = "New facility";
               const payload = suggestion.payload as Record<string, unknown>;
 
