@@ -58,6 +58,11 @@ export function MapMarker({ item, isSelected = false, onSelect }: MapMarkerProps
     if (!marker) return;
 
     if (isSelected) {
+      // Unbind tooltip before opening popup to prevent null reference errors
+      // when Leaflet tries to access the tooltip during state transitions
+      if (marker.getTooltip()) {
+        marker.unbindTooltip();
+      }
       // Small timeout to ensure the marker is ready in Leaflet's engine
       const timer = setTimeout(() => {
         marker.openPopup();
