@@ -33,7 +33,7 @@ export default function DirectoryPage() {
     const load = async () => {
       setIsLoading(true);
 
-      const cached = getCachedFacilities();
+      const cached = await getCachedFacilities();
       if (cached && cached.length > 0) {
         setFacilities(cached);
       }

@@ -31,18 +31,7 @@ function isCacheableApiRequest(url, request) {
   return CACHEABLE_API_PATTERNS.some(pattern => url.pathname.includes(pattern));
 }
 
-async function fetchWithTimeout(request, timeout = 3000) {
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeout);
-  try {
-    const response = await fetch(request, { signal: controller.signal });
-    clearTimeout(id);
-    return response;
-  } catch (error) {
-    clearTimeout(id);
-    throw error;
-  }
-}
+
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -117,29 +106,35 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Network-first for cacheable API endpoints only (public facility data)
+  // Stale-While-Revalidate for cacheable API endpoints
   if (isCacheableApiRequest(url, request)) {
     event.respondWith(
-      caches.open(API_CACHE_NAME).then((cache) => {
-        // Use a timeout for network requests so they don't block forever on slow connections
-        return fetchWithTimeout(request, 3000)
-          .then((networkResponse) => {
-            if (networkResponse.ok) {
-              cache.put(request, networkResponse.clone());
-            }
-            return networkResponse;
-          })
-          .catch(() => {
-            return cache.match(request).then((cachedResponse) => {
-              if (cachedResponse) {
-                return cachedResponse;
-              }
-              return new Response(JSON.stringify({ error: 'Offline' }), {
-                status: 503,
-                headers: { 'Content-Type': 'application/json' }
-              });
-            });
+      caches.open(API_CACHE_NAME).then(async (cache) => {
+        const cachedResponse = await cache.match(request);
+
+        const networkFetch = fetch(request).then((response) => {
+          if (response.ok) {
+            cache.put(request, response.clone());
+          }
+          return response;
+        }).catch(() => {
+          // Network failed, nothing to do. 
+          // If we returned cachedResponse, user is fine.
+          // If we didn't, the return networkFetch below will bubble the error (or we can handle it there).
+          return new Response(JSON.stringify({ error: 'Offline' }), {
+            status: 503,
+            headers: { 'Content-Type': 'application/json' }
           });
+        });
+
+        if (cachedResponse) {
+          // Return cached immediately, update in background
+          event.waitUntil(networkFetch);
+          return cachedResponse;
+        }
+
+        // No cache, wait for network
+        return networkFetch;
       })
     );
     return;

@@ -39,7 +39,7 @@ export function MapSearchPanel({
     let cancelled = false;
     const doRoomSearch = async () => {
       // Try cache first for immediate (and offline) results
-      const cachedRooms = getCachedRooms();
+      const cachedRooms = await getCachedRooms();
       if (cachedRooms && cachedRooms.length > 0) {
         const ids = new Set<string>();
         const term = searchLower;
