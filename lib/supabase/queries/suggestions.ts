@@ -19,7 +19,7 @@ const normalizeError = (error: PostgrestError | null) => (error ? { ...error } :
 const resolveClient = async (client?: MaybeClient) =>
   Promise.resolve(client ?? getSupabaseBrowserClient());
 
-const toSuggestion = (row: SuggestionRow): Suggestion => ({
+export const toSuggestion = (row: SuggestionRow): Suggestion => ({
   id: row.id,
   type: row.type,
   status: row.status,
