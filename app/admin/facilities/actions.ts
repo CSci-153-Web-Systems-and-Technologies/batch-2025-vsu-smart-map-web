@@ -92,7 +92,7 @@ export async function updateFacilityAction(id: string, input: unknown) {
 
   // Delete old image if being replaced with a new one OR if being cleared
   const inputData = parsed.data as Record<string, unknown>;
-  const isClearing = inputData.imageUrl === undefined || inputData.imageUrl === null || inputData.imageUrl === '';
+  const isClearing = inputData.imageUrl === null || inputData.imageUrl === '';
   const isReplacing = inputData.imageUrl && inputData.imageUrl !== currentFacility?.imageUrl;
   if (currentFacility?.imageUrl && (isClearing || isReplacing)) {
     await deleteImage(currentFacility.imageUrl, true);
@@ -209,7 +209,7 @@ export async function updateRoomAction(id: string, input: unknown) {
 
   // Delete old room image if being replaced with a new one OR if being cleared
   if (currentRoom && !("facility" in currentRoom) && currentRoom.image_url) {
-    const isClearing = parsed.data.imageUrl === undefined || parsed.data.imageUrl === null || parsed.data.imageUrl === '';
+    const isClearing = parsed.data.imageUrl === null || parsed.data.imageUrl === '';
     const isReplacing = parsed.data.imageUrl && parsed.data.imageUrl !== currentRoom.image_url;
     if (isClearing || isReplacing) {
       await deleteImage(currentRoom.image_url, true);

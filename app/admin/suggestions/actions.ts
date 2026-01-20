@@ -103,7 +103,7 @@ export async function approveSuggestion(id: string, overridePayload?: unknown) {
       }
 
       // Delete old image if being replaced with a new one OR if being cleared
-      const isClearing = parsed.data.imageUrl === undefined || parsed.data.imageUrl === null || parsed.data.imageUrl === '';
+      const isClearing = parsed.data.imageUrl === null || parsed.data.imageUrl === '';
       const isReplacing = typeof parsed.data.imageUrl === "string" && parsed.data.imageUrl;
       if (isClearing || isReplacing) {
         const { data: currentFacility } = await getFacilityById({
@@ -152,7 +152,7 @@ export async function approveSuggestion(id: string, overridePayload?: unknown) {
       }
 
       // Delete old room image if being replaced with a new one OR if being cleared
-      const isClearing = parsed.data.imageUrl === undefined || parsed.data.imageUrl === null || parsed.data.imageUrl === '';
+      const isClearing = parsed.data.imageUrl === null || parsed.data.imageUrl === '';
       const isReplacing = typeof parsed.data.imageUrl === "string" && parsed.data.imageUrl;
       if (isClearing || isReplacing) {
         const { data: currentRoom } = await getRoomById({
