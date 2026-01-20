@@ -1,4 +1,4 @@
-import type { Facility } from "@/lib/types";
+import type { Facility, FacilityLite } from "@/lib/types";
 import { db, type CacheMetaEntry } from "@/lib/db";
 
 const FACILITIES_META_KEY = "facilities" as const;
@@ -36,13 +36,14 @@ export async function getCachedFacilities(): Promise<Facility[] | null> {
   }
 }
 
-export async function setCachedFacilities(facilities: Facility[]): Promise<void> {
+export async function setCachedFacilities(facilities: Facility[] | FacilityLite[]): Promise<void> {
   if (typeof window === "undefined") return;
 
   try {
     await db.transaction("rw", db.facilities, db.cache_meta, async () => {
       await db.facilities.clear();
-      await db.facilities.bulkAdd(facilities);
+      // Cast to Facility because IDB doesn't enforce strict shape beyond keys
+      await db.facilities.bulkAdd(facilities as Facility[]);
       await db.cache_meta.put({ key: FACILITIES_META_KEY, updatedAt: Date.now() });
     });
   } catch (error) {
