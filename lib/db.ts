@@ -30,11 +30,17 @@ export class VSUDatabase extends Dexie {
       offline_queue: "++id, action, timestamp",
     });
 
+    // Version 2: Drop tables that need primary key changes
     this.version(2).stores({
+      rooms: null,
+      facilities: null,
+      cache_meta: "key",
+    });
+
+    // Version 3: Recreate tables with new schema
+    this.version(3).stores({
       facilities: "id, name, category",
       rooms: "id, facility_id, room_code, name",
-      offline_queue: "++id, action, timestamp",
-      cache_meta: "key",
     });
   }
 }
