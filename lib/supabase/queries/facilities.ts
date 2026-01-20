@@ -7,6 +7,7 @@ import type {
   FacilityUpdate,
   FacilityWithRooms,
   FacilityPOI,
+  FacilityLite,
 } from "@/lib/types/facility";
 import { FACILITY_CATEGORIES } from "@/lib/types/facility";
 import { getSupabaseBrowserClient } from "../browser-client";
@@ -148,6 +149,54 @@ export async function getFacilities(params?: {
   const { data, error } = await query.order("name", { ascending: true });
   const rows = data as FacilityRow[] | null;
   return { data: rows ? rows.map(toFacility) : null, error: normalizeError(error) };
+}
+
+function toFacilityLite(row: FacilityRow): FacilityLite {
+  const code = row.code?.trim();
+  const base = {
+    id: row.id,
+    code: code ? code : undefined,
+    name: row.name,
+    slug: row.slug,
+    category: row.category as FacilityCategory,
+    coordinates: { lat: row.latitude, lng: row.longitude },
+    imageUrl: row.image_url ?? undefined,
+  };
+
+  if (row.has_rooms) {
+    return { ...base, hasRooms: true };
+  }
+  return { ...base, hasRooms: false };
+}
+
+export async function getFacilitiesLite(params?: {
+  category?: FacilityCategory | FacilityCategory[];
+  hasRooms?: boolean;
+  client?: MaybeClient;
+}): Promise<BaseResult<FacilityLite[]>> {
+  const client = await resolveClient(params?.client);
+  const query = client.from("facilities").select(
+    "id, code, name, slug, category, has_rooms, latitude, longitude, image_url"
+  );
+
+  if (params?.category) {
+    if (Array.isArray(params.category)) {
+      query.in("category", params.category);
+    } else {
+      query.eq("category", params.category);
+    }
+  }
+
+  if (params?.hasRooms !== undefined) {
+    query.eq("has_rooms", params.hasRooms);
+  }
+
+  const { data, error } = await query.order("name", { ascending: true });
+  const rows = data as FacilityRow[] | null;
+  return {
+    data: rows ? rows.map(toFacilityLite) : null,
+    error: normalizeError(error),
+  };
 }
 
 export async function getBuildings(params?: {

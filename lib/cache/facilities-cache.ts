@@ -1,58 +1,65 @@
-import type { Facility } from "@/lib/types";
+import type { Facility, FacilityLite } from "@/lib/types";
+import { db, type CacheMetaEntry } from "@/lib/db";
 
-const FACILITIES_STORAGE_KEY = "vsu-smartmap-facilities-v3";
-const CACHE_MAX_AGE_MS = 30 * 60 * 1000; // 30 minutes
+const FACILITIES_META_KEY = "facilities" as const;
 
-interface CachedFacilities {
-  data: Facility[];
-  timestamp: number;
-}
-
-export function getCachedFacilities(): Facility[] | null {
+export async function getFacilitiesCacheMeta(): Promise<CacheMetaEntry | null> {
   if (typeof window === "undefined") return null;
 
   try {
-    const stored = localStorage.getItem(FACILITIES_STORAGE_KEY);
-    if (!stored) return null;
-
-    const parsed: CachedFacilities = JSON.parse(stored);
-    const age = Date.now() - parsed.timestamp;
-
-    if (!navigator.onLine) {
-      return parsed.data;
-    }
-
-    if (age < CACHE_MAX_AGE_MS) {
-      return parsed.data;
-    }
-
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-export function setCachedFacilities(facilities: Facility[]): void {
-  if (typeof window === "undefined") return;
-
-  try {
-    const cached: CachedFacilities = {
-      data: facilities,
-      timestamp: Date.now(),
-    };
-    localStorage.setItem(FACILITIES_STORAGE_KEY, JSON.stringify(cached));
+    return (await db.cache_meta.get(FACILITIES_META_KEY)) ?? null;
   } catch (error) {
-    if (error instanceof DOMException && error.name === "QuotaExceededError") {
-      console.warn("Facilities cache storage quota exceeded");
-    }
+    console.warn("Failed to get facilities cache meta from IDB:", error);
+    return null;
   }
 }
 
-export function clearCachedFacilities(): void {
+export async function isFacilitiesCacheStale(maxAgeMs: number): Promise<boolean> {
+  if (typeof window === "undefined") return true;
+
+  const meta = await getFacilitiesCacheMeta();
+  if (!meta) return true;
+
+  return Date.now() - meta.updatedAt > maxAgeMs;
+}
+
+export async function getCachedFacilities(): Promise<Facility[] | null> {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const facilities = await db.facilities.toArray();
+    if (facilities.length === 0) return null;
+    return facilities;
+  } catch (error) {
+    console.warn("Failed to get facilities from IDB:", error);
+    return null;
+  }
+}
+
+export async function setCachedFacilities(facilities: Facility[] | FacilityLite[]): Promise<void> {
   if (typeof window === "undefined") return;
 
   try {
-    localStorage.removeItem(FACILITIES_STORAGE_KEY);
-  } catch {
+    await db.transaction("rw", db.facilities, db.cache_meta, async () => {
+      await db.facilities.clear();
+      // Cast to Facility because IDB doesn't enforce strict shape beyond keys
+      await db.facilities.bulkAdd(facilities as Facility[]);
+      await db.cache_meta.put({ key: FACILITIES_META_KEY, updatedAt: Date.now() });
+    });
+  } catch (error) {
+    console.warn("Failed to cache facilities to IDB:", error);
+  }
+}
+
+export async function clearCachedFacilities(): Promise<void> {
+  if (typeof window === "undefined") return;
+
+  try {
+    await db.transaction("rw", db.facilities, db.cache_meta, async () => {
+      await db.facilities.clear();
+      await db.cache_meta.delete(FACILITIES_META_KEY);
+    });
+  } catch (error) {
+    console.error("Failed to clear facilities cache:", error);
   }
 }

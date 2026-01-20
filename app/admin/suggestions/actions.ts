@@ -102,13 +102,15 @@ export async function approveSuggestion(id: string, overridePayload?: unknown) {
         return { error: "Suggestion payload is invalid." };
       }
 
-      // Delete old image if being replaced with a new one
-      if (typeof parsed.data.imageUrl === "string" && parsed.data.imageUrl) {
+      // Delete old image if being replaced with a new one OR if being cleared
+      const isClearing = parsed.data.imageUrl === null || parsed.data.imageUrl === '';
+      const isReplacing = typeof parsed.data.imageUrl === "string" && parsed.data.imageUrl;
+      if (isClearing || isReplacing) {
         const { data: currentFacility } = await getFacilityById({
           id: suggestion.targetId,
           client,
         });
-        if (currentFacility?.imageUrl && currentFacility.imageUrl !== parsed.data.imageUrl) {
+        if (currentFacility?.imageUrl && (isClearing || currentFacility.imageUrl !== parsed.data.imageUrl)) {
           await deleteImage(currentFacility.imageUrl, true);
         }
       }
@@ -149,13 +151,15 @@ export async function approveSuggestion(id: string, overridePayload?: unknown) {
         return { error: "Room payload is invalid." };
       }
 
-      // Delete old room image if being replaced with a new one
-      if (typeof parsed.data.imageUrl === "string" && parsed.data.imageUrl) {
+      // Delete old room image if being replaced with a new one OR if being cleared
+      const isClearing = parsed.data.imageUrl === null || parsed.data.imageUrl === '';
+      const isReplacing = typeof parsed.data.imageUrl === "string" && parsed.data.imageUrl;
+      if (isClearing || isReplacing) {
         const { data: currentRoom } = await getRoomById({
           id: suggestion.targetId,
           client,
         });
-        if (currentRoom && "image_url" in currentRoom && currentRoom.image_url && currentRoom.image_url !== parsed.data.imageUrl) {
+        if (currentRoom && "image_url" in currentRoom && currentRoom.image_url && (isClearing || currentRoom.image_url !== parsed.data.imageUrl)) {
           await deleteImage(currentRoom.image_url, true);
         }
       }

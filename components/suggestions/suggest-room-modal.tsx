@@ -24,6 +24,7 @@ import Image from "next/image";
 import { uploadSuggestionImageClient } from "@/lib/supabase/storage-client";
 import { TurnstileWidget } from "@/components/ui/turnstile-widget";
 import type { TurnstileToken } from "@/lib/types/turnstile";
+import { FieldHelp } from "@/components/ui/field-help";
 
 function hasRoomChanges(
   initialData: RoomFormValues,
@@ -245,7 +246,10 @@ export function SuggestRoomModal({
             <div className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label htmlFor="roomCode">Room code *</Label>
+                  <div className="flex items-center gap-1">
+                    <Label htmlFor="roomCode">Room code *</Label>
+                    <FieldHelp content="The unique identifier for the room (e.g., ICT101, Lab-A)." />
+                  </div>
                   <Input
                     id="roomCode"
                     value={values.roomCode}
@@ -257,7 +261,10 @@ export function SuggestRoomModal({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="floor">Floor (optional)</Label>
+                  <div className="flex items-center gap-1">
+                    <Label htmlFor="floor">Floor (optional)</Label>
+                    <FieldHelp content="The floor level where this room is located." />
+                  </div>
                   <Input
                     id="floor"
                     type="number"
@@ -275,7 +282,10 @@ export function SuggestRoomModal({
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="name">Name (optional)</Label>
+                <div className="flex items-center gap-1">
+                  <Label htmlFor="name">Name (optional)</Label>
+                  <FieldHelp content="A descriptive name for the room (e.g., Computer Lab, Conference Room)." />
+                </div>
                 <Input
                   id="name"
                   value={values.name ?? ""}
@@ -287,7 +297,10 @@ export function SuggestRoomModal({
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="description">Description (optional)</Label>
+                <div className="flex items-center gap-1">
+                  <Label htmlFor="description">Description (optional)</Label>
+                  <FieldHelp content="Additional details about the room's purpose or availability." />
+                </div>
                 <Textarea
                   id="description"
                   value={values.description ?? ""}
@@ -300,7 +313,10 @@ export function SuggestRoomModal({
               </div>
 
               <div className="space-y-1.5">
-                <Label>Room Image (optional)</Label>
+                <div className="flex items-center gap-1">
+                  <Label>Room Image (optional)</Label>
+                  <FieldHelp content="A photo of the room interior or entrance." />
+                </div>
                 {!preview ? (
                   <div className="flex items-center gap-2">
                     <Button
@@ -344,7 +360,10 @@ export function SuggestRoomModal({
 
               {preview && (
                 <div className="space-y-1.5">
-                  <Label htmlFor="imageCredit">Photo credit (optional)</Label>
+                  <div className="flex items-center gap-1">
+                    <Label htmlFor="imageCredit">Photo credit (optional)</Label>
+                    <FieldHelp content="Mention the photographer or source of the image." />
+                  </div>
                   <Input
                     id="imageCredit"
                     value={values.imageCredit ?? ""}

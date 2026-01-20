@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ImageZoomDialog } from '@/components/ui/image-zoom-dialog';
+import { FieldHelp } from '@/components/ui/field-help';
 
 interface RoomFormProps {
   facilityId: string;
@@ -93,7 +94,10 @@ export function RoomForm({
         </div>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor="roomCode">Room code</Label>
+            <div className="flex items-center gap-1">
+              <Label htmlFor="roomCode">Room code</Label>
+              <FieldHelp content="The unique identifier for the room, often including the facility code (e.g., ICT 101)." />
+            </div>
             <Input
               id="roomCode"
               value={values.roomCode}
@@ -102,7 +106,10 @@ export function RoomForm({
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="floor">Floor (optional)</Label>
+            <div className="flex items-center gap-1">
+              <Label htmlFor="floor">Floor (optional)</Label>
+              <FieldHelp content="The floor level where this room is located (e.g., 1 for ground floor, 2 for second floor)." />
+            </div>
             <Input
               id="floor"
               type="number"
@@ -124,7 +131,10 @@ export function RoomForm({
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="name">Name (optional)</Label>
+          <div className="flex items-center gap-1">
+            <Label htmlFor="name">Name (optional)</Label>
+            <FieldHelp content="A descriptive name for the room (e.g., Computer Lab 1, Dean's Office)." />
+          </div>
           <Input
             id="name"
             value={values.name ?? ''}
@@ -133,7 +143,10 @@ export function RoomForm({
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="description">Description (optional)</Label>
+          <div className="flex items-center gap-1">
+            <Label htmlFor="description">Description (optional)</Label>
+            <FieldHelp content="Additional details about the room's purpose, equipment, or availability." />
+          </div>
           <Textarea
             id="description"
             value={values.description ?? ''}
@@ -142,7 +155,10 @@ export function RoomForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="roomImage">Image (optional)</Label>
+          <div className="flex items-center gap-1">
+            <Label htmlFor="roomImage">Image (optional)</Label>
+            <FieldHelp content="A photo of the room interior or entrance to help users find it." />
+          </div>
           {preview && (
             <div className="rounded-lg border p-3 flex items-center gap-3">
               <button

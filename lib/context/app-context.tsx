@@ -104,7 +104,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     }
     setIsHydrated(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency - run only once on mount
 
   // Persist to local storage (only after hydration to avoid overwriting)
