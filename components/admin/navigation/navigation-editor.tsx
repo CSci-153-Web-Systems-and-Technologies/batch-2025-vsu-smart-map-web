@@ -130,9 +130,17 @@ export function NavigationEditor() {
         );
         
         if (exists) {
-            toast.error("Edge already exists");
-            setEdgeStartNodeId(null);
-            return;
+            // Allow overlapping edges if types are different (handled by rendering order or parallel offsets in future)
+            // But user specifically asked to overlap "both", implying they want to upgrade an existing edge or add a second one.
+            // For now, if we want to "mix" them, we should probably update the existing edge to have more permissions
+            // OR allow multiple edges.
+            
+            // Requirement: "make sure that I can overlap both, it does not gives edge alredy exist"
+            // So we remove the blocking check.
+            
+            // toast.error("Edge already exists");
+            // setEdgeStartNodeId(null);
+            // return;
         }
 
         let access: any[] = ['walking'];
@@ -168,6 +176,9 @@ export function NavigationEditor() {
   }, [mode, edgeStartNodeId, defaultEdgeType, edges, nodes, historyIndex]);
 
   const handleEdgeSelect = useCallback((id: string) => {
+      // Allow selection in any mode except when actively adding something? 
+      // Or explicitly only in select mode. User asked "I want to be able to select an edge to delete it".
+      // They might be in 'select' mode.
       if (mode === 'select') {
           setSelectedEdgeId(id);
           setSelectedNodeId(null);
