@@ -19,6 +19,14 @@ export function NavigationControl({ onNavigate, userLocation }: NavigationContro
   const [isOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<TransportMode>('walking');
   
+  useEffect(() => {
+      // Load default on mount/open
+      const saved = localStorage.getItem("default-transport-mode");
+      if (saved) {
+          setMode(saved as TransportMode);
+      }
+  }, [isOpen]); // Reload when opened to catch changes from settings
+
   const map = useMap();
 
   const handleStartNav = () => {
