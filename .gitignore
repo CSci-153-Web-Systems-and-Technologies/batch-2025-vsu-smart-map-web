@@ -52,3 +52,5 @@ supabase/.temp/
 
 # genkit
 .genkit/
+
+/.venv/
