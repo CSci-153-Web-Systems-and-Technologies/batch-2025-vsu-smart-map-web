@@ -230,6 +230,7 @@ function MapView({
   const { position } = useGeolocation();
   const [navStart, setNavStart] = useState<LatLng | null>(null);
   const [navEnd, setNavEnd] = useState<LatLng | null>(null);
+  const [navMode, setNavMode] = useState<TransportMode>('walking');
 
   return (
     <div className="relative h-full w-full">
@@ -242,10 +243,10 @@ function MapView({
             onClearSelection={onClearSelection}
           />
           <UserLocationControl />
-          <NavigationLayer startPoint={navStart} endPoint={navEnd} />
+          <NavigationLayer startPoint={navStart} endPoint={navEnd} mode={navMode} />
           <NavigationControl 
             userLocation={position ? { lat: position.coords.latitude, lng: position.coords.longitude } as LatLng : null}
-            onNavigate={(start, end) => { setNavStart(start); setNavEnd(end); }}
+            onNavigate={(start, end, mode) => { setNavStart(start); setNavEnd(end); setNavMode(mode); }}
           />
         </MapContainerClient>
 
