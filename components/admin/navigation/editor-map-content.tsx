@@ -11,6 +11,7 @@ import { MAP_MAX_ZOOM, MAP_MIN_ZOOM, MAP_TILES, MAP_DEFAULT_CENTER } from "@/lib
 import { useMapStyle } from "@/lib/context/map-style-context";
 import type { MapNode, MapEdge } from "@/lib/types/graph";
 
+// Fix Leaflet marker icons
 const icon = L.icon({
   iconUrl: "/images/marker-icon.png",
   shadowUrl: "/images/marker-shadow.png",
@@ -56,11 +57,16 @@ export default function EditorMapContent({
     return resolvedTheme === "dark" && MAP_TILES.darkUrl ? MAP_TILES.darkUrl : MAP_TILES.url;
   })();
 
-  const handleNodeDrag = useCallback((id: string, e: L.LeafletEvent) => {
-    const marker = e.target;
-    const position = marker.getLatLng();
-    onNodeMove(id, position.lat, position.lng);
-  }, [onNodeMove]);
+  const getEdgeColor = (type: string) => {
+    switch (type) {
+      case 'walkway': return '#22c55e'; // green
+      case 'road': return '#3b82f6'; // blue
+      case 'corridor': return '#eab308'; // yellow
+      case 'stairs': return '#f97316'; // orange
+      case 'elevator': return '#a855f7'; // purple
+      default: return '#94a3b8'; // gray
+    }
+  };
 
   return (
     <MapContainer
@@ -99,7 +105,11 @@ export default function EditorMapContent({
               [source.lat, source.lng],
               [target.lat, target.lng],
             ]}
-            pathOptions={{ color: 'red', weight: 3, opacity: 0.7 }}
+            pathOptions={{ 
+              color: getEdgeColor(edge.type || 'walkway'), 
+              weight: 4, 
+              opacity: 0.8 
+            }}
           />
         );
       })}

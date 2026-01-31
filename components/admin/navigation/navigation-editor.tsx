@@ -7,9 +7,8 @@ import type { MapNode, MapEdge } from "@/lib/types/graph";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { MousePointer2, Plus, GripHorizontal, Save, Trash2, Route } from "lucide-react";
-import { db } from "@/lib/db";
-import { saveMapGraph } from "@/lib/supabase/queries/navigation";
-import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 export function NavigationEditor() {
   const [nodes, setNodes] = useState<MapNode[]>([]);
@@ -17,6 +16,10 @@ export function NavigationEditor() {
   const [mode, setMode] = useState<'select' | 'add_node' | 'add_edge'>('select');
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [edgeStartNodeId, setEdgeStartNodeId] = useState<string | null>(null);
+  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
+  
+  // Default edge type for new edges
+  const [defaultEdgeType, setDefaultEdgeType] = useState<'walkway' | 'road'>('walkway');
 
   useEffect(() => {
     const loadData = async () => {
@@ -51,23 +54,26 @@ export function NavigationEditor() {
            setEdgeStartNodeId(null);
            return;
         }
-        // Create edge
         const newEdge: MapEdge = {
           id: uuidv4(),
           source_id: edgeStartNodeId,
           target_id: id,
           weight: 0,
           bidirectional: true,
+          type: defaultEdgeType,
+          access: defaultEdgeType === 'road' ? ['walking', 'cycling', 'driving'] : ['walking'],
         };
         setEdges((prev) => [...prev, newEdge]);
         setEdgeStartNodeId(null);
-        toast.success("Edge created");
+        toast.success(`Edge created (${defaultEdgeType})`);
       }
     } else {
       setSelectedNodeId(id);
       setEdgeStartNodeId(null);
+      // Deselect edge when selecting node
+      setSelectedEdgeId(null);
     }
-  }, [mode, edgeStartNodeId]);
+  }, [mode, edgeStartNodeId, defaultEdgeType]);
 
   const handleSave = async () => {
     if (!db) return;
@@ -140,6 +146,23 @@ export function NavigationEditor() {
           >
             <Route className="h-4 w-4" />
           </Button>
+          <div className="h-px bg-border my-1" />
+          
+          <div className="px-2 py-1">
+             <Label className="text-xs text-muted-foreground mb-1 block">Edge Type</Label>
+             <Select value={defaultEdgeType} onValueChange={(v: any) => setDefaultEdgeType(v)}>
+                <SelectTrigger className="h-7 text-xs w-[100px]">
+                   <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                   <SelectItem value="walkway">Walkway</SelectItem>
+                   <SelectItem value="road">Road</SelectItem>
+                   <SelectItem value="corridor">Corridor</SelectItem>
+                   <SelectItem value="stairs">Stairs</SelectItem>
+                </SelectContent>
+             </Select>
+          </div>
+
           <div className="h-px bg-border my-1" />
           <Button
             variant="ghost"

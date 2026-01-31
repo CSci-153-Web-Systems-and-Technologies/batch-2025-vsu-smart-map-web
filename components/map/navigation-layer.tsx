@@ -4,16 +4,17 @@ import { useEffect, useState, useMemo } from "react";
 import { Polyline, CircleMarker } from "react-leaflet";
 import { db } from "@/lib/db";
 import { findPath } from "@/lib/pathfinding/astar";
-import type { MapNode, MapEdge, PathResult } from "@/lib/types/graph";
+import type { MapNode, MapEdge, PathResult, TransportMode } from "@/lib/types/graph";
 import type { LatLng } from "leaflet";
 import { toast } from "sonner";
 
 interface NavigationLayerProps {
   startPoint: LatLng | null;
   endPoint: LatLng | null;
+  mode: TransportMode;
 }
 
-export function NavigationLayer({ startPoint, endPoint }: NavigationLayerProps) {
+export function NavigationLayer({ startPoint, endPoint, mode }: NavigationLayerProps) {
   const [nodes, setNodes] = useState<MapNode[]>([]);
   const [edges, setEdges] = useState<MapEdge[]>([]);
   const [pathResult, setPathResult] = useState<PathResult | null>(null);
@@ -59,7 +60,7 @@ export function NavigationLayer({ startPoint, endPoint }: NavigationLayerProps) 
     const endNodeId = findNearestNode(endPoint.lat, endPoint.lng);
 
     if (startNodeId && endNodeId) {
-      const result = findPath(nodes, edges, startNodeId, endNodeId);
+      const result = findPath(nodes, edges, startNodeId, endNodeId, mode);
       if (result) {
         setPathResult(result);
         if (result.path.length === 0) {
@@ -70,7 +71,7 @@ export function NavigationLayer({ startPoint, endPoint }: NavigationLayerProps) 
         toast.error("Could not find a path");
       }
     }
-  }, [startPoint, endPoint, nodes, edges]);
+  }, [startPoint, endPoint, nodes, edges, mode]);
 
   if (!pathResult) return null;
 

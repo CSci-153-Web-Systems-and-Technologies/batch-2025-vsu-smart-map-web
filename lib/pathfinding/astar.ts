@@ -1,4 +1,31 @@
-import type { MapNode, MapEdge, PathResult } from "@/lib/types/graph";
+import type { MapNode, MapEdge, PathResult, TransportMode } from "@/lib/types/graph";
+
+// Default speeds (meters per second) - rough estimates for heuristics if needed later
+const SPEEDS = {
+  walking: 1.4, // ~5 km/h
+  cycling: 4.5, // ~16 km/h
+  driving: 8.3, // ~30 km/h (campus speed limit)
+};
+
+// Access rules: Which modes can use which edge types by default?
+const DEFAULT_ACCESS: Record<string, TransportMode[]> = {
+  road: ['walking', 'cycling', 'driving'], // Roads usually allow all, unless restricted
+  walkway: ['walking'],
+  corridor: ['walking'],
+  stairs: ['walking'],
+  elevator: ['walking'], // Bikes/cars usually can't take elevators/stairs easily (unless freight elevator)
+};
+
+function canTraverse(edge: MapEdge, mode: TransportMode): boolean {
+  // If edge has explicit access list, use it
+  if (edge.access && edge.access.length > 0) {
+    return edge.access.includes(mode);
+  }
+  
+  // Otherwise fall back to default based on type
+  const allowed = DEFAULT_ACCESS[edge.type] || ['walking'];
+  return allowed.includes(mode);
+}
 
 function getDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371e3;
@@ -19,7 +46,8 @@ export function findPath(
   nodes: MapNode[],
   edges: MapEdge[],
   startNodeId: string,
-  endNodeId: string
+  endNodeId: string,
+  mode: TransportMode = 'walking'
 ): PathResult | null {
   const startNode = nodes.find((n) => n.id === startNodeId);
   const endNode = nodes.find((n) => n.id === endNodeId);
@@ -61,7 +89,7 @@ export function findPath(
     const currentNode = nodes.find(n => n.id === currentId)!;
 
     const neighbors = edges.filter(
-      (e) => e.source_id === currentId || (e.bidirectional && e.target_id === currentId)
+      (e) => (e.source_id === currentId || (e.bidirectional && e.target_id === currentId)) && canTraverse(e, mode)
     );
 
     for (const edge of neighbors) {

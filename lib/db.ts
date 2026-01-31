@@ -50,6 +50,15 @@ export class VSUDatabase extends Dexie {
       map_nodes: "id, type",
       map_edges: "id, source_id, target_id",
     });
+
+    this.version(5).stores({
+      map_edges: "id, source_id, target_id, type", 
+    }).upgrade(tx => {
+       return tx.table("map_edges").toCollection().modify(edge => {
+          if (!edge.type) edge.type = 'walkway';
+          if (!edge.access) edge.access = ['walking'];
+       });
+    });
   }
 }
 
