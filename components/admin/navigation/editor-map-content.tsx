@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useTheme } from "next-themes";
-import { MapContainer, TileLayer, CircleMarker, Polyline, useMapEvents, Marker } from "react-leaflet";
+import { MapContainer, TileLayer, CircleMarker, Polyline, useMapEvents, Marker, ZoomControl } from "react-leaflet";
 import type { LatLng } from "leaflet";
 import L from "leaflet";
 import { MAP_MAX_ZOOM, MAP_MIN_ZOOM, MAP_TILES, MAP_DEFAULT_CENTER } from "@/lib/constants/map";
@@ -68,6 +68,11 @@ export default function EditorMapContent({
       maxZoom={MAP_MAX_ZOOM}
       className="h-full w-full"
       scrollWheelZoom
+      zoomControl={false}
+      zoomSnap={0}
+      zoomDelta={0.5}
+      wheelDebounceTime={40}
+      bounceAtZoomLimits={false}
     >
       <TileLayer
         key={tileUrl}
@@ -76,6 +81,7 @@ export default function EditorMapContent({
         maxZoom={MAP_MAX_ZOOM}
         maxNativeZoom={MAP_TILES.maxNativeZoom ?? MAP_MAX_ZOOM}
       />
+      <ZoomControl position="bottomleft" />
       
       <MapEvents mode={mode} onNodeAdd={onNodeAdd} />
 
