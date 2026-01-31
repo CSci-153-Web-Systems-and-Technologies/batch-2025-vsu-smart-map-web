@@ -1,5 +1,7 @@
 "use client";
 
+import "leaflet/dist/leaflet.css";
+
 import { useEffect, useState, useCallback } from "react";
 import { useTheme } from "next-themes";
 import { MapContainer, TileLayer, CircleMarker, Polyline, useMapEvents, Marker, ZoomControl } from "react-leaflet";
