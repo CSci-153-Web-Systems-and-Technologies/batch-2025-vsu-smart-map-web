@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Navigation, X, Footprints, Bike, Car } from "lucide-react";
 import { Card } from "@/components/ui/card";
