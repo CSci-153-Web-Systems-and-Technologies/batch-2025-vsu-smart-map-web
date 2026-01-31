@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label";
 import { db } from "@/lib/db";
 import { saveMapGraph } from "@/lib/supabase/queries/navigation";
 import { toast } from "sonner";
+
+export function NavigationEditor() {
   const [nodes, setNodes] = useState<MapNode[]>([]);
   const [edges, setEdges] = useState<MapEdge[]>([]);
   const [mode, setMode] = useState<'select' | 'add_node' | 'add_edge'>('select');
