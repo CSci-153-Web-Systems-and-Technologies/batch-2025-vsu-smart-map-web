@@ -1,8 +1,9 @@
 import Dexie, { type Table } from "dexie";
 import type { RoomRowWithFacility } from "@/lib/supabase/queries/rooms";
 import type { Facility } from "@/lib/types";
+import type { MapNode, MapEdge } from "@/lib/types/graph";
 
-export type CacheMetaKey = "facilities" | "rooms";
+export type CacheMetaKey = "facilities" | "rooms" | "navigation";
 
 export interface CacheMetaEntry {
   key: CacheMetaKey;
@@ -19,6 +20,8 @@ export interface OfflineAction {
 export class VSUDatabase extends Dexie {
   rooms!: Table<RoomRowWithFacility, string>;
   facilities!: Table<Facility, string>;
+  map_nodes!: Table<MapNode, string>;
+  map_edges!: Table<MapEdge, string>;
   offline_queue!: Table<OfflineAction, number>;
   cache_meta!: Table<CacheMetaEntry, CacheMetaKey>;
 
@@ -41,6 +44,11 @@ export class VSUDatabase extends Dexie {
     this.version(3).stores({
       facilities: "id, name, category",
       rooms: "id, facility_id, room_code, name",
+    });
+
+    this.version(4).stores({
+      map_nodes: "id, type",
+      map_edges: "id, source_id, target_id",
     });
   }
 }

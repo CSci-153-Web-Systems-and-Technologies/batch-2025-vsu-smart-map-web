@@ -11,8 +11,12 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { SuggestAddModal } from "@/components/suggestions/suggest-add-modal";
 import { getCachedFacilities, setCachedFacilities } from "@/lib/cache/facilities-cache";
+import { getCachedNavigationGraph, setCachedNavigationGraph } from "@/lib/cache/navigation-cache";
 import { searchRooms } from "@/lib/supabase/queries/rooms";
+import { getMapNodes, getMapEdges } from "@/lib/supabase/queries/navigation";
 import { setCachedRooms } from "@/lib/cache/rooms-cache";
+import { useGeolocation } from "@/hooks/use-geolocation";
+import type { LatLng } from "leaflet";
 
 const MapSelectionLayer = dynamic(
   () => import("@/components/map/map-selection-layer").then((m) => m.MapSelectionLayer),
@@ -21,6 +25,16 @@ const MapSelectionLayer = dynamic(
 
 const UserLocationControl = dynamic(
   () => import("@/components/map/user-location-control").then((m) => m.UserLocationControl),
+  { ssr: false },
+);
+
+const NavigationLayer = dynamic(
+  () => import("@/components/map/navigation-layer").then((m) => m.NavigationLayer),
+  { ssr: false },
+);
+
+const NavigationControl = dynamic(
+  () => import("@/components/map/navigation-control").then((m) => m.NavigationControl),
   { ssr: false },
 );
 
@@ -53,17 +67,38 @@ function MapTab() {
   const [suggestOpen, setSuggestOpen] = useState(false);
 
   useEffect(() => {
-    const load = async () => {
-      const cached = await getCachedFacilities();
-      if (cached && cached.length > 0) {
-        setItems(cached);
-        setFiltered(cached);
-        setIsLoading(false); // Stop showing full page loader if we have cache
-      } else {
-        setIsLoading(true);
-      }
+      const load = async () => {
+        const cached = await getCachedFacilities();
+        const cachedNav = await getCachedNavigationGraph();
+        
+        if (cached && cached.length > 0) {
+          setItems(cached);
+          setFiltered(cached);
+          setIsLoading(false);
+        } else {
+          setIsLoading(true);
+        }
 
-      // Pre-fetch rooms for search indexing/offline use
+        const loadNavigation = async () => {
+           if (!cachedNav) {
+               
+           }
+           
+           try {
+             const [nodesRes, edgesRes] = await Promise.all([
+               getMapNodes(),
+               getMapEdges()
+             ]);
+             
+             if (nodesRes.data && edgesRes.data) {
+               await setCachedNavigationGraph(nodesRes.data, edgesRes.data);
+             }
+           } catch (e) {
+             console.warn("Failed to sync navigation graph", e);
+           }
+        };
+
+        // Pre-fetch rooms for search indexing/offline use
       // This is done in the background to avoid blocking facility loading
       const loadRooms = async () => {
         try {
@@ -76,7 +111,7 @@ function MapTab() {
         }
       };
 
-      const fetchFacilities = async (fallbackCache: Facility[] | null) => {
+        const fetchFacilities = async (fallbackCache: Facility[] | null) => {
         const { data, error: fetchError } = await getFacilitiesLite();
 
         if (fetchError || !data) {
@@ -101,7 +136,7 @@ function MapTab() {
         setIsLoading(false);
       };
 
-      void Promise.all([fetchFacilities(cached), loadRooms()]);
+      void Promise.all([fetchFacilities(cached), loadRooms(), loadNavigation()]);
     };
 
     void load();
@@ -190,8 +225,11 @@ function MapView({
 }) {
   const { selectedCategories, debouncedQuery } = useApp();
   const hasResults = filtered.length > 0;
-  // Only show "No locations found" when filters are active (categories selected or search query)
   const hasActiveFilters = selectedCategories.length > 0 || debouncedQuery.trim().length > 0;
+  
+  const { position } = useGeolocation();
+  const [navStart, setNavStart] = useState<LatLng | null>(null);
+  const [navEnd, setNavEnd] = useState<LatLng | null>(null);
 
   return (
     <div className="relative h-full w-full">
@@ -204,6 +242,11 @@ function MapView({
             onClearSelection={onClearSelection}
           />
           <UserLocationControl />
+          <NavigationLayer startPoint={navStart} endPoint={navEnd} />
+          <NavigationControl 
+            userLocation={position ? { lat: position.coords.latitude, lng: position.coords.longitude } as LatLng : null}
+            onNavigate={(start, end) => { setNavStart(start); setNavEnd(end); }}
+          />
         </MapContainerClient>
 
         {!hasResults && !error && !isLoading && hasActiveFilters && (
