@@ -9,8 +9,9 @@ import { Card } from "@/components/ui/card";
 import { MousePointer2, Plus, GripHorizontal, Save, Trash2, Route } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-
-export function NavigationEditor() {
+import { db } from "@/lib/db";
+import { saveMapGraph } from "@/lib/supabase/queries/navigation";
+import { toast } from "sonner";
   const [nodes, setNodes] = useState<MapNode[]>([]);
   const [edges, setEdges] = useState<MapEdge[]>([]);
   const [mode, setMode] = useState<'select' | 'add_node' | 'add_edge'>('select');
