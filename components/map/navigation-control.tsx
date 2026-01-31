@@ -15,7 +15,6 @@ interface NavigationControlProps {
 
 export function NavigationControl({ onNavigate, userLocation }: NavigationControlProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [mode, setMode] = useState<'idle' | 'picking_start' | 'picking_end'>('idle');
   
   const map = useMap();
 
@@ -50,18 +49,16 @@ export function NavigationControl({ onNavigate, userLocation }: NavigationContro
   }
 
   return (
-    <div className="leaflet-bottom leaflet-left" style={{ bottom: '80px', left: '10px', pointerEvents: 'auto' }}>
-      <div className="leaflet-control">
-        <Button 
-            variant="secondary" 
-            size="icon" 
-            className="h-10 w-10 rounded-full shadow-md bg-background border"
-            onClick={handleStartNav}
-            title="Navigate"
-        >
-          <Navigation className="h-5 w-5" />
-        </Button>
-      </div>
+    <div className="absolute left-[12px] bottom-[13.5rem] md:bottom-[130px] z-[400]">
+      <Button 
+          variant="secondary" 
+          size="icon" 
+          className="h-10 w-10 rounded-full shadow-md bg-background border"
+          onClick={handleStartNav}
+          title="Navigate"
+      >
+        <Navigation className="h-5 w-5" />
+      </Button>
     </div>
   );
 }
