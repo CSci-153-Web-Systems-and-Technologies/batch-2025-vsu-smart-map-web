@@ -34,6 +34,10 @@ export function NavigationControl({ onNavigate, userLocation }: NavigationContro
       toast.error("Please enable location services or wait for location.");
       return;
     }
+    
+    // Safety check: Don't start nav mode if we don't have enough data?
+    // Actually better to let them try, and the Layer will warn if no nodes found.
+    
     setIsOpen(true);
     toast.info("Tap anywhere on the map to navigate there");
     

@@ -11,9 +11,6 @@ const SPEEDS = {
 const DEFAULT_ACCESS: Record<string, TransportMode[]> = {
   road: ['walking', 'cycling', 'driving'], // Roads usually allow all, unless restricted
   walkway: ['walking'],
-  corridor: ['walking'],
-  stairs: ['walking'],
-  elevator: ['walking'], // Bikes/cars usually can't take elevators/stairs easily (unless freight elevator)
 };
 
 function canTraverse(edge: MapEdge, mode: TransportMode): boolean {

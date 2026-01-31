@@ -24,8 +24,11 @@ interface EditorMapContentProps {
   edges: MapEdge[];
   mode: 'select' | 'add_node' | 'add_edge';
   selectedNodeId: string | null;
+  selectedEdgeId: string | null;
+  edgeStartNodeId: string | null; // Add this prop
   onNodeAdd: (lat: number, lng: number) => void;
   onNodeSelect: (id: string) => void;
+  onEdgeSelect: (id: string) => void;
   onNodeMove: (id: string, lat: number, lng: number) => void;
 }
 
@@ -45,8 +48,11 @@ export default function EditorMapContent({
   edges,
   mode,
   selectedNodeId,
+  selectedEdgeId,
+  edgeStartNodeId,
   onNodeAdd,
   onNodeSelect,
+  onEdgeSelect,
   onNodeMove,
 }: EditorMapContentProps) {
   const { resolvedTheme } = useTheme();
@@ -57,15 +63,14 @@ export default function EditorMapContent({
     return resolvedTheme === "dark" && MAP_TILES.darkUrl ? MAP_TILES.darkUrl : MAP_TILES.url;
   })();
 
-  const getEdgeColor = (type: string) => {
-    switch (type) {
-      case 'walkway': return '#22c55e'; // green
-      case 'road': return '#3b82f6'; // blue
-      case 'corridor': return '#eab308'; // yellow
-      case 'stairs': return '#f97316'; // orange
-      case 'elevator': return '#a855f7'; // purple
-      default: return '#94a3b8'; // gray
-    }
+  const getEdgeColor = (edge: MapEdge) => {
+    const access = edge.access || [];
+    const hasWalk = access.includes('walking');
+    const hasDrive = access.includes('driving');
+
+    if (hasWalk && hasDrive) return '#f97316'; // Orange (Mixed)
+    if (hasDrive) return '#3b82f6'; // Blue (Car/Bike only)
+    return '#22c55e'; // Green (Walkway)
   };
 
   return (
@@ -98,6 +103,8 @@ export default function EditorMapContent({
         const target = nodes.find((n) => n.id === edge.target_id);
         if (!source || !target) return null;
 
+        const isSelected = edge.id === selectedEdgeId;
+
         return (
           <Polyline
             key={edge.id}
@@ -106,9 +113,15 @@ export default function EditorMapContent({
               [target.lat, target.lng],
             ]}
             pathOptions={{ 
-              color: getEdgeColor(edge.type || 'walkway'), 
-              weight: 4, 
+              color: isSelected ? 'yellow' : getEdgeColor(edge), 
+              weight: isSelected ? 6 : 4, 
               opacity: 0.8 
+            }}
+            eventHandlers={{
+              click: (e) => {
+                L.DomEvent.stopPropagation(e);
+                onEdgeSelect(edge.id);
+              }
             }}
           />
         );
@@ -116,14 +129,16 @@ export default function EditorMapContent({
 
       {nodes.map((node) => {
         const isSelected = node.id === selectedNodeId;
+        const isStartNode = node.id === edgeStartNodeId;
+        
         return (
           <CircleMarker
             key={node.id}
             center={[node.lat, node.lng]}
-            radius={isSelected ? 8 : 5}
+            radius={isSelected || isStartNode ? 8 : 5}
             pathOptions={{
-              color: isSelected ? 'yellow' : 'blue',
-              fillColor: isSelected ? 'yellow' : 'blue',
+              color: isSelected ? 'yellow' : (isStartNode ? 'cyan' : 'blue'),
+              fillColor: isSelected ? 'yellow' : (isStartNode ? 'cyan' : 'blue'),
               fillOpacity: 0.8,
             }}
             eventHandlers={{
