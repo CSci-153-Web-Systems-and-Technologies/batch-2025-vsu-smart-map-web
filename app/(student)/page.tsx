@@ -17,6 +17,7 @@ import { getMapNodes, getMapEdges } from "@/lib/supabase/queries/navigation";
 import { setCachedRooms } from "@/lib/cache/rooms-cache";
 import { useGeolocation } from "@/hooks/use-geolocation";
 import type { LatLng } from "leaflet";
+import type { TransportMode } from "@/lib/types/graph";
 
 const MapSelectionLayer = dynamic(
   () => import("@/components/map/map-selection-layer").then((m) => m.MapSelectionLayer),
