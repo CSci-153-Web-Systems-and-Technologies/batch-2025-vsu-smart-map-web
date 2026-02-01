@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { getCategoryMeta } from "@/lib/constants/facilities";
 import type { Facility } from "@/lib/types/facility";
 import { Info, Route } from "lucide-react";
+import Image from "next/image";
 
 interface MapPopupCardProps {
   facility: Facility;
