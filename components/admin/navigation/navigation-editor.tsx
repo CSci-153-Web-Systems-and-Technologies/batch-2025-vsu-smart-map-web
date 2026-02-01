@@ -367,8 +367,30 @@ export function NavigationEditor() {
                         </SelectContent>
                     </Select>
                 </div>
+
+                <div className="space-y-2">
+                    <Label className="text-xs">Allowed Access</Label>
+                    <div className="flex flex-wrap gap-2">
+                        {(['walking', 'cycling', 'driving'] as const).map(mode => (
+                            <div key={mode} className="flex items-center gap-1">
+                                <Checkbox 
+                                    id={`access-${mode}`}
+                                    checked={edge.access?.includes(mode) ?? false}
+                                    onCheckedChange={(checked) => {
+                                        const current = edge.access || [];
+                                        const newAccess = checked 
+                                            ? [...current, mode]
+                                            : current.filter(m => m !== mode);
+                                        handleEdgeUpdate({ access: newAccess });
+                                    }}
+                                />
+                                <Label htmlFor={`access-${mode}`} className="text-xs capitalize cursor-pointer">{mode}</Label>
+                            </div>
+                        ))}
+                    </div>
+                </div>
                 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 pt-2 border-t">
                     <Checkbox 
                         id="bidirectional"
                         checked={edge.bidirectional}
