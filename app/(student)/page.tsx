@@ -243,7 +243,6 @@ function MapView({
             onSelect={(item) => onSelect(item.id)}
             onClearSelection={onClearSelection}
           />
-          <UserLocationControl />
           <NavigationLayer startPoint={navStart} endPoint={navEnd} mode={navMode} />
           <NavigationControl 
             userLocation={position ? { lat: position.coords.latitude, lng: position.coords.longitude } as LatLng : null}

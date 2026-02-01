@@ -67,8 +67,20 @@ export function NavigationLayer({ startPoint, endPoint, mode }: NavigationLayerP
              toast.error("No path found");
         }
       } else {
-        setPathResult(null);
-        toast.error("Could not find a path");
+        // Fallback: Straight line if pathfinding fails
+        if (startPoint && endPoint) {
+            setPathResult({
+                path: [
+                    { id: 'start', lat: startPoint.lat, lng: startPoint.lng, type: 'node' },
+                    { id: 'end', lat: endPoint.lat, lng: endPoint.lng, type: 'node' }
+                ],
+                totalDistance: 0
+            });
+            toast.info("Pathfinding failed. Showing direct line.");
+        } else {
+            setPathResult(null);
+            toast.error("Could not find a path");
+        }
       }
     }
   }, [startPoint, endPoint, nodes, edges, mode]);
