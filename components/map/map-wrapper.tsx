@@ -1,17 +1,32 @@
 import "leaflet/dist/leaflet.css";
 
-import { MapContainer, TileLayer, ZoomControl } from "react-leaflet";
+import { MapContainer, TileLayer, ZoomControl, useMap } from "react-leaflet";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM, MAP_MIN_ZOOM, MAP_MAX_ZOOM, MAP_TILES } from "@/lib/constants/map";
 import { useApp } from "@/lib/context/app-context";
+import type { LatLngBoundsExpression } from "leaflet";
 
 type MapWrapperProps = {
   children?: React.ReactNode;
   className?: string;
+  bounds?: LatLngBoundsExpression | null;
 };
 
-export function MapWrapper({ children, className }: MapWrapperProps) {
+// Component to handle bounds changes
+function MapBoundsHandler({ bounds }: { bounds: LatLngBoundsExpression | null }) {
+  const map = useMap();
+  
+  useEffect(() => {
+    if (bounds) {
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 18 });
+    }
+  }, [bounds, map]);
+  
+  return null;
+}
+
+export function MapWrapper({ children, className, bounds }: MapWrapperProps) {
   const { resolvedTheme } = useTheme();
   const { mapStyle } = useApp();
   const [mounted, setMounted] = useState(false);
@@ -56,6 +71,7 @@ export function MapWrapper({ children, className }: MapWrapperProps) {
           maxNativeZoom={MAP_TILES.maxNativeZoom ?? MAP_MAX_ZOOM}
         />
         <ZoomControl position="bottomleft" />
+        <MapBoundsHandler bounds={bounds} />
         {children}
       </MapContainer>
     </div>

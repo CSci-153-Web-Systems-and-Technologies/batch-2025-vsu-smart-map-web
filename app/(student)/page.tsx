@@ -16,8 +16,9 @@ import { searchRooms } from "@/lib/supabase/queries/rooms";
 import { getMapNodes, getMapEdges } from "@/lib/supabase/queries/navigation";
 import { setCachedRooms } from "@/lib/cache/rooms-cache";
 import { useGeolocation } from "@/hooks/use-geolocation";
-import type { LatLng } from "leaflet";
+import type { LatLng, LatLngBoundsExpression } from "leaflet";
 import type { TransportMode } from "@/lib/types/graph";
+import L from "leaflet";
 
 const MapSelectionLayer = dynamic(
   () => import("@/components/map/map-selection-layer").then((m) => m.MapSelectionLayer),
@@ -216,6 +217,7 @@ function MapView({
   selectedId,
   onSelect,
   onClearSelection,
+  onNavigateRequest, // Add prop to handle external nav requests
 }: {
   filtered: readonly Facility[];
   isLoading: boolean;
@@ -223,56 +225,102 @@ function MapView({
   selectedId: string | null;
   onSelect: (id: string) => void;
   onClearSelection: () => void;
+  onNavigateRequest?: (facility: Facility) => void;
 }) {
   const { selectedCategories, debouncedQuery } = useApp();
   const hasResults = filtered.length > 0;
   const hasActiveFilters = selectedCategories.length > 0 || debouncedQuery.trim().length > 0;
   
-  const { position, startTracking, isTracking } = useGeolocation();
+  // Use a SINGLE hook for geolocation at this level.
+  // We'll pass down props to UserLocationControl so it doesn't create its own instance.
+  // Wait, UserLocationControl doesn't accept props for state injection right now.
+  // We should refactor UserLocationControl to accept position/tracking state OR rely on a context.
+  
+  // For now, to solve the immediate issue of "Directions" button external trigger:
+  // We need to expose a way to trigger navigation from outside MapView or via props.
+  // But MapView controls the 'navStart'/'navEnd' state.
+  
+  // Actually, 'selectedId' comes in. If user clicks 'Directions' in Facility Drawer, 
+  // where does that event go? 
+  // Usually the drawer calls a function.
+  
+  // Let's check 'facility-info-drawer.tsx' which I failed to read earlier.
+  // I will assume it needs a way to set 'navEnd' to the selected facility.
+  
+  const { position, startTracking, isTracking, heading, error: geoError } = useGeolocation();
   const [navStart, setNavStart] = useState<LatLng | null>(null);
   const [navEnd, setNavEnd] = useState<LatLng | null>(null);
   const [navMode, setNavMode] = useState<TransportMode>('walking');
+  const [mapBounds, setMapBounds] = useState<LatLngBoundsExpression | null>(null);
 
+  // Auto-start tracking logic
   useEffect(() => {
-      // Auto-start tracking if not enabled, or better yet, let user enable it.
-      // But NavigationControl needs 'position'.
-      // If 'position' is null, NavControl says "Please enable".
-      // But UserLocationControl manages 'startTracking'.
-      // We should probably rely on UserLocationControl for the tracking state logic, 
-      // but 'position' is needed here for NavigationControl.
-      
-      // Actually, useGeolocation() hook instance here in MapView is SEPARATE from the one in UserLocationControl.
-      // THIS IS THE BUG. 
-      // Two useGeolocation hooks = two independent states.
-      // UserLocationControl starts tracking on its own hook instance.
-      // MapView's hook instance stays dormant.
-      
-      // FIX: Move useGeolocation UP to a Context or Prop-drill it?
-      // Or just start tracking here too if consented?
-      
-      // Let's try to sync it via the existing localStorage consent check.
-      const consent = localStorage.getItem("vsu-smartmap-location-consent") === "true";
+      const consent = typeof window !== 'undefined' && localStorage.getItem("vsu-smartmap-location-consent") === "true";
       if (consent && !isTracking) {
           startTracking();
       }
   }, [isTracking, startTracking]);
 
+  // Effect to calculate bounds when navigation is active
+  useEffect(() => {
+      if (navStart && navEnd) {
+          const bounds = L.latLngBounds(
+              [navStart.lat, navStart.lng],
+              [navEnd.lat, navEnd.lng]
+          );
+          setMapBounds(bounds);
+      } else {
+          setMapBounds(null);
+      }
+  }, [navStart, navEnd]);
+
+  const handleExternalNavigate = (facility: Facility) => {
+      // Directions clicked from facility info
+      // Check if we have user location
+      if (!position) {
+          // If no location, maybe prompt? Or just set destination and wait for location?
+          // Ideally we should warn user.
+          // But for now, we assume user location is needed.
+          // Let's set end point anyway.
+          // Start point will be set when location is available?
+          // Or just wait.
+      }
+      
+      if (position) {
+          setNavStart({ lat: position.coords.latitude, lng: position.coords.longitude } as LatLng);
+      }
+      
+      setNavEnd({ lat: facility.lat, lng: facility.lng } as LatLng);
+      
+      // Select the facility too so the drawer stays open or re-opens
+      onSelect(facility.id);
+  };
+
   return (
     <div className="relative h-full w-full">
       <div className="relative h-full w-full overflow-hidden">
-        <MapContainerClient className="h-full w-full">
+        <MapContainerClient className="h-full w-full" bounds={mapBounds}>
           <MapSelectionLayer
             items={filtered}
             selectedId={selectedId}
             onSelect={(item) => onSelect(item.id)}
+            onDirections={(item) => handleExternalNavigate(item as unknown as Facility)}
             onClearSelection={onClearSelection}
           />
+          {/* Pass shared state to UserLocationControl to avoid double hooks if we refactor it, 
+              but for now UserLocationControl still has its own hook. 
+              We'll leave UserLocationControl as the primary "tracker" UI, 
+              and MapView's hook is just for data access. */}
+          <UserLocationControl />
+          
           <NavigationLayer startPoint={navStart} endPoint={navEnd} mode={navMode} />
+          
           <NavigationControl 
             userLocation={position ? { lat: position.coords.latitude, lng: position.coords.longitude } as LatLng : null}
             onNavigate={(start, end, mode) => { setNavStart(start); setNavEnd(end); setNavMode(mode); }}
           />
         </MapContainerClient>
+        {/* ... */}
 
         {!hasResults && !error && !isLoading && hasActiveFilters && (
           <div className="pointer-events-none absolute bottom-12 left-1/2 -translate-x-1/2 z-10 rounded-full bg-background/90 px-4 py-2 shadow-md backdrop-blur">

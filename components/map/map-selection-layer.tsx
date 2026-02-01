@@ -9,6 +9,7 @@ type MapSelectionLayerProps = {
   items: readonly MapItem[];
   selectedId: string | null;
   onSelect: (item: MapItem) => void;
+  onDirections?: (item: MapItem) => void;
   onClearSelection?: () => void;
   flyZoom?: number;
 };
@@ -17,6 +18,7 @@ export function MapSelectionLayer({
   items,
   selectedId,
   onSelect,
+  onDirections,
   onClearSelection,
   flyZoom = 19,
 }: MapSelectionLayerProps) {
@@ -54,6 +56,7 @@ export function MapSelectionLayer({
       items={items}
       selectedId={selectedId}
       onSelect={onSelect}
+      onDirections={onDirections}
     />
   );
 }

@@ -3,15 +3,15 @@
 import { Button } from "@/components/ui/button";
 import { getCategoryMeta } from "@/lib/constants/facilities";
 import type { Facility } from "@/lib/types/facility";
-import { Info } from "lucide-react";
-import Image from "next/image";
+import { Info, Route } from "lucide-react";
 
 interface MapPopupCardProps {
   facility: Facility;
   onViewDetails: () => void;
+  onDirections?: () => void; // New prop
 }
 
-export function MapPopupCard({ facility, onViewDetails }: MapPopupCardProps) {
+export function MapPopupCard({ facility, onViewDetails, onDirections }: MapPopupCardProps) {
   const meta = getCategoryMeta(facility.category);
 
   return (
@@ -41,14 +41,25 @@ export function MapPopupCard({ facility, onViewDetails }: MapPopupCardProps) {
         </div>
       </div>
 
-      <Button
-        size="sm"
-        className="w-full gap-2 h-8 text-xs"
-        onClick={onViewDetails}
-      >
-        <Info className="h-3 w-3" aria-hidden />
-        Show more info
-      </Button>
+      <div className="flex gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          className="flex-1 gap-2 h-8 text-xs"
+          onClick={onViewDetails}
+        >
+          <Info className="h-3 w-3" aria-hidden />
+          Details
+        </Button>
+        <Button
+          size="sm"
+          className="flex-1 gap-2 h-8 text-xs bg-blue-600 hover:bg-blue-700 text-white"
+          onClick={onDirections}
+        >
+          <Route className="h-3 w-3" aria-hidden />
+          Directions
+        </Button>
+      </div>
     </div>
   );
 }
