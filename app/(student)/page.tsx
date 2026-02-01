@@ -275,26 +275,37 @@ function MapView({
   }, [navStart, navEnd]);
 
   const handleExternalNavigate = (facility: Facility) => {
-      // Directions clicked from facility info
-      // Check if we have user location
-      if (!position) {
-          // If no location, maybe prompt? Or just set destination and wait for location?
-          // Ideally we should warn user.
-          // But for now, we assume user location is needed.
-          // Let's set end point anyway.
-          // Start point will be set when location is available?
-          // Or just wait.
-      }
+      // Directions clicked from facility info (via onNavigateRequest prop from props drilled down, or event bus)
+      // Since FacilitySheet is in Layout, we can't easily pass props UP from Page.
+      // BUT, we can check if the user clicked navigate.
+      // Actually, cleaner way: Use Context or Zustand. But we don't have that for nav.
+      // The FacilitySheet in Layout doesn't have access to this page's state.
       
-      if (position) {
-          setNavStart({ lat: position.coords.latitude, lng: position.coords.longitude } as LatLng);
-      }
+      // FIX: Move FacilitySheet INTO this page (MapView) OR move nav state UP to Context.
+      // Given constraints, I moved FacilitySheet inside the page component in previous steps? 
+      // No, it's in layout.tsx.
       
-      setNavEnd({ lat: facility.coordinates.lat, lng: facility.coordinates.lng } as LatLng);
+      // Let's use a Custom Event for now to trigger nav from the global sheet.
+      // Or simply: When FacilitySheet calls onNavigate, it can dispatch a custom event.
       
-      // Select the facility too so the drawer stays open or re-opens
-      onSelect(facility.id);
+      // Better: Since I can't move the Sheet easily without breaking layout structure,
+      // I will rely on the `window` event bus for this specific trigger since it's cross-component.
+      
+      // (See below for implementation)
   };
+
+  useEffect(() => {
+      const handleNavRequest = (e: CustomEvent<Facility>) => {
+          if (position) {
+              setNavStart({ lat: position.coords.latitude, lng: position.coords.longitude } as LatLng);
+          }
+          setNavEnd({ lat: e.detail.coordinates.lat, lng: e.detail.coordinates.lng } as LatLng);
+          // Don't select, just nav.
+      };
+      
+      window.addEventListener('navigate-to-facility', handleNavRequest as EventListener);
+      return () => window.removeEventListener('navigate-to-facility', handleNavRequest as EventListener);
+  }, [position]);
 
   return (
     <div className="relative h-full w-full">

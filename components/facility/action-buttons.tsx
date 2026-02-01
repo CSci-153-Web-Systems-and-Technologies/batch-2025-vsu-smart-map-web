@@ -10,9 +10,10 @@ import { useApp } from "@/lib/context/app-context";
 interface ActionButtonsProps {
     facility: Facility;
     className?: string;
+    onNavigate?: (facility: Facility) => void;
 }
 
-export function ActionButtons({ facility, className }: ActionButtonsProps) {
+export function ActionButtons({ facility, className, onNavigate }: ActionButtonsProps) {
     const router = useRouter();
     const pathname = usePathname();
     const { setFacilitySheetOpen } = useApp();
@@ -30,11 +31,14 @@ export function ActionButtons({ facility, className }: ActionButtonsProps) {
     };
 
     const handleDirections = () => {
-        if (pathname === "/") {
-            setFacilitySheetOpen(false);
-            return;
+        // Dispatch event for MapView to catch
+        const event = new CustomEvent('navigate-to-facility', { detail: facility });
+        window.dispatchEvent(event);
+        setFacilitySheetOpen(false);
+        
+        if (pathname !== "/") {
+            router.push('/');
         }
-        router.push(`/?facility=${facility.id}`);
     };
 
     return (
@@ -55,7 +59,7 @@ export function ActionButtons({ facility, className }: ActionButtonsProps) {
                 </Button>
                 <Button size="sm" className="w-full gap-2" onClick={handleDirections}>
                     <Navigation className="h-4 w-4" />
-                    Directions
+                    Navigate
                 </Button>
             </div>
         </div>
