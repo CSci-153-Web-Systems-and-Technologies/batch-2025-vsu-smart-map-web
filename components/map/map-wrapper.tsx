@@ -71,7 +71,7 @@ export function MapWrapper({ children, className, bounds }: MapWrapperProps) {
           maxNativeZoom={MAP_TILES.maxNativeZoom ?? MAP_MAX_ZOOM}
         />
         <ZoomControl position="bottomleft" />
-        <MapBoundsHandler bounds={bounds} />
+        <MapBoundsHandler bounds={bounds ?? null} />
         {children}
       </MapContainer>
     </div>
