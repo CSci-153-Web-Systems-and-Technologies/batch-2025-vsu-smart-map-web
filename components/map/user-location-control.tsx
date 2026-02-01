@@ -55,7 +55,6 @@ export function UserLocationControl({ className, destination, selectedFacility }
     }
 
     if (position) {
-      // Determine target: Navigation destination > Selected Facility > User Only
       const target = destination || selectedFacility;
       
       if (target) {
@@ -63,6 +62,7 @@ export function UserLocationControl({ className, destination, selectedFacility }
               [position.coords.latitude, position.coords.longitude],
               [target.lat, target.lng]
           );
+          
           map.fitBounds(bounds, { 
             padding: [100, 100], 
             maxZoom: 18, 
