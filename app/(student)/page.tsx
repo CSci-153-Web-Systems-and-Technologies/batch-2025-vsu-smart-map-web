@@ -288,8 +288,10 @@ function MapView({
             onSelect={(item) => onSelect(item.id)}
             onDirections={(item) => {
                setIsNavigatingFromUser(true);
-               if (position) {
+               if (position && position.coords) {
                    setNavStart({ lat: position.coords.latitude, lng: position.coords.longitude } as LatLng);
+               } else {
+                   setNavStart(null);
                }
                setNavEnd({ lat: item.coordinates.lat, lng: item.coordinates.lng } as LatLng);
             }}
