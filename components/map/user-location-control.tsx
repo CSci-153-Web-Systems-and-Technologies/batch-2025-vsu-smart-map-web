@@ -14,11 +14,12 @@ import L from "leaflet";
 interface UserLocationControlProps {
   className?: string;
   destination?: { lat: number; lng: number } | null;
+  selectedFacility?: { lat: number; lng: number } | null;
 }
 
 const LOCATION_PERMISSION_KEY = "vsu-smartmap-location-consent";
 
-export function UserLocationControl({ className, destination }: UserLocationControlProps) {
+export function UserLocationControl({ className, destination, selectedFacility }: UserLocationControlProps) {
   const map = useMap();
   const [showPermissionDialog, setShowPermissionDialog] = useState(false);
   const {
@@ -51,12 +52,15 @@ export function UserLocationControl({ className, destination }: UserLocationCont
     }
 
     if (isTracking && position) {
-      // If we have a destination selected, fit bounds to include both user and destination
-      if (destination) {
+      // Determine target: Navigation destination > Selected Facility > User Only
+      const target = destination || selectedFacility;
+      
+      if (target) {
           const bounds = L.latLngBounds(
               [position.coords.latitude, position.coords.longitude],
-              [destination.lat, destination.lng]
+              [target.lat, target.lng]
           );
+          // Add padding to ensure both points aren't at the very edge
           map.fitBounds(bounds, { padding: [50, 50], maxZoom: 18, duration: 0.5 });
       } else {
           // Default behavior: Fly to user
@@ -71,7 +75,7 @@ export function UserLocationControl({ className, destination }: UserLocationCont
     } else {
       setShowPermissionDialog(true);
     }
-  }, [isSupported, isTracking, position, map, startTracking, hasConsented, destination]);
+  }, [isSupported, isTracking, position, map, startTracking, hasConsented, destination, selectedFacility]);
 
   const handlePermissionConfirm = useCallback(() => {
     localStorage.setItem(LOCATION_PERMISSION_KEY, "true");

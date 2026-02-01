@@ -322,7 +322,10 @@ function MapView({
               but for now UserLocationControl still has its own hook. 
               We'll leave UserLocationControl as the primary "tracker" UI, 
               and MapView's hook is just for data access. */}
-          <UserLocationControl destination={navEnd} />
+          <UserLocationControl 
+              destination={navEnd} 
+              selectedFacility={selectedFacility?.id === selectedId ? selectedFacility?.coordinates : null}
+          />
           
           <NavigationLayer startPoint={navStart} endPoint={navEnd} mode={navMode} />
           
