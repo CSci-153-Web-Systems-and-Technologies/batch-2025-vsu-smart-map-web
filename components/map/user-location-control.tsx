@@ -42,7 +42,9 @@ export function UserLocationControl({ className, destination }: UserLocationCont
     }
   }, [hasConsented, isTracking, startTracking]);
 
-  const handleLocate = useCallback(() => {
+  const handleLocate = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent map click event (which clears selection)
+    
     if (!isSupported) {
       toast.error("Geolocation is not supported by your browser");
       return;

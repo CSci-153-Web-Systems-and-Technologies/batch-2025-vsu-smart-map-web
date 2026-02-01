@@ -27,6 +27,10 @@ export function MapSelectionLayer({
 
   useMapEvents({
     click: (e) => {
+      // Prevent clearing selection if clicking on UI controls
+      if ((e.originalEvent.target as HTMLElement).closest(".leaflet-control")) {
+        return;
+      }
       if ((e.originalEvent.target as HTMLElement).closest(".leaflet-marker-icon")) {
         return;
       }
