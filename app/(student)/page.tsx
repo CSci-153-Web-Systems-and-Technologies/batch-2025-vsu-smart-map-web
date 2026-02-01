@@ -287,9 +287,9 @@ function MapView({
             selectedId={selectedId}
             onSelect={(item) => onSelect(item.id)}
             onDirections={(item) => {
+               setIsNavigatingFromUser(true);
                if (position) {
                    setNavStart({ lat: position.coords.latitude, lng: position.coords.longitude } as LatLng);
-                   setIsNavigatingFromUser(true);
                }
                setNavEnd({ lat: item.coordinates.lat, lng: item.coordinates.lng } as LatLng);
             }}
