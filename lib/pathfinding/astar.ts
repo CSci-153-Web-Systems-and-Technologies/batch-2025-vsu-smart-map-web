@@ -54,10 +54,12 @@ export function findNearestEdge(
   let nearestPoint = { lat, lng };
   let nearestEdge: MapEdge | null = null;
 
+  const nodeMap = new Map(nodes.map(n => [n.id, n]));
+
   for (const edge of edges) {
     if (!canTraverse(edge, mode)) continue;
-    const source = nodes.find(n => n.id === edge.source_id);
-    const target = nodes.find(n => n.id === edge.target_id);
+    const source = nodeMap.get(edge.source_id);
+    const target = nodeMap.get(edge.target_id);
     if (!source || !target) continue;
 
     const pointOnEdge = getNearestPointOnSegment({ lat, lng }, source, target);
@@ -82,11 +84,13 @@ export function findPath(
 ): PathResult | null {
   if (startNodeId === endNodeId) {
     const node = nodes.find(n => n.id === startNodeId);
-    return node ? { path: [node], totalDistance: 0 } : null;
+    if (!node) return null;
+    return { path: [node, node], totalDistance: 0 };
   }
 
-  const startNode = nodes.find((n) => n.id === startNodeId);
-  const endNode = nodes.find((n) => n.id === endNodeId);
+  const nodeMap = new Map(nodes.map(n => [n.id, n]));
+  const startNode = nodeMap.get(startNodeId);
+  const endNode = nodeMap.get(endNodeId);
 
   if (!startNode || !endNode) return null;
 
@@ -97,6 +101,19 @@ export function findPath(
 
   gScore.set(startNodeId, 0);
   fScore.set(startNodeId, getDistance(startNode.lat, startNode.lng, endNode.lat, endNode.lng));
+
+  const adj = new Map<string, MapEdge[]>();
+  for (const edge of edges) {
+    if (!canTraverse(edge, mode)) continue;
+    
+    if (!adj.has(edge.source_id)) adj.set(edge.source_id, []);
+    adj.get(edge.source_id)!.push(edge);
+    
+    if (edge.bidirectional) {
+      if (!adj.has(edge.target_id)) adj.set(edge.target_id, []);
+      adj.get(edge.target_id)!.push(edge);
+    }
+  }
 
   while (openSet.size > 0) {
     let currentId: string | null = null;
@@ -111,24 +128,21 @@ export function findPath(
     }
 
     if (currentId === endNodeId) {
-      return reconstructPath(cameFrom, currentId!, nodes);
+      return reconstructPath(cameFrom, currentId!, nodeMap);
     }
 
     if (!currentId) break;
 
     openSet.delete(currentId);
-    const currentNode = nodes.find(n => n.id === currentId);
+    const currentNode = nodeMap.get(currentId);
     if (!currentNode) continue;
 
     const currentG = gScore.get(currentId) ?? Infinity;
-
-    const neighbors = edges.filter(
-      (e) => (e.source_id === currentId || (e.bidirectional && e.target_id === currentId)) && canTraverse(e, mode)
-    );
+    const neighbors = adj.get(currentId) || [];
 
     for (const edge of neighbors) {
       const neighborId = edge.source_id === currentId ? edge.target_id : edge.source_id;
-      const neighbor = nodes.find((n) => n.id === neighborId);
+      const neighbor = nodeMap.get(neighborId);
       if (!neighbor) continue;
 
       const edgeWeight = edge.weight > 0 
@@ -150,15 +164,16 @@ export function findPath(
   return null;
 }
 
-function reconstructPath(cameFrom: Map<string, string>, currentId: string, nodes: MapNode[]): PathResult {
+function reconstructPath(cameFrom: Map<string, string>, currentId: string, nodeMap: Map<string, MapNode>): PathResult {
   const totalPath: string[] = [currentId];
-  while (cameFrom.has(currentId)) {
-    currentId = cameFrom.get(currentId)!;
-    totalPath.unshift(currentId);
+  let curr = currentId;
+  while (cameFrom.has(curr)) {
+    curr = cameFrom.get(curr)!;
+    totalPath.unshift(curr);
   }
 
   const pathNodes = totalPath
-    .map((id) => nodes.find((n) => n.id === id))
+    .map((id) => nodeMap.get(id))
     .filter((n): n is MapNode => n !== undefined);
 
   let totalDistance = 0;
@@ -173,3 +188,4 @@ function reconstructPath(cameFrom: Map<string, string>, currentId: string, nodes
 
   return { path: pathNodes, totalDistance };
 }
+

@@ -81,21 +81,33 @@ export function NavigationLayer({ startPoint, endPoint, mode }: NavigationLayerP
         }
       }
 
+      if (!nearestId) {
+        for (const node of nodes) {
+          const d = getDistance(node.lat, node.lng, lat, lng);
+          if (d < minDist) {
+            minDist = d;
+            nearestId = node.id;
+          }
+        }
+      }
+
       return nearestId;
     };
 
     const runPathfinding = async () => {
+      let isCancelled = false;
+      
       const startNodeId = snapToGraph(startPoint.lat, startPoint.lng);
       const endNodeId = snapToGraph(endPoint.lat, endPoint.lng);
 
       if (startNodeId && endNodeId) {
         const result = findPath(nodes, edges, startNodeId, endNodeId, mode);
-        if (result) {
+        if (result && !isCancelled) {
           setPathResult(result);
           if (result.path.length === 0) {
             toast.error("No path found");
           }
-          return;
+          return () => { isCancelled = true; };
         }
       }
 
@@ -104,6 +116,8 @@ export function NavigationLayer({ startPoint, endPoint, mode }: NavigationLayerP
         { lat: endPoint.lat, lng: endPoint.lng },
         mode
       );
+
+      if (isCancelled) return;
 
       if (externalResult) {
         setPathResult(externalResult);
