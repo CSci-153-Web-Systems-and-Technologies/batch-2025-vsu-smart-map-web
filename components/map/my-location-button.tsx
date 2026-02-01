@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 interface MyLocationButtonProps {
   isTracking: boolean;
   hasHeading: boolean;
-  onLocate: () => void;
+  onLocate: (e: React.MouseEvent) => void;
   className?: string;
 }
 
@@ -17,15 +17,11 @@ export function MyLocationButton({
   onLocate,
   className,
 }: MyLocationButtonProps) {
-  const handleClick = () => {
-    onLocate();
-  };
-
   return (
     <Button
       variant="outline"
       size="icon"
-      onClick={handleClick}
+      onClick={onLocate}
       className={cn(
         "absolute z-[1000] bg-background/95 backdrop-blur-sm shadow-md",
         "hover:bg-accent hover:text-accent-foreground",

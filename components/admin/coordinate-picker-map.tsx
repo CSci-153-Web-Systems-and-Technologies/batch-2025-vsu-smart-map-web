@@ -4,7 +4,7 @@ import "leaflet/dist/leaflet.css";
 
 import { useEffect } from "react";
 import { useTheme } from "next-themes";
-import { MapContainer, TileLayer, useMap, useMapEvents, CircleMarker } from "react-leaflet";
+import { MapContainer, TileLayer, useMap, useMapEvents, CircleMarker, ZoomControl } from "react-leaflet";
 import type { LatLng } from "@/lib/types/common";
 import { MAP_MAX_ZOOM, MAP_MIN_ZOOM, MAP_TILES } from "@/lib/constants/map";
 import { useMapStyle } from "@/lib/context/map-style-context";
@@ -51,6 +51,11 @@ export function CoordinatePickerMap({ value, onChange }: CoordinatePickerMapProp
         maxZoom={MAP_MAX_ZOOM}
         className="h-full w-full"
         scrollWheelZoom
+        zoomControl={false}
+        zoomSnap={0}
+        zoomDelta={0.5}
+        wheelDebounceTime={40}
+        bounceAtZoomLimits={false}
       >
         <TileLayer
           key={tileUrl}
@@ -59,6 +64,7 @@ export function CoordinatePickerMap({ value, onChange }: CoordinatePickerMapProp
           maxZoom={MAP_MAX_ZOOM}
           maxNativeZoom={MAP_TILES.maxNativeZoom ?? MAP_MAX_ZOOM}
         />
+        <ZoomControl position="bottomleft" />
         <MapCenterUpdater value={value} />
         <ClickCapture onChange={onChange} />
         <CircleMarker

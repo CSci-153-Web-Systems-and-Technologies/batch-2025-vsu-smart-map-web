@@ -13,9 +13,10 @@ type MapMarkerProps = {
   item: MapItem;
   isSelected?: boolean;
   onSelect?: (item: MapItem) => void;
+  onDirections?: (item: MapItem) => void;
 };
 
-export function MapMarker({ item, isSelected = false, onSelect }: MapMarkerProps) {
+export function MapMarker({ item, isSelected = false, onSelect, onDirections }: MapMarkerProps) {
   const { setFacilitySheetOpen } = useApp();
   const [zoom, setZoom] = useState(16);
 
@@ -99,6 +100,7 @@ export function MapMarker({ item, isSelected = false, onSelect }: MapMarkerProps
         <MapPopupCard
           facility={item as unknown as Facility}
           onViewDetails={handleViewDetails}
+          onDirections={() => onDirections?.(item)}
         />
       </Popup>
     </Marker>

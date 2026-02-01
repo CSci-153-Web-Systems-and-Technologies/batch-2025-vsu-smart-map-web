@@ -7,6 +7,7 @@ import { useApp } from "@/lib/context/app-context";
 import { CategoryFilters } from "./category-filters";
 import { searchRooms } from "@/lib/supabase/queries/rooms";
 import { getCachedRooms } from "@/lib/cache/rooms-cache";
+import { MapSettings } from "@/components/settings/map-settings";
 
 
 type MapSearchPanelProps = {
@@ -98,10 +99,13 @@ export function MapSearchPanel({
   }, [matchCount, onMatchCountChange]);
 
   return (
-    <CategoryFilters
-      value={selectedCategories}
-      onChange={setCategories}
-      onToggle={toggleCategory}
-    />
+    <div className="flex items-center w-full gap-2">
+        <CategoryFilters
+        value={selectedCategories}
+        onChange={setCategories}
+        onToggle={toggleCategory}
+        />
+        <MapSettings />
+    </div>
   );
 }

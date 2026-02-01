@@ -3,18 +3,25 @@
 import { useCallback, useEffect, useState } from "react";
 import { useMap } from "react-leaflet";
 import { toast } from "sonner";
-import { useGeolocation } from "@/hooks/use-geolocation";
+import type { GeolocationState } from "@/hooks/use-geolocation";
 import { UserLocationMarker } from "./user-location-marker";
 import { MyLocationButton } from "./my-location-button";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 
+import L from "leaflet";
+
 interface UserLocationControlProps {
   className?: string;
+  destination?: { lat: number; lng: number } | null;
+  selectedFacility?: { lat: number; lng: number } | null;
+  geo: Pick<GeolocationState, "position" | "heading" | "error" | "isTracking" | "isSupported"> & {
+    startTracking: () => void;
+  };
 }
 
 const LOCATION_PERMISSION_KEY = "vsu-smartmap-location-consent";
 
-export function UserLocationControl({ className }: UserLocationControlProps) {
+export function UserLocationControl({ className, destination, selectedFacility, geo }: UserLocationControlProps) {
   const map = useMap();
   const [showPermissionDialog, setShowPermissionDialog] = useState(false);
   const {
@@ -24,31 +31,64 @@ export function UserLocationControl({ className }: UserLocationControlProps) {
     isTracking,
     isSupported,
     startTracking,
-  } = useGeolocation();
+  } = geo;
 
   const hasConsented = useCallback(() => {
     if (typeof window === "undefined") return false;
     return localStorage.getItem(LOCATION_PERMISSION_KEY) === "true";
   }, []);
 
-  const handleLocate = useCallback(() => {
+  const [hasStartedRef] = useState({ value: false });
+
+  useEffect(() => {
+    // Only auto-start ONCE on mount if consented
+    if (typeof window !== "undefined" && hasConsented() && !isTracking && !hasStartedRef.value) {
+        hasStartedRef.value = true;
+        startTracking();
+    }
+  }, [hasConsented, isTracking, startTracking, hasStartedRef]);
+
+  const handleLocate = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    if (e.currentTarget) {
+      L.DomEvent.disableClickPropagation(e.currentTarget as unknown as HTMLElement);
+    }
+    
     if (!isSupported) {
       toast.error("Geolocation is not supported by your browser");
       return;
     }
 
-    if (isTracking && position) {
-      map.flyTo(
-        [position.coords.latitude, position.coords.longitude],
-        18,
-        { duration: 0.5 }
-      );
+    if (position) {
+      const userLatLng = L.latLng(position.coords.latitude, position.coords.longitude);
+      const target = destination || selectedFacility;
+      
+      if (target) {
+          const targetLatLng = L.latLng(target.lat, target.lng);
+          const distance = userLatLng.distanceTo(targetLatLng);
+
+          if (distance < 10) {
+            map.flyTo(userLatLng, 18, { duration: 0.8 });
+          } else {
+            const bounds = L.latLngBounds([userLatLng, targetLatLng]);
+            map.fitBounds(bounds, { 
+              padding: [100, 100], 
+              maxZoom: 18, 
+              duration: 0.8,
+              animate: true 
+            });
+          }
+      } else {
+          map.flyTo(userLatLng, 18, { duration: 0.8 });
+      }
     } else if (hasConsented()) {
       startTracking();
     } else {
       setShowPermissionDialog(true);
     }
-  }, [isSupported, isTracking, position, map, startTracking, hasConsented]);
+  }, [isSupported, position, map, startTracking, hasConsented, destination, selectedFacility]);
 
   const handlePermissionConfirm = useCallback(() => {
     localStorage.setItem(LOCATION_PERMISSION_KEY, "true");
@@ -60,15 +100,16 @@ export function UserLocationControl({ className }: UserLocationControlProps) {
     setShowPermissionDialog(false);
   }, []);
 
-  useEffect(() => {
-    if (position && isTracking) {
-      map.flyTo(
-        [position.coords.latitude, position.coords.longitude],
-        Math.max(map.getZoom(), 17),
-        { duration: 0.5 }
-      );
-    }
-  }, [position, isTracking, map]);
+  // Remove the aggressive auto-centering effect
+  // useEffect(() => {
+  //   if (position && isTracking) {
+  //     map.flyTo(
+  //       [position.coords.latitude, position.coords.longitude],
+  //       Math.max(map.getZoom(), 17),
+  //       { duration: 0.5 }
+  //     );
+  //   }
+  // }, [position, isTracking, map]);
 
   useEffect(() => {
     if (error) {
@@ -83,7 +124,7 @@ export function UserLocationControl({ className }: UserLocationControlProps) {
 
   return (
     <>
-      {position && isTracking && (
+      {position && (
         <UserLocationMarker position={position} heading={heading} />
       )}
 
