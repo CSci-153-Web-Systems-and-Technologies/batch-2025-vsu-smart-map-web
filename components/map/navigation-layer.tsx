@@ -34,7 +34,10 @@ export function NavigationLayer({ startPoint, endPoint, mode }: NavigationLayerP
         console.error("Failed to load navigation graph", err);
       }
     };
+    
     loadGraph();
+    const interval = setInterval(loadGraph, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -44,13 +47,13 @@ export function NavigationLayer({ startPoint, endPoint, mode }: NavigationLayerP
     }
 
     const snapToGraph = (lat: number, lng: number): string | null => {
-      if (nodes.length === 0 || edges.length === 0) return null;
+      if (!nodes || nodes.length === 0 || !edges || edges.length === 0) return null;
 
       const { nearestEdge } = findNearestEdge(lat, lng, nodes, edges, mode);
       
       if (nearestEdge) {
-        const source = nodes.find(n => n.id === nearestEdge.source_id);
-        const target = nodes.find(n => n.id === nearestEdge.target_id);
+        const source = nodes.find((n: MapNode) => n.id === nearestEdge.source_id);
+        const target = nodes.find((n: MapNode) => n.id === nearestEdge.target_id);
         
         if (source && target) {
           const dSource = getDistance(lat, lng, source.lat, source.lng);
@@ -97,44 +100,48 @@ export function NavigationLayer({ startPoint, endPoint, mode }: NavigationLayerP
     };
 
     const runPathfinding = async () => {
-      const startNodeId = snapToGraph(startPoint.lat, startPoint.lng);
-      const endNodeId = snapToGraph(endPoint.lat, endPoint.lng);
+      try {
+        const startNodeId = snapToGraph(startPoint.lat, startPoint.lng);
+        const endNodeId = snapToGraph(endPoint.lat, endPoint.lng);
 
-      if (startNodeId && endNodeId && nodes.length > 0 && edges.length > 0) {
-        const result = findPath(nodes, edges, startNodeId, endNodeId, mode);
-        if (result) {
-          const userPoint = { lat: startPoint.lat, lng: startPoint.lng };
-          const firstPathNode = result.path[0];
-          const distToFirstNode = getDistance(userPoint.lat, userPoint.lng, firstPathNode.lat, firstPathNode.lng);
+        if (startNodeId && endNodeId && nodes.length > 0 && edges.length > 0) {
+          const result = findPath(nodes, edges, startNodeId, endNodeId, mode);
+          if (result && result.path.length > 0) {
+            const userPoint = { lat: startPoint.lat, lng: startPoint.lng };
+            const firstPathNode = result.path[0];
+            const distToFirstNode = getDistance(userPoint.lat, userPoint.lng, firstPathNode.lat, firstPathNode.lng);
 
-          if (distToFirstNode > 2 && distToFirstNode < 50) {
-            result.path = [
-              { id: 'user-pos', lat: userPoint.lat, lng: userPoint.lng, type: 'node' } as MapNode,
-              ...result.path
-            ];
+            if (distToFirstNode > 2 && distToFirstNode < 50) {
+              result.path = [
+                { id: 'user-pos', lat: userPoint.lat, lng: userPoint.lng, type: 'node' } as MapNode,
+                ...result.path
+              ];
+            }
+            
+            setPathResult(result);
+            return;
           }
-          
-          setPathResult(result);
-          return;
         }
-      }
 
-      const externalResult = await getExternalPath(
-        { lat: startPoint.lat, lng: startPoint.lng },
-        { lat: endPoint.lat, lng: endPoint.lng },
-        mode
-      );
+        const externalResult = await getExternalPath(
+          { lat: startPoint.lat, lng: startPoint.lng },
+          { lat: endPoint.lat, lng: endPoint.lng },
+          mode
+        );
 
-      if (externalResult) {
-        setPathResult(externalResult);
-      } else {
-        setPathResult({
-          path: [
-            { id: 'start', lat: startPoint.lat, lng: startPoint.lng, type: 'node' },
-            { id: 'end', lat: endPoint.lat, lng: endPoint.lng, type: 'node' }
-          ],
-          totalDistance: getDistance(startPoint.lat, startPoint.lng, endPoint.lat, endPoint.lng)
-        });
+        if (externalResult && externalResult.path.length > 0) {
+          setPathResult(externalResult);
+        } else {
+          setPathResult({
+            path: [
+              { id: 'start', lat: startPoint.lat, lng: startPoint.lng, type: 'node' } as MapNode,
+              { id: 'end', lat: endPoint.lat, lng: endPoint.lng, type: 'node' } as MapNode
+            ],
+            totalDistance: getDistance(startPoint.lat, startPoint.lng, endPoint.lat, endPoint.lng)
+          });
+        }
+      } catch (err) {
+        console.error("Pathfinding process error:", err);
       }
     };
 
