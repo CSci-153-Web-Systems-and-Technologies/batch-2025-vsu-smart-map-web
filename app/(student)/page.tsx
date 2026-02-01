@@ -315,6 +315,7 @@ function MapView({
               mode={navMode} 
               nodes={graphData.nodes}
               edges={graphData.edges}
+              waitingForUserLocation={isNavigatingFromUser && !navStart}
             />
           )}
         </MapContainerClient>

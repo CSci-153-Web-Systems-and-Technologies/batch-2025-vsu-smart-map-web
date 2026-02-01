@@ -16,9 +16,10 @@ interface NavigationLayerProps {
   mode: TransportMode;
   nodes: MapNode[];
   edges: MapEdge[];
+  waitingForUserLocation?: boolean;
 }
 
-export function NavigationLayer({ startPoint, endPoint, mode, nodes, edges }: NavigationLayerProps) {
+export function NavigationLayer({ startPoint, endPoint, mode, nodes, edges, waitingForUserLocation }: NavigationLayerProps) {
   const [pathResult, setPathResult] = useState<PathResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -27,6 +28,13 @@ export function NavigationLayer({ startPoint, endPoint, mode, nodes, edges }: Na
   }, []);
 
   useEffect(() => {
+    if (waitingForUserLocation) {
+        toast.dismiss();
+        toast.loading("Waiting for user location...");
+        setPathResult(null);
+        return;
+    }
+
     if (!startPoint || !endPoint) {
       setPathResult(null);
       return;
