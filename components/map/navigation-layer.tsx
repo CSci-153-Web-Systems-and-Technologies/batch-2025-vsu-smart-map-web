@@ -46,13 +46,38 @@ export function NavigationLayer({ startPoint, endPoint, mode }: NavigationLayerP
       let nearestId: string | null = null;
       let minDist = Infinity;
 
+      const navigableNodeIds = new Set<string>();
+      for (const edge of edges) {
+        const hasAccess = edge.access && edge.access.length > 0 
+          ? edge.access.includes(mode)
+          : (mode === 'walking' || edge.type === 'road');
+
+        if (hasAccess) {
+          navigableNodeIds.add(edge.source_id);
+          navigableNodeIds.add(edge.target_id);
+        }
+      }
+
       for (const node of nodes) {
+        if (!navigableNodeIds.has(node.id)) continue;
+        
         const d = getDistance(node.lat, node.lng, lat, lng);
         if (d < minDist) {
           minDist = d;
           nearestId = node.id;
         }
       }
+
+      if (!nearestId) {
+        for (const node of nodes) {
+          const d = getDistance(node.lat, node.lng, lat, lng);
+          if (d < minDist) {
+            minDist = d;
+            nearestId = node.id;
+          }
+        }
+      }
+
       return nearestId;
     };
 

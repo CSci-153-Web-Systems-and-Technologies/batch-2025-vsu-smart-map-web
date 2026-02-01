@@ -46,7 +46,7 @@ export function UserLocationControl({ className, destination, selectedFacility }
   }, [hasConsented, isTracking, startTracking, hasStartedRef]);
 
   const handleLocate = useCallback((e: React.MouseEvent) => {
-    L.DomEvent.stopPropagation(e as unknown as Event); // Stronger propagation stop
+    e.stopPropagation();
     e.preventDefault();
     
     if (!isSupported) {
@@ -55,26 +55,26 @@ export function UserLocationControl({ className, destination, selectedFacility }
     }
 
     if (position) {
+      const userLatLng = L.latLng(position.coords.latitude, position.coords.longitude);
       const target = destination || selectedFacility;
       
       if (target) {
-          const bounds = L.latLngBounds(
-              [position.coords.latitude, position.coords.longitude],
-              [target.lat, target.lng]
-          );
-          
-          map.fitBounds(bounds, { 
-            padding: [100, 100], 
-            maxZoom: 18, 
-            duration: 0.8,
-            animate: true 
-          });
+          const targetLatLng = L.latLng(target.lat, target.lng);
+          const distance = userLatLng.distanceTo(targetLatLng);
+
+          if (distance < 10) {
+            map.flyTo(userLatLng, 18, { duration: 0.8 });
+          } else {
+            const bounds = L.latLngBounds([userLatLng, targetLatLng]);
+            map.fitBounds(bounds, { 
+              padding: [100, 100], 
+              maxZoom: 18, 
+              duration: 0.8,
+              animate: true 
+            });
+          }
       } else {
-          map.flyTo(
-            [position.coords.latitude, position.coords.longitude],
-            18,
-            { duration: 0.8 }
-          );
+          map.flyTo(userLatLng, 18, { duration: 0.8 });
       }
     } else if (hasConsented()) {
       startTracking();
@@ -121,12 +121,14 @@ export function UserLocationControl({ className, destination, selectedFacility }
         <UserLocationMarker position={position} heading={heading} />
       )}
 
-      <MyLocationButton
-        isTracking={isTracking}
-        hasHeading={heading !== null}
-        onLocate={handleLocate}
-        className={className || "left-[12px] bottom-40 md:bottom-[80px]"}
-      />
+      <div className="leaflet-control">
+        <MyLocationButton
+          isTracking={isTracking}
+          hasHeading={heading !== null}
+          onLocate={handleLocate}
+          className={className || "left-[12px] bottom-40 md:bottom-[80px]"}
+        />
+      </div>
 
       <ConfirmDialog
         open={showPermissionDialog}
