@@ -16,14 +16,16 @@ interface NavigationLayerProps {
   startPoint: LatLng | null;
   endPoint: LatLng | null;
   mode: TransportMode;
+  nodes: MapNode[];
+  edges: MapEdge[];
 }
 
-export function NavigationLayer({ startPoint, endPoint, mode }: NavigationLayerProps) {
-  const nodes = useLiveQuery(() => db.map_nodes.toArray(), []) || [];
-  const edges = useLiveQuery(() => db.map_edges.toArray(), []) || [];
+export function NavigationLayer({ startPoint, endPoint, mode, nodes, edges }: NavigationLayerProps) {
   const [pathResult, setPathResult] = useState<PathResult | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    // Re-run whenever data or endpoints change
   }, []);
 
   useEffect(() => {
@@ -86,12 +88,19 @@ export function NavigationLayer({ startPoint, endPoint, mode }: NavigationLayerP
     };
 
     const runPathfinding = async () => {
+      setIsLoading(true);
+      setPathResult(null);
+      toast.loading("Loading route...");
+
       // 1. DATABASE CHECK: Is the DB open?
       if (!db.isOpen()) {
          try {
             await db.open();
          } catch (e) {
             console.error("NavigationLayer: DB Failed to open", e);
+            toast.error("Failed to open database for routing.");
+            setIsLoading(false);
+            return;
          }
       }
 
@@ -100,6 +109,7 @@ export function NavigationLayer({ startPoint, endPoint, mode }: NavigationLayerP
       // useLiveQuery will re-trigger this effect when data arrives.
       if (!nodes || nodes.length === 0 || !edges || edges.length === 0) {
          console.log("NavigationLayer: Waiting for graph data...", { nodes: nodes?.length, edges: edges?.length });
+         setIsLoading(false);
          return; 
       }
 
@@ -127,6 +137,9 @@ export function NavigationLayer({ startPoint, endPoint, mode }: NavigationLayerP
             
             console.log("NavigationLayer: Internal path found", { nodes: result.path.length });
             setPathResult(result);
+            toast.dismiss();
+            toast.success("Route found!");
+            setIsLoading(false);
             return;
           }
         }
@@ -142,6 +155,8 @@ export function NavigationLayer({ startPoint, endPoint, mode }: NavigationLayerP
         if (externalResult && externalResult.path.length > 0) {
           console.log("NavigationLayer: External path found", { nodes: externalResult.path.length });
           setPathResult(externalResult);
+          toast.dismiss();
+          toast.success("Route found (external)!");
         } else {
           console.warn("NavigationLayer: External routing failed, showing straight line");
           setPathResult({
@@ -151,9 +166,15 @@ export function NavigationLayer({ startPoint, endPoint, mode }: NavigationLayerP
             ],
             totalDistance: getDistance(startPoint.lat, startPoint.lng, endPoint.lat, endPoint.lng)
           });
+          toast.dismiss();
+          toast.error("No route found.");
         }
       } catch (err) {
         console.error("NavigationLayer: Process error", err);
+        toast.dismiss();
+        toast.error("An error occurred during routing.");
+      } finally {
+        setIsLoading(false);
       }
     };
 

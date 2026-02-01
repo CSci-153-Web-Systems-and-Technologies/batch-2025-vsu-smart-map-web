@@ -61,6 +61,7 @@ function MapTab() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [suggestOpen, setSuggestOpen] = useState(false);
+  const [graphData, setGraphData] = useState<{ nodes: MapNode[]; edges: MapEdge[] }>({ nodes: [], edges: [] });
 
   useEffect(() => {
       const load = async () => {
@@ -76,8 +77,8 @@ function MapTab() {
         }
 
         const loadNavigation = async () => {
-           if (!cachedNav) {
-               
+           if (cachedNav) {
+             setGraphData(cachedNav);
            }
            
            try {
@@ -87,6 +88,7 @@ function MapTab() {
              ]);
              
              if (nodesRes.data && edgesRes.data) {
+               setGraphData({ nodes: nodesRes.data, edges: edgesRes.data });
                await setCachedNavigationGraph(nodesRes.data, edgesRes.data);
              }
            } catch (e) {
@@ -193,6 +195,7 @@ function MapTab() {
             selectFacility(facility);
           }}
           onClearSelection={() => selectFacility(null)}
+          graphData={graphData}
         />
       </div>
 
@@ -206,6 +209,7 @@ function MapTab() {
 }
 
 import { useNavigationPersistence } from "@/hooks/use-navigation-persistence";
+import type { MapNode, MapEdge } from "@/lib/types/graph";
 
 function MapView({
   filtered,
@@ -215,6 +219,7 @@ function MapView({
   selectedFacility, // Receive selectedFacility prop
   onSelect,
   onClearSelection,
+  graphData,
 }: {
   filtered: readonly Facility[];
   isLoading: boolean;
@@ -223,6 +228,7 @@ function MapView({
   selectedFacility: Facility | null; 
   onSelect: (id: string) => void;
   onClearSelection: () => void;
+  graphData: { nodes: MapNode[], edges: MapEdge[] };
 }) {
   const { selectedCategories, debouncedQuery } = useApp();
   const hasResults = filtered.length > 0;
@@ -301,7 +307,13 @@ function MapView({
               }
           />
           
-          <NavigationLayer startPoint={navStart} endPoint={navEnd} mode={navMode} />
+          <NavigationLayer 
+            startPoint={navStart} 
+            endPoint={navEnd} 
+            mode={navMode} 
+            nodes={graphData.nodes}
+            edges={graphData.edges}
+          />
         </MapContainerClient>
 
         {navEnd && (
