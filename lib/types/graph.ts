@@ -23,9 +23,13 @@ export interface MapEdge {
   
   // Explicit permissions overrides (optional, defaults based on type)
   access?: TransportMode[]; 
+
+  // Temporarily closed or blocked
+  is_closed?: boolean;
 }
 
 export interface PathResult {
   path: MapNode[];
   totalDistance: number;
+  estimatedTime?: number; // In minutes
 }

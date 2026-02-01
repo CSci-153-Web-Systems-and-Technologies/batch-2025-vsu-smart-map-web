@@ -1,18 +1,29 @@
 import type { MapNode, MapEdge, PathResult, TransportMode } from "@/lib/types/graph";
 
-// Access rules: Which modes can use which edge types by default?
+const SPEEDS = {
+  walking: 80,
+  cycling: 250,
+  driving: 500,
+};
+
 const DEFAULT_ACCESS: Record<string, TransportMode[]> = {
-  road: ['walking', 'cycling', 'driving'], // Roads usually allow all, unless restricted
+  road: ['walking', 'cycling', 'driving'],
   walkway: ['walking'],
 };
 
 function canTraverse(edge: MapEdge, mode: TransportMode): boolean {
+  if (edge.is_closed) return false;
+
   if (edge.access && edge.access.length > 0) {
     return edge.access.includes(mode);
   }
   
   const allowed = DEFAULT_ACCESS[edge.type] || ['walking'];
   return allowed.includes(mode);
+}
+
+function calculateTime(distance: number, mode: TransportMode): number {
+  return Math.ceil(distance / SPEEDS[mode]);
 }
 
 export function getDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -85,7 +96,7 @@ export function findPath(
   if (startNodeId === endNodeId) {
     const node = nodes.find(n => n.id === startNodeId);
     if (!node) return null;
-    return { path: [node, node], totalDistance: 0 };
+    return { path: [node, node], totalDistance: 0, estimatedTime: 0 };
   }
 
   const nodeMap = new Map(nodes.map(n => [n.id, n]));
@@ -128,7 +139,9 @@ export function findPath(
     }
 
     if (currentId === endNodeId) {
-      return reconstructPath(cameFrom, currentId!, nodeMap);
+      const result = reconstructPath(cameFrom, currentId!, nodeMap);
+      result.estimatedTime = calculateTime(result.totalDistance, mode);
+      return result;
     }
 
     if (!currentId) break;
