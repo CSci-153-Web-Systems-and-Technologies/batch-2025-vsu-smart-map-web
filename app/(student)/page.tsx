@@ -307,13 +307,15 @@ function MapView({
               }
           />
           
-          <NavigationLayer 
-            startPoint={navStart} 
-            endPoint={navEnd} 
-            mode={navMode} 
-            nodes={graphData.nodes}
-            edges={graphData.edges}
-          />
+          {graphData.nodes.length > 0 && graphData.edges.length > 0 && (
+            <NavigationLayer 
+              startPoint={navStart} 
+              endPoint={navEnd} 
+              mode={navMode} 
+              nodes={graphData.nodes}
+              edges={graphData.edges}
+            />
+          )}
         </MapContainerClient>
 
         {navEnd && (
