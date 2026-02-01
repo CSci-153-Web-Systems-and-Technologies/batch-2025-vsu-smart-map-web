@@ -17,8 +17,11 @@ interface EditorMapProps {
   edges: MapEdge[];
   mode: 'select' | 'add_node' | 'add_edge';
   selectedNodeId: string | null;
+  selectedEdgeId: string | null;
+  edgeStartNodeId: string | null;
   onNodeAdd: (lat: number, lng: number) => void;
   onNodeSelect: (id: string) => void;
+  onEdgeSelect: (id: string) => void;
   onNodeMove: (id: string, lat: number, lng: number) => void;
 }
 

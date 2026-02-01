@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { toast } from "sonner";
 
 interface DeviceOrientationEventWithCompass extends DeviceOrientationEvent {
   webkitCompassHeading?: number;
@@ -63,6 +64,25 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
   }, []);
 
   const handleError = useCallback((error: GeolocationPositionError) => {
+    // Notify user of error only if the error code has changed or if it's the first error
+    // to prevent infinite toast loops in watchPosition
+    if (state.error?.code !== error.code) {
+      if (error.code === 1) { // PERMISSION_DENIED
+        toast.error("Location access denied. Please enable location services.");
+        // Stop tracking if permission is denied to prevent loop
+        if (watchIdRef.current !== null) {
+          navigator.geolocation.clearWatch(watchIdRef.current);
+          watchIdRef.current = null;
+        }
+        setState((prev) => ({ ...prev, isTracking: false, error }));
+        return;
+      } else if (error.code === 2) { // POSITION_UNAVAILABLE
+        toast.error("Location unavailable. Please check your GPS signal.");
+      } else if (error.code === 3) { // TIMEOUT
+        toast.error("Location request timed out.");
+      }
+    }
+
     const isTimeout = error.code === error.TIMEOUT || error.code === 3;
 
     if (
@@ -97,11 +117,20 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
       watchIdRef.current = null;
     }
 
-    setState((prev) => ({
-      ...prev,
-      error,
-      isTracking: false,
-    }));
+    const isFatal = error.code === 1 || error.code === 2; 
+
+    if (isFatal) {
+        setState((prev) => ({
+            ...prev,
+            error,
+            isTracking: false,
+        }));
+    } else {
+        setState((prev) => ({
+            ...prev,
+            error,
+        }));
+    }
   }, [state.isTracking, handleSuccess, lowAccuracyOptions]);
 
   const handleOrientation = useCallback((event: DeviceOrientationEventWithCompass) => {

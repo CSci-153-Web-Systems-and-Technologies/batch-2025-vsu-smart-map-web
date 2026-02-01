@@ -16,7 +16,8 @@ import { searchRooms } from "@/lib/supabase/queries/rooms";
 import { getMapNodes, getMapEdges } from "@/lib/supabase/queries/navigation";
 import { setCachedRooms } from "@/lib/cache/rooms-cache";
 import { useGeolocation } from "@/hooks/use-geolocation";
-import type { LatLng } from "leaflet";
+import type { LatLng, LatLngBoundsExpression } from "leaflet";
+import type { TransportMode } from "@/lib/types/graph";
 
 const MapSelectionLayer = dynamic(
   () => import("@/components/map/map-selection-layer").then((m) => m.MapSelectionLayer),
@@ -30,11 +31,6 @@ const UserLocationControl = dynamic(
 
 const NavigationLayer = dynamic(
   () => import("@/components/map/navigation-layer").then((m) => m.NavigationLayer),
-  { ssr: false },
-);
-
-const NavigationControl = dynamic(
-  () => import("@/components/map/navigation-control").then((m) => m.NavigationControl),
   { ssr: false },
 );
 
@@ -65,6 +61,7 @@ function MapTab() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [suggestOpen, setSuggestOpen] = useState(false);
+  const [graphData, setGraphData] = useState<{ nodes: MapNode[]; edges: MapEdge[] }>({ nodes: [], edges: [] });
 
   useEffect(() => {
       const load = async () => {
@@ -80,8 +77,8 @@ function MapTab() {
         }
 
         const loadNavigation = async () => {
-           if (!cachedNav) {
-               
+           if (cachedNav) {
+             setGraphData(cachedNav);
            }
            
            try {
@@ -91,6 +88,7 @@ function MapTab() {
              ]);
              
              if (nodesRes.data && edgesRes.data) {
+               setGraphData({ nodes: nodesRes.data, edges: edgesRes.data });
                await setCachedNavigationGraph(nodesRes.data, edgesRes.data);
              }
            } catch (e) {
@@ -191,11 +189,13 @@ function MapTab() {
           isLoading={isLoading}
           error={error}
           selectedId={selectedFacility?.id ?? null}
+          selectedFacility={selectedFacility} // Pass selectedFacility
           onSelect={(id) => {
             const facility = items.find((f) => f.id === id) || null;
             selectFacility(facility);
           }}
           onClearSelection={() => selectFacility(null)}
+          graphData={graphData}
         />
       </div>
 
@@ -208,46 +208,130 @@ function MapTab() {
   );
 }
 
+import { useNavigationPersistence } from "@/hooks/use-navigation-persistence";
+import type { MapNode, MapEdge } from "@/lib/types/graph";
+
 function MapView({
   filtered,
   isLoading,
   error,
   selectedId,
+  selectedFacility, // Receive selectedFacility prop
   onSelect,
   onClearSelection,
+  graphData,
 }: {
   filtered: readonly Facility[];
   isLoading: boolean;
   error: string | null;
   selectedId: string | null;
+  selectedFacility: Facility | null; 
   onSelect: (id: string) => void;
   onClearSelection: () => void;
+  graphData: { nodes: MapNode[], edges: MapEdge[] };
 }) {
   const { selectedCategories, debouncedQuery } = useApp();
   const hasResults = filtered.length > 0;
   const hasActiveFilters = selectedCategories.length > 0 || debouncedQuery.trim().length > 0;
   
-  const { position } = useGeolocation();
-  const [navStart, setNavStart] = useState<LatLng | null>(null);
-  const [navEnd, setNavEnd] = useState<LatLng | null>(null);
+  const geo = useGeolocation();
+  const { position } = geo;
+  
+  // Use persistent navigation state
+  const { navStart, setNavStart, navEnd, setNavEnd, clearNavigation } = useNavigationPersistence();
+  
+  const [navMode] = useState<TransportMode>('walking');
+  const [mapBounds, setMapBounds] = useState<LatLngBoundsExpression | null>(null);
+  const [isNavigatingFromUser, setIsNavigatingFromUser] = useState(false);
+
+  useEffect(() => {
+    // Only update if we are actively navigating from user AND position is available
+    if (isNavigatingFromUser && position && navEnd) {
+      setNavStart({ lat: position.coords.latitude, lng: position.coords.longitude } as LatLng);
+    }
+  }, [position, isNavigatingFromUser, navEnd, setNavStart]);
+
+  useEffect(() => {
+      if (!navStart || !navEnd) {
+          setMapBounds(null);
+      }
+  }, [navStart, navEnd]);
+
+  useEffect(() => {
+      const handleNavRequest = (e: CustomEvent<Facility>) => {
+          setIsNavigatingFromUser(true);
+          if (position) {
+              setNavStart({ lat: position.coords.latitude, lng: position.coords.longitude } as LatLng);
+          } else {
+              setNavStart(null);
+          }
+          setNavEnd({ lat: e.detail.coordinates.lat, lng: e.detail.coordinates.lng } as LatLng);
+      };
+      
+      window.addEventListener('navigate-to-facility', handleNavRequest as EventListener);
+      return () => window.removeEventListener('navigate-to-facility', handleNavRequest as EventListener);
+  }, [position, setNavStart, setNavEnd, setIsNavigatingFromUser]);
 
   return (
     <div className="relative h-full w-full">
       <div className="relative h-full w-full overflow-hidden">
-        <MapContainerClient className="h-full w-full">
+        <MapContainerClient className="h-full w-full" bounds={mapBounds}>
           <MapSelectionLayer
             items={filtered}
             selectedId={selectedId}
             onSelect={(item) => onSelect(item.id)}
-            onClearSelection={onClearSelection}
+            onDirections={(item) => {
+               setIsNavigatingFromUser(true);
+               if (position && position.coords) {
+                   setNavStart({ lat: position.coords.latitude, lng: position.coords.longitude } as LatLng);
+               } else {
+                   setNavStart(null);
+               }
+               setNavEnd({ lat: item.coordinates.lat, lng: item.coordinates.lng } as LatLng);
+            }}
+            onClearSelection={() => {
+              onClearSelection();
+            }}
           />
-          <UserLocationControl />
-          <NavigationLayer startPoint={navStart} endPoint={navEnd} />
-          <NavigationControl 
-            userLocation={position ? { lat: position.coords.latitude, lng: position.coords.longitude } as LatLng : null}
-            onNavigate={(start, end) => { setNavStart(start); setNavEnd(end); }}
+          {/* ... */}
+          <UserLocationControl 
+              destination={navEnd} 
+              selectedFacility={
+                selectedFacility?.id === selectedId 
+                  ? (selectedFacility && 'coordinates' in selectedFacility ? selectedFacility.coordinates : null) 
+                  : null
+              }
+              geo={geo}
           />
+          
+          {graphData.nodes.length > 0 && graphData.edges.length > 0 && (
+            <NavigationLayer 
+              key={`nav-${graphData.nodes.length}-${navStart ? 's' : 'x'}-${navEnd ? 'e' : 'x'}`}
+              startPoint={navStart} 
+              endPoint={navEnd} 
+              mode={navMode} 
+              nodes={graphData.nodes}
+              edges={graphData.edges}
+              waitingForUserLocation={isNavigatingFromUser && !navStart}
+            />
+          )}
         </MapContainerClient>
+
+        {navEnd && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000]">
+            <Button 
+              variant="destructive" 
+              size="sm" 
+              className="rounded-full shadow-lg h-8 px-4 text-xs font-semibold uppercase tracking-wider"
+              onClick={() => {
+                clearNavigation();
+                setIsNavigatingFromUser(false);
+              }}
+            >
+              Clear Route
+            </Button>
+          </div>
+        )}
 
         {!hasResults && !error && !isLoading && hasActiveFilters && (
           <div className="pointer-events-none absolute bottom-12 left-1/2 -translate-x-1/2 z-10 rounded-full bg-background/90 px-4 py-2 shadow-md backdrop-blur">

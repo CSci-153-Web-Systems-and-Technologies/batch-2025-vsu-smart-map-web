@@ -2,30 +2,23 @@
 
 import "leaflet/dist/leaflet.css";
 
-import { useEffect, useState, useCallback } from "react";
 import { useTheme } from "next-themes";
-import { MapContainer, TileLayer, CircleMarker, Polyline, useMapEvents, Marker, ZoomControl } from "react-leaflet";
-import type { LatLng } from "leaflet";
+import { MapContainer, TileLayer, CircleMarker, Polyline, useMapEvents, ZoomControl } from "react-leaflet";
 import L from "leaflet";
 import { MAP_MAX_ZOOM, MAP_MIN_ZOOM, MAP_TILES, MAP_DEFAULT_CENTER } from "@/lib/constants/map";
 import { useMapStyle } from "@/lib/context/map-style-context";
 import type { MapNode, MapEdge } from "@/lib/types/graph";
-
-const icon = L.icon({
-  iconUrl: "/images/marker-icon.png",
-  shadowUrl: "/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-});
 
 interface EditorMapContentProps {
   nodes: MapNode[];
   edges: MapEdge[];
   mode: 'select' | 'add_node' | 'add_edge';
   selectedNodeId: string | null;
+  selectedEdgeId: string | null;
+  edgeStartNodeId: string | null; // Add this prop
   onNodeAdd: (lat: number, lng: number) => void;
   onNodeSelect: (id: string) => void;
-  onNodeMove: (id: string, lat: number, lng: number) => void;
+  onEdgeSelect: (id: string) => void;
 }
 
 function MapEvents({ mode, onNodeAdd }: { mode: string; onNodeAdd: (lat: number, lng: number) => void }) {
@@ -44,9 +37,11 @@ export default function EditorMapContent({
   edges,
   mode,
   selectedNodeId,
+  selectedEdgeId,
+  edgeStartNodeId,
   onNodeAdd,
   onNodeSelect,
-  onNodeMove,
+  onEdgeSelect,
 }: EditorMapContentProps) {
   const { resolvedTheme } = useTheme();
   const { mapStyle } = useMapStyle();
@@ -56,11 +51,23 @@ export default function EditorMapContent({
     return resolvedTheme === "dark" && MAP_TILES.darkUrl ? MAP_TILES.darkUrl : MAP_TILES.url;
   })();
 
-  const handleNodeDrag = useCallback((id: string, e: L.LeafletEvent) => {
-    const marker = e.target;
-    const position = marker.getLatLng();
-    onNodeMove(id, position.lat, position.lng);
-  }, [onNodeMove]);
+  const getEdgeColor = (edge: MapEdge) => {
+    if (edge.is_closed) return '#ef4444';
+    
+    const access = edge.access || [];
+    const hasWalk = access.includes('walking');
+    const hasDrive = access.includes('driving');
+
+    if (hasWalk && hasDrive) return '#f97316';
+    if (hasDrive) return '#3b82f6';
+    return '#22c55e';
+  };
+
+  const getEdgeDashArray = (edge: MapEdge) => {
+    if (edge.is_closed) return '5, 10';
+    if (!edge.bidirectional) return '10, 5';
+    return undefined;
+  };
 
   return (
     <MapContainer
@@ -92,6 +99,8 @@ export default function EditorMapContent({
         const target = nodes.find((n) => n.id === edge.target_id);
         if (!source || !target) return null;
 
+        const isSelected = edge.id === selectedEdgeId;
+
         return (
           <Polyline
             key={edge.id}
@@ -99,21 +108,34 @@ export default function EditorMapContent({
               [source.lat, source.lng],
               [target.lat, target.lng],
             ]}
-            pathOptions={{ color: 'red', weight: 3, opacity: 0.7 }}
+            pathOptions={{ 
+              color: isSelected ? 'yellow' : getEdgeColor(edge), 
+              weight: isSelected ? 6 : 4, 
+              opacity: edge.is_closed ? 0.5 : 0.8,
+              dashArray: isSelected ? undefined : getEdgeDashArray(edge),
+            }}
+            eventHandlers={{
+              click: (e) => {
+                L.DomEvent.stopPropagation(e);
+                onEdgeSelect(edge.id);
+              }
+            }}
           />
         );
       })}
 
       {nodes.map((node) => {
         const isSelected = node.id === selectedNodeId;
+        const isStartNode = node.id === edgeStartNodeId;
+        
         return (
           <CircleMarker
             key={node.id}
             center={[node.lat, node.lng]}
-            radius={isSelected ? 8 : 5}
+            radius={isSelected || isStartNode ? 8 : 5}
             pathOptions={{
-              color: isSelected ? 'yellow' : 'blue',
-              fillColor: isSelected ? 'yellow' : 'blue',
+              color: isSelected ? 'yellow' : (isStartNode ? 'cyan' : 'blue'),
+              fillColor: isSelected ? 'yellow' : (isStartNode ? 'cyan' : 'blue'),
               fillOpacity: 0.8,
             }}
             eventHandlers={{
@@ -121,9 +143,6 @@ export default function EditorMapContent({
                 L.DomEvent.stopPropagation(e);
                 onNodeSelect(node.id);
               },
-              mousedown: (e) => {
-                 
-              }
             }}
           />
         );
