@@ -49,6 +49,10 @@ export function UserLocationControl({ className, destination, selectedFacility }
     e.stopPropagation();
     e.preventDefault();
     
+    if (e.currentTarget) {
+      L.DomEvent.disableClickPropagation(e.currentTarget as unknown as HTMLElement);
+    }
+    
     if (!isSupported) {
       toast.error("Geolocation is not supported by your browser");
       return;
@@ -121,14 +125,12 @@ export function UserLocationControl({ className, destination, selectedFacility }
         <UserLocationMarker position={position} heading={heading} />
       )}
 
-      <div className="leaflet-control">
-        <MyLocationButton
-          isTracking={isTracking}
-          hasHeading={heading !== null}
-          onLocate={handleLocate}
-          className={className || "left-[12px] bottom-40 md:bottom-[80px]"}
-        />
-      </div>
+      <MyLocationButton
+        isTracking={isTracking}
+        hasHeading={heading !== null}
+        onLocate={handleLocate}
+        className={className || "left-[12px] bottom-40 md:bottom-[80px]"}
+      />
 
       <ConfirmDialog
         open={showPermissionDialog}
