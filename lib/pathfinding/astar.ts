@@ -7,12 +7,10 @@ const DEFAULT_ACCESS: Record<string, TransportMode[]> = {
 };
 
 function canTraverse(edge: MapEdge, mode: TransportMode): boolean {
-  // If edge has explicit access list, use it
   if (edge.access && edge.access.length > 0) {
     return edge.access.includes(mode);
   }
   
-  // Otherwise fall back to default based on type
   const allowed = DEFAULT_ACCESS[edge.type] || ['walking'];
   return allowed.includes(mode);
 }
@@ -30,6 +28,49 @@ export function getDistance(lat1: number, lng1: number, lat2: number, lng2: numb
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
   return R * c;
+}
+
+export function getNearestPointOnSegment(p: {lat: number, lng: number}, a: {lat: number, lng: number}, b: {lat: number, lng: number}) {
+  const atob = { x: b.lng - a.lng, y: b.lat - a.lat };
+  const atop = { x: p.lng - a.lng, y: p.lat - a.lat };
+  const len = atob.x * atob.x + atob.y * atob.y;
+  const dot = atop.x * atob.x + atop.y * atob.y;
+  const t = Math.min(1, Math.max(0, len === 0 ? 0 : dot / len));
+  
+  return {
+      lat: a.lat + atob.y * t,
+      lng: a.lng + atob.x * t
+  };
+}
+
+export function findNearestEdge(
+  lat: number, 
+  lng: number, 
+  nodes: MapNode[], 
+  edges: MapEdge[],
+  mode: TransportMode = 'walking'
+) {
+  let minDistance = Infinity;
+  let nearestPoint = { lat, lng };
+  let nearestEdge: MapEdge | null = null;
+
+  for (const edge of edges) {
+    if (!canTraverse(edge, mode)) continue;
+    const source = nodes.find(n => n.id === edge.source_id);
+    const target = nodes.find(n => n.id === edge.target_id);
+    if (!source || !target) continue;
+
+    const pointOnEdge = getNearestPointOnSegment({ lat, lng }, source, target);
+    const dist = getDistance(lat, lng, pointOnEdge.lat, pointOnEdge.lng);
+
+    if (dist < minDistance) {
+      minDistance = dist;
+      nearestPoint = pointOnEdge;
+      nearestEdge = edge;
+    }
+  }
+
+  return { nearestPoint, nearestEdge, distance: minDistance };
 }
 
 export function findPath(

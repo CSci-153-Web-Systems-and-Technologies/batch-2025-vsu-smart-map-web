@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { Polyline, CircleMarker } from "react-leaflet";
 import { db } from "@/lib/db";
-import { findPath, getDistance } from "@/lib/pathfinding/astar";
+import { findPath, getDistance, findNearestEdge } from "@/lib/pathfinding/astar";
+import { getExternalPath } from "@/lib/pathfinding/external";
 import type { MapNode, MapEdge, PathResult, TransportMode } from "@/lib/types/graph";
 import type { LatLng } from "leaflet";
 import { toast } from "sonner";
@@ -42,13 +43,26 @@ export function NavigationLayer({ startPoint, endPoint, mode }: NavigationLayerP
       return;
     }
 
-    const findNearestNode = (lat: number, lng: number): string | null => {
+    const snapToGraph = (lat: number, lng: number): string | null => {
+      const { nearestEdge } = findNearestEdge(lat, lng, nodes, edges, mode);
+      
+      if (nearestEdge) {
+        const source = nodes.find(n => n.id === nearestEdge.source_id);
+        const target = nodes.find(n => n.id === nearestEdge.target_id);
+        
+        if (source && target) {
+          const dSource = getDistance(lat, lng, source.lat, source.lng);
+          const dTarget = getDistance(lat, lng, target.lat, target.lng);
+          return dSource < dTarget ? source.id : target.id;
+        }
+      }
+
       let nearestId: string | null = null;
       let minDist = Infinity;
 
       const navigableNodeIds = new Set<string>();
       for (const edge of edges) {
-        const hasAccess = edge.access && edge.access.length > 0 
+        const hasAccess = (edge.access && edge.access.length > 0)
           ? edge.access.includes(mode)
           : (mode === 'walking' || edge.type === 'road');
 
@@ -60,7 +74,6 @@ export function NavigationLayer({ startPoint, endPoint, mode }: NavigationLayerP
 
       for (const node of nodes) {
         if (!navigableNodeIds.has(node.id)) continue;
-        
         const d = getDistance(node.lat, node.lng, lat, lng);
         if (d < minDist) {
           minDist = d;
@@ -68,46 +81,46 @@ export function NavigationLayer({ startPoint, endPoint, mode }: NavigationLayerP
         }
       }
 
-      if (!nearestId) {
-        for (const node of nodes) {
-          const d = getDistance(node.lat, node.lng, lat, lng);
-          if (d < minDist) {
-            minDist = d;
-            nearestId = node.id;
-          }
-        }
-      }
-
       return nearestId;
     };
 
-    const startNodeId = findNearestNode(startPoint.lat, startPoint.lng);
-    const endNodeId = findNearestNode(endPoint.lat, endPoint.lng);
+    const runPathfinding = async () => {
+      const startNodeId = snapToGraph(startPoint.lat, startPoint.lng);
+      const endNodeId = snapToGraph(endPoint.lat, endPoint.lng);
 
-    if (startNodeId && endNodeId) {
-      const result = findPath(nodes, edges, startNodeId, endNodeId, mode);
-      if (result) {
-        setPathResult(result);
-        if (result.path.length === 0) {
-             toast.error("No path found");
-        }
-      } else {
-        // Fallback: Straight line if pathfinding fails
-        if (startPoint && endPoint) {
-            setPathResult({
-                path: [
-                    { id: 'start', lat: startPoint.lat, lng: startPoint.lng, type: 'node' },
-                    { id: 'end', lat: endPoint.lat, lng: endPoint.lng, type: 'node' }
-                ],
-                totalDistance: 0
-            });
-            toast.info("Pathfinding failed. Showing direct line.");
-        } else {
-            setPathResult(null);
-            toast.error("Could not find a path");
+      if (startNodeId && endNodeId) {
+        const result = findPath(nodes, edges, startNodeId, endNodeId, mode);
+        if (result) {
+          setPathResult(result);
+          if (result.path.length === 0) {
+            toast.error("No path found");
+          }
+          return;
         }
       }
-    }
+
+      const externalResult = await getExternalPath(
+        { lat: startPoint.lat, lng: startPoint.lng },
+        { lat: endPoint.lat, lng: endPoint.lng },
+        mode
+      );
+
+      if (externalResult) {
+        setPathResult(externalResult);
+        toast.info("Using external routing for this path.");
+      } else {
+        setPathResult({
+          path: [
+            { id: 'start', lat: startPoint.lat, lng: startPoint.lng, type: 'node' },
+            { id: 'end', lat: endPoint.lat, lng: endPoint.lng, type: 'node' }
+          ],
+          totalDistance: getDistance(startPoint.lat, startPoint.lng, endPoint.lat, endPoint.lng)
+        });
+        toast.info("Pathfinding failed. Showing direct line.");
+      }
+    };
+
+    runPathfinding();
   }, [startPoint, endPoint, nodes, edges, mode]);
 
   if (!pathResult) return null;
