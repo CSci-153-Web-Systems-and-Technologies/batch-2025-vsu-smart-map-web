@@ -58,7 +58,7 @@ export function MapPopupCard({ facility, onViewDetails, onDirections }: MapPopup
           onClick={onDirections}
         >
           <Route className="h-3 w-3" aria-hidden />
-          Directions
+          Navigate
         </Button>
       </div>
     </div>

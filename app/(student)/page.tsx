@@ -311,14 +311,14 @@ function MapView({
               but for now UserLocationControl still has its own hook. 
               We'll leave UserLocationControl as the primary "tracker" UI, 
               and MapView's hook is just for data access. */}
-          <UserLocationControl />
+          <UserLocationControl destination={navEnd} />
           
           <NavigationLayer startPoint={navStart} endPoint={navEnd} mode={navMode} />
           
-          <NavigationControl 
+          {/* <NavigationControl 
             userLocation={position ? { lat: position.coords.latitude, lng: position.coords.longitude } as LatLng : null}
             onNavigate={(start, end, mode) => { setNavStart(start); setNavEnd(end); setNavMode(mode); }}
-          />
+          /> */}
         </MapContainerClient>
         {/* ... */}
 

@@ -8,13 +8,17 @@ import { UserLocationMarker } from "./user-location-marker";
 import { MyLocationButton } from "./my-location-button";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 
+import type { LatLngBoundsExpression } from "leaflet";
+import L from "leaflet";
+
 interface UserLocationControlProps {
   className?: string;
+  destination?: { lat: number; lng: number } | null;
 }
 
 const LOCATION_PERMISSION_KEY = "vsu-smartmap-location-consent";
 
-export function UserLocationControl({ className }: UserLocationControlProps) {
+export function UserLocationControl({ className, destination }: UserLocationControlProps) {
   const map = useMap();
   const [showPermissionDialog, setShowPermissionDialog] = useState(false);
   const {
@@ -45,17 +49,27 @@ export function UserLocationControl({ className }: UserLocationControlProps) {
     }
 
     if (isTracking && position) {
-      map.flyTo(
-        [position.coords.latitude, position.coords.longitude],
-        18,
-        { duration: 0.5 }
-      );
+      // If we have a destination selected, fit bounds to include both user and destination
+      if (destination) {
+          const bounds = L.latLngBounds(
+              [position.coords.latitude, position.coords.longitude],
+              [destination.lat, destination.lng]
+          );
+          map.fitBounds(bounds, { padding: [50, 50], maxZoom: 18, duration: 0.5 });
+      } else {
+          // Default behavior: Fly to user
+          map.flyTo(
+            [position.coords.latitude, position.coords.longitude],
+            18,
+            { duration: 0.5 }
+          );
+      }
     } else if (hasConsented()) {
       startTracking();
     } else {
       setShowPermissionDialog(true);
     }
-  }, [isSupported, isTracking, position, map, startTracking, hasConsented]);
+  }, [isSupported, isTracking, position, map, startTracking, hasConsented, destination]);
 
   const handlePermissionConfirm = useCallback(() => {
     localStorage.setItem(LOCATION_PERMISSION_KEY, "true");
