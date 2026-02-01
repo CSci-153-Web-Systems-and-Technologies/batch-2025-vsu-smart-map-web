@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { Polyline, CircleMarker } from "react-leaflet";
 import { db } from "@/lib/db";
-import { findPath } from "@/lib/pathfinding/astar";
+import { findPath, getDistance } from "@/lib/pathfinding/astar";
 import type { MapNode, MapEdge, PathResult, TransportMode } from "@/lib/types/graph";
 import type { LatLng } from "leaflet";
 import { toast } from "sonner";
@@ -47,7 +47,7 @@ export function NavigationLayer({ startPoint, endPoint, mode }: NavigationLayerP
       let minDist = Infinity;
 
       for (const node of nodes) {
-        const d = Math.sqrt(Math.pow(node.lat - lat, 2) + Math.pow(node.lng - lng, 2));
+        const d = getDistance(node.lat, node.lng, lat, lng);
         if (d < minDist) {
           minDist = d;
           nearestId = node.id;

@@ -35,11 +35,6 @@ const NavigationLayer = dynamic(
   { ssr: false },
 );
 
-const NavigationControl = dynamic(
-  () => import("@/components/map/navigation-control").then((m) => m.NavigationControl),
-  { ssr: false },
-);
-
 export default function HomePage() {
   return (
     <Suspense fallback={<HomePageSkeleton />}>
@@ -219,7 +214,6 @@ function MapView({
   selectedFacility, // Receive selectedFacility prop
   onSelect,
   onClearSelection,
-  onNavigateRequest,
 }: {
   filtered: readonly Facility[];
   isLoading: boolean;
@@ -228,35 +222,24 @@ function MapView({
   selectedFacility: Facility | null; 
   onSelect: (id: string) => void;
   onClearSelection: () => void;
-  onNavigateRequest?: (facility: Facility) => void;
 }) {
   const { selectedCategories, debouncedQuery } = useApp();
   const hasResults = filtered.length > 0;
   const hasActiveFilters = selectedCategories.length > 0 || debouncedQuery.trim().length > 0;
   
-  // Use a SINGLE hook for geolocation at this level.
-  // We'll pass down props to UserLocationControl so it doesn't create its own instance.
-  // Wait, UserLocationControl doesn't accept props for state injection right now.
-  // We should refactor UserLocationControl to accept position/tracking state OR rely on a context.
-  
-  // For now, to solve the immediate issue of "Directions" button external trigger:
-  // We need to expose a way to trigger navigation from outside MapView or via props.
-  // But MapView controls the 'navStart'/'navEnd' state.
-  
-  // Actually, 'selectedId' comes in. If user clicks 'Directions' in Facility Drawer, 
-  // where does that event go? 
-  // Usually the drawer calls a function.
-  
-  // Let's check 'facility-info-drawer.tsx' which I failed to read earlier.
-  // I will assume it needs a way to set 'navEnd' to the selected facility.
-  
-  const { position, startTracking, isTracking, heading, error: geoError } = useGeolocation();
+  const { position, startTracking, isTracking } = useGeolocation();
   const [navStart, setNavStart] = useState<LatLng | null>(null);
   const [navEnd, setNavEnd] = useState<LatLng | null>(null);
-  const [navMode, setNavMode] = useState<TransportMode>('walking');
+  const [navMode] = useState<TransportMode>('walking');
   const [mapBounds, setMapBounds] = useState<LatLngBoundsExpression | null>(null);
+  const [isNavigatingFromUser, setIsNavigatingFromUser] = useState(false);
 
-  // Auto-start tracking logic
+  useEffect(() => {
+    if (isNavigatingFromUser && position && navEnd) {
+      setNavStart({ lat: position.coords.latitude, lng: position.coords.longitude } as LatLng);
+    }
+  }, [position, isNavigatingFromUser, navEnd]);
+
   useEffect(() => {
       const consent = typeof window !== 'undefined' && localStorage.getItem("vsu-smartmap-location-consent") === "true";
       if (consent && !isTracking) {
@@ -264,7 +247,6 @@ function MapView({
       }
   }, [isTracking, startTracking]);
 
-  // Effect to calculate bounds when navigation is active
   useEffect(() => {
       if (navStart && navEnd) {
           const bounds = L.latLngBounds(
@@ -277,38 +259,26 @@ function MapView({
       }
   }, [navStart, navEnd]);
 
-  const handleExternalNavigate = (facility: Facility) => {
-      // Directions clicked from facility info (via onNavigateRequest prop from props drilled down, or event bus)
-      // Since FacilitySheet is in Layout, we can't easily pass props UP from Page.
-      // BUT, we can check if the user clicked navigate.
-      // Actually, cleaner way: Use Context or Zustand. But we don't have that for nav.
-      // The FacilitySheet in Layout doesn't have access to this page's state.
-      
-      // FIX: Move FacilitySheet INTO this page (MapView) OR move nav state UP to Context.
-      // Given constraints, I moved FacilitySheet inside the page component in previous steps? 
-      // No, it's in layout.tsx.
-      
-      // Let's use a Custom Event for now to trigger nav from the global sheet.
-      // Or simply: When FacilitySheet calls onNavigate, it can dispatch a custom event.
-      
-      // Better: Since I can't move the Sheet easily without breaking layout structure,
-      // I will rely on the `window` event bus for this specific trigger since it's cross-component.
-      
-      // (See below for implementation)
-  };
-
   useEffect(() => {
       const handleNavRequest = (e: CustomEvent<Facility>) => {
           if (position) {
               setNavStart({ lat: position.coords.latitude, lng: position.coords.longitude } as LatLng);
+              setIsNavigatingFromUser(true);
+          } else {
+              setIsNavigatingFromUser(false);
           }
           setNavEnd({ lat: e.detail.coordinates.lat, lng: e.detail.coordinates.lng } as LatLng);
-          // Don't select, just nav.
       };
       
       window.addEventListener('navigate-to-facility', handleNavRequest as EventListener);
       return () => window.removeEventListener('navigate-to-facility', handleNavRequest as EventListener);
   }, [position]);
+
+  const clearNavigation = () => {
+    setNavStart(null);
+    setNavEnd(null);
+    setIsNavigatingFromUser(false);
+  };
 
   return (
     <div className="relative h-full w-full">
@@ -318,13 +288,19 @@ function MapView({
             items={filtered}
             selectedId={selectedId}
             onSelect={(item) => onSelect(item.id)}
-            onDirections={(item) => handleExternalNavigate(item as unknown as Facility)}
-            onClearSelection={onClearSelection}
+            onDirections={(item) => {
+               if (position) {
+                   setNavStart({ lat: position.coords.latitude, lng: position.coords.longitude } as LatLng);
+                   setIsNavigatingFromUser(true);
+               }
+               setNavEnd({ lat: item.coordinates.lat, lng: item.coordinates.lng } as LatLng);
+            }}
+            onClearSelection={() => {
+              onClearSelection();
+              clearNavigation();
+            }}
           />
-          {/* Pass shared state to UserLocationControl to avoid double hooks if we refactor it, 
-              but for now UserLocationControl still has its own hook. 
-              We'll leave UserLocationControl as the primary "tracker" UI, 
-              and MapView's hook is just for data access. */}
+          {/* ... */}
           <UserLocationControl 
               destination={navEnd} 
               selectedFacility={
@@ -335,13 +311,20 @@ function MapView({
           />
           
           <NavigationLayer startPoint={navStart} endPoint={navEnd} mode={navMode} />
-          
-          {/* <NavigationControl 
-            userLocation={position ? { lat: position.coords.latitude, lng: position.coords.longitude } as LatLng : null}
-            onNavigate={(start, end, mode) => { setNavStart(start); setNavEnd(end); setNavMode(mode); }}
-          /> */}
         </MapContainerClient>
-        {/* ... */}
+
+        {navEnd && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000]">
+            <Button 
+              variant="destructive" 
+              size="sm" 
+              className="rounded-full shadow-lg h-8 px-4 text-xs font-semibold uppercase tracking-wider"
+              onClick={clearNavigation}
+            >
+              Clear Route
+            </Button>
+          </div>
+        )}
 
         {!hasResults && !error && !isLoading && hasActiveFilters && (
           <div className="pointer-events-none absolute bottom-12 left-1/2 -translate-x-1/2 z-10 rounded-full bg-background/90 px-4 py-2 shadow-md backdrop-blur">

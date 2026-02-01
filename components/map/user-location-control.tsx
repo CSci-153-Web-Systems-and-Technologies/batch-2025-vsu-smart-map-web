@@ -8,7 +8,6 @@ import { UserLocationMarker } from "./user-location-marker";
 import { MyLocationButton } from "./my-location-button";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 
-import type { LatLngBoundsExpression } from "leaflet";
 import L from "leaflet";
 
 interface UserLocationControlProps {
@@ -47,7 +46,7 @@ export function UserLocationControl({ className, destination, selectedFacility }
   }, [hasConsented, isTracking, startTracking, hasStartedRef]);
 
   const handleLocate = useCallback((e: React.MouseEvent) => {
-    L.DomEvent.stopPropagation(e as any); // Stronger propagation stop
+    L.DomEvent.stopPropagation(e as unknown as Event); // Stronger propagation stop
     e.preventDefault();
     
     if (!isSupported) {
@@ -64,12 +63,17 @@ export function UserLocationControl({ className, destination, selectedFacility }
               [position.coords.latitude, position.coords.longitude],
               [target.lat, target.lng]
           );
-          map.fitBounds(bounds, { padding: [70, 70], maxZoom: 18, duration: 0.5 });
+          map.fitBounds(bounds, { 
+            padding: [100, 100], 
+            maxZoom: 18, 
+            duration: 0.8,
+            animate: true 
+          });
       } else {
           map.flyTo(
             [position.coords.latitude, position.coords.longitude],
             18,
-            { duration: 0.5 }
+            { duration: 0.8 }
           );
       }
     } else if (hasConsented()) {
@@ -77,7 +81,7 @@ export function UserLocationControl({ className, destination, selectedFacility }
     } else {
       setShowPermissionDialog(true);
     }
-  }, [isSupported, isTracking, position, map, startTracking, hasConsented, destination, selectedFacility]);
+  }, [isSupported, position, map, startTracking, hasConsented, destination, selectedFacility]);
 
   const handlePermissionConfirm = useCallback(() => {
     localStorage.setItem(LOCATION_PERMISSION_KEY, "true");

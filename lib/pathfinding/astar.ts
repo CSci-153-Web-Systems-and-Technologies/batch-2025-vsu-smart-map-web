@@ -1,12 +1,5 @@
 import type { MapNode, MapEdge, PathResult, TransportMode } from "@/lib/types/graph";
 
-// Default speeds (meters per second) - rough estimates for heuristics if needed later
-const SPEEDS = {
-  walking: 1.4, // ~5 km/h
-  cycling: 4.5, // ~16 km/h
-  driving: 8.3, // ~30 km/h (campus speed limit)
-};
-
 // Access rules: Which modes can use which edge types by default?
 const DEFAULT_ACCESS: Record<string, TransportMode[]> = {
   road: ['walking', 'cycling', 'driving'], // Roads usually allow all, unless restricted
@@ -24,7 +17,7 @@ function canTraverse(edge: MapEdge, mode: TransportMode): boolean {
   return allowed.includes(mode);
 }
 
-function getDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
+export function getDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371e3;
   const φ1 = (lat1 * Math.PI) / 180;
   const φ2 = (lat2 * Math.PI) / 180;
@@ -46,6 +39,11 @@ export function findPath(
   endNodeId: string,
   mode: TransportMode = 'walking'
 ): PathResult | null {
+  if (startNodeId === endNodeId) {
+    const node = nodes.find(n => n.id === startNodeId);
+    return node ? { path: [node], totalDistance: 0 } : null;
+  }
+
   const startNode = nodes.find((n) => n.id === startNodeId);
   const endNode = nodes.find((n) => n.id === endNodeId);
 
@@ -56,11 +54,6 @@ export function findPath(
   const gScore = new Map<string, number>();
   const fScore = new Map<string, number>();
 
-  nodes.forEach((node) => {
-    gScore.set(node.id, Infinity);
-    fScore.set(node.id, Infinity);
-  });
-
   gScore.set(startNodeId, 0);
   fScore.set(startNodeId, getDistance(startNode.lat, startNode.lng, endNode.lat, endNode.lng));
 
@@ -68,13 +61,13 @@ export function findPath(
     let currentId: string | null = null;
     let lowestFScore = Infinity;
 
-    openSet.forEach((id) => {
+    for (const id of openSet) {
       const score = fScore.get(id) ?? Infinity;
       if (score < lowestFScore) {
         lowestFScore = score;
         currentId = id;
       }
-    });
+    }
 
     if (currentId === endNodeId) {
       return reconstructPath(cameFrom, currentId!, nodes);
@@ -83,7 +76,10 @@ export function findPath(
     if (!currentId) break;
 
     openSet.delete(currentId);
-    const currentNode = nodes.find(n => n.id === currentId)!;
+    const currentNode = nodes.find(n => n.id === currentId);
+    if (!currentNode) continue;
+
+    const currentG = gScore.get(currentId) ?? Infinity;
 
     const neighbors = edges.filter(
       (e) => (e.source_id === currentId || (e.bidirectional && e.target_id === currentId)) && canTraverse(e, mode)
@@ -98,18 +94,14 @@ export function findPath(
         ? edge.weight 
         : getDistance(currentNode.lat, currentNode.lng, neighbor.lat, neighbor.lng);
       
-      const tentativeGScore = (gScore.get(currentId) ?? Infinity) + edgeWeight;
+      const tentativeGScore = currentG + edgeWeight;
 
       if (tentativeGScore < (gScore.get(neighborId) ?? Infinity)) {
         cameFrom.set(neighborId, currentId);
         gScore.set(neighborId, tentativeGScore);
-        fScore.set(
-          neighborId,
-          tentativeGScore + getDistance(neighbor.lat, neighbor.lng, endNode.lat, endNode.lng)
-        );
-        if (!openSet.has(neighborId)) {
-          openSet.add(neighborId);
-        }
+        const h = getDistance(neighbor.lat, neighbor.lng, endNode.lat, endNode.lng);
+        fScore.set(neighborId, tentativeGScore + h);
+        openSet.add(neighborId);
       }
     }
   }
