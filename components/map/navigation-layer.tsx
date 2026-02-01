@@ -4,8 +4,6 @@
 
 import { useEffect, useState } from "react";
 import { Polyline, CircleMarker } from "react-leaflet";
-import { db } from "@/lib/db";
-import { useLiveQuery } from "dexie-react-hooks";
 import { findPath, getDistance, findNearestEdge } from "@/lib/pathfinding/astar";
 import { getExternalPath } from "@/lib/pathfinding/external";
 import type { MapNode, MapEdge, PathResult, TransportMode } from "@/lib/types/graph";
@@ -92,21 +90,8 @@ export function NavigationLayer({ startPoint, endPoint, mode, nodes, edges }: Na
       setPathResult(null);
       toast.loading("Loading route...");
 
-      // 1. DATABASE CHECK: Is the DB open?
-      if (!db.isOpen()) {
-         try {
-            await db.open();
-         } catch (e) {
-            console.error("NavigationLayer: DB Failed to open", e);
-            toast.error("Failed to open database for routing.");
-            setIsLoading(false);
-            return;
-         }
-      }
-
       // 2. DATA CHECK: Wait for nodes to load if they are empty
       // If we proceed with empty nodes, we might trigger a premature fallback.
-      // useLiveQuery will re-trigger this effect when data arrives.
       if (!nodes || nodes.length === 0 || !edges || edges.length === 0) {
          console.log("NavigationLayer: Waiting for graph data...", { nodes: nodes?.length, edges: edges?.length });
          setIsLoading(false);
