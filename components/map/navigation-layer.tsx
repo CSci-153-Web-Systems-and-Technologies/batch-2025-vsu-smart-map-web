@@ -101,8 +101,10 @@ export function NavigationLayer({ startPoint, endPoint, mode }: NavigationLayerP
 
     const runPathfinding = async () => {
       try {
+        console.log("NavigationLayer: Running pathfinding", { startPoint, endPoint, nodesCount: nodes.length });
         const startNodeId = snapToGraph(startPoint.lat, startPoint.lng);
         const endNodeId = snapToGraph(endPoint.lat, endPoint.lng);
+        console.log("NavigationLayer: Snapped nodes", { startNodeId, endNodeId });
 
         if (startNodeId && endNodeId && nodes.length > 0 && edges.length > 0) {
           const result = findPath(nodes, edges, startNodeId, endNodeId, mode);
@@ -118,11 +120,13 @@ export function NavigationLayer({ startPoint, endPoint, mode }: NavigationLayerP
               ];
             }
             
+            console.log("NavigationLayer: Internal path found", { nodes: result.path.length });
             setPathResult(result);
             return;
           }
         }
 
+        console.log("NavigationLayer: Falling back to external routing...");
         const externalResult = await getExternalPath(
           { lat: startPoint.lat, lng: startPoint.lng },
           { lat: endPoint.lat, lng: endPoint.lng },
@@ -130,8 +134,10 @@ export function NavigationLayer({ startPoint, endPoint, mode }: NavigationLayerP
         );
 
         if (externalResult && externalResult.path.length > 0) {
+          console.log("NavigationLayer: External path found", { nodes: externalResult.path.length });
           setPathResult(externalResult);
         } else {
+          console.warn("NavigationLayer: External routing failed, showing straight line");
           setPathResult({
             path: [
               { id: 'start', lat: startPoint.lat, lng: startPoint.lng, type: 'node' } as MapNode,
@@ -141,7 +147,7 @@ export function NavigationLayer({ startPoint, endPoint, mode }: NavigationLayerP
           });
         }
       } catch (err) {
-        console.error("Pathfinding process error:", err);
+        console.error("NavigationLayer: Process error", err);
       }
     };
 

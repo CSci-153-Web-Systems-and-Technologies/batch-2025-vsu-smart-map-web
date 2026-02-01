@@ -233,8 +233,8 @@ export function NavigationEditor() {
   }, [selectedEdgeId, edges, nodes, historyIndex]);
 
   return (
-    <div className="flex h-[calc(100vh-100px)] gap-4">
-      <div className="flex-1 relative rounded-lg border overflow-hidden">
+    <div className="flex flex-col md:flex-row h-[calc(100vh-100px)] gap-4">
+      <div className="flex-1 relative rounded-lg border overflow-hidden min-h-[400px]">
         <EditorMap
           nodes={nodes}
           edges={edges}
@@ -286,10 +286,11 @@ export function NavigationEditor() {
           <div className="h-px bg-border my-1" />
           
           <div className="px-2 py-1">
-             <Label className="text-xs text-muted-foreground mb-1 block">Edge Type</Label>
+             <Label className="text-xs text-muted-foreground mb-1 block">Type</Label>
              <Select value={defaultEdgeType} onValueChange={(v: any) => setDefaultEdgeType(v)}>
-                <SelectTrigger className="h-7 text-xs w-[100px]">
-                   <SelectValue />
+                <SelectTrigger className="h-7 text-xs w-[40px] md:w-[100px] flex justify-center p-0 md:p-2">
+                   <div className="md:block hidden"><SelectValue /></div>
+                   <div className="md:hidden block text-[10px]">{defaultEdgeType[0].toUpperCase()}</div>
                 </SelectTrigger>
                 <SelectContent>
                    <SelectItem value="walkway">Walkway (Walking only)</SelectItem>
@@ -311,7 +312,7 @@ export function NavigationEditor() {
         </Card>
       </div>
 
-      <Card className="w-80 p-4 flex flex-col gap-4">
+      <Card className="w-full md:w-80 p-4 flex flex-col gap-4 overflow-y-auto">
         <h2 className="font-semibold text-lg">Graph Editor</h2>
         <div className="text-sm text-muted-foreground">
           Nodes: {nodes.length} | Edges: {edges.length}
