@@ -100,13 +100,20 @@ export function NavigationLayer({ startPoint, endPoint, mode }: NavigationLayerP
     };
 
     const runPathfinding = async () => {
+      // Wait for nodes to load if they are empty
+      if ((!nodes || nodes.length === 0) && (!edges || edges.length === 0)) {
+         console.log("NavigationLayer: Nodes/Edges empty, waiting...");
+         // We don't return here because we want the fallback to execute if it stays empty
+         // but useLiveQuery should re-trigger this effect when they populate.
+      }
+
       try {
-        console.log("NavigationLayer: Running pathfinding", { startPoint, endPoint, nodesCount: nodes.length });
+        console.log("NavigationLayer: Running pathfinding", { startPoint, endPoint, nodesCount: nodes?.length });
         const startNodeId = snapToGraph(startPoint.lat, startPoint.lng);
         const endNodeId = snapToGraph(endPoint.lat, endPoint.lng);
         console.log("NavigationLayer: Snapped nodes", { startNodeId, endNodeId });
 
-        if (startNodeId && endNodeId && nodes.length > 0 && edges.length > 0) {
+        if (startNodeId && endNodeId && nodes && nodes.length > 0 && edges && edges.length > 0) {
           const result = findPath(nodes, edges, startNodeId, endNodeId, mode);
           if (result && result.path.length > 0) {
             const userPoint = { lat: startPoint.lat, lng: startPoint.lng };
@@ -126,6 +133,7 @@ export function NavigationLayer({ startPoint, endPoint, mode }: NavigationLayerP
           }
         }
 
+        // Only fallback if we actually have points but no internal path
         console.log("NavigationLayer: Falling back to external routing...");
         const externalResult = await getExternalPath(
           { lat: startPoint.lat, lng: startPoint.lng },

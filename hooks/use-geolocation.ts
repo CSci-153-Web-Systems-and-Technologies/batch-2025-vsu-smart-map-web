@@ -67,13 +67,23 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
   const errorCountRef = useRef<number>(0);
 
   const handleError = useCallback((error: GeolocationPositionError) => {
-    // Notify user of error
-    if (error.code === 1) { // PERMISSION_DENIED
-      toast.error("Location access denied. Please enable location services.");
-    } else if (error.code === 2) { // POSITION_UNAVAILABLE
-      toast.error("Location unavailable. Please check your GPS signal.");
-    } else if (error.code === 3) { // TIMEOUT
-      toast.error("Location request timed out.");
+    // Notify user of error only if the error code has changed or if it's the first error
+    // to prevent infinite toast loops in watchPosition
+    if (state.error?.code !== error.code) {
+      if (error.code === 1) { // PERMISSION_DENIED
+        toast.error("Location access denied. Please enable location services.");
+        // Stop tracking if permission is denied to prevent loop
+        if (watchIdRef.current !== null) {
+          navigator.geolocation.clearWatch(watchIdRef.current);
+          watchIdRef.current = null;
+        }
+        setState((prev) => ({ ...prev, isTracking: false, error }));
+        return;
+      } else if (error.code === 2) { // POSITION_UNAVAILABLE
+        toast.error("Location unavailable. Please check your GPS signal.");
+      } else if (error.code === 3) { // TIMEOUT
+        toast.error("Location request timed out.");
+      }
     }
 
     const isTimeout = error.code === error.TIMEOUT || error.code === 3;
