@@ -13,12 +13,12 @@ interface EditorMapContentProps {
   nodes: MapNode[];
   edges: MapEdge[];
   mode: 'select' | 'add_node' | 'add_edge';
-  selectedNodeId: string | null;
-  selectedEdgeId: string | null;
-  edgeStartNodeId: string | null; // Add this prop
+  selectedNodeIds: Set<string>;
+  selectedEdgeIds: Set<string>;
+  edgeStartNodeId: string | null;
   onNodeAdd: (lat: number, lng: number) => void;
-  onNodeSelect: (id: string) => void;
-  onEdgeSelect: (id: string) => void;
+  onNodeSelect: (id: string, multi: boolean) => void;
+  onEdgeSelect: (id: string, multi: boolean) => void;
 }
 
 function MapEvents({ mode, onNodeAdd }: { mode: string; onNodeAdd: (lat: number, lng: number) => void }) {
@@ -36,8 +36,8 @@ export default function EditorMapContent({
   nodes,
   edges,
   mode,
-  selectedNodeId,
-  selectedEdgeId,
+  selectedNodeIds,
+  selectedEdgeIds,
   edgeStartNodeId,
   onNodeAdd,
   onNodeSelect,
@@ -99,7 +99,7 @@ export default function EditorMapContent({
         const target = nodes.find((n) => n.id === edge.target_id);
         if (!source || !target) return null;
 
-        const isSelected = edge.id === selectedEdgeId;
+        const isSelected = selectedEdgeIds.has(edge.id);
 
         return (
           <Polyline
@@ -117,7 +117,8 @@ export default function EditorMapContent({
             eventHandlers={{
               click: (e) => {
                 L.DomEvent.stopPropagation(e);
-                onEdgeSelect(edge.id);
+                const isMulti = e.originalEvent.metaKey || e.originalEvent.ctrlKey || e.originalEvent.shiftKey;
+                onEdgeSelect(edge.id, isMulti);
               }
             }}
           />
@@ -125,7 +126,7 @@ export default function EditorMapContent({
       })}
 
       {nodes.map((node) => {
-        const isSelected = node.id === selectedNodeId;
+        const isSelected = selectedNodeIds.has(node.id);
         const isStartNode = node.id === edgeStartNodeId;
         
         return (
@@ -141,7 +142,8 @@ export default function EditorMapContent({
             eventHandlers={{
               click: (e) => {
                 L.DomEvent.stopPropagation(e);
-                onNodeSelect(node.id);
+                const isMulti = e.originalEvent.metaKey || e.originalEvent.ctrlKey || e.originalEvent.shiftKey;
+                onNodeSelect(node.id, isMulti);
               },
             }}
           />

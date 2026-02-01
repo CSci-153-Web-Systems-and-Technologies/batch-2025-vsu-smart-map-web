@@ -16,7 +16,6 @@ import { db } from "@/lib/db";
 import { saveMapGraph } from "@/lib/supabase/queries/navigation";
 import { toast } from "sonner";
 
-// Simple history stack for Undo/Redo
 interface HistoryState {
   nodes: MapNode[];
   edges: MapEdge[];
@@ -29,11 +28,10 @@ export function NavigationEditor() {
   const [historyIndex, setHistoryIndex] = useState(-1);
   
   const [mode, setMode] = useState<'select' | 'add_node' | 'add_edge'>('select');
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
+  const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
+  const [selectedEdgeIds, setSelectedEdgeIds] = useState<Set<string>>(new Set());
   const [edgeStartNodeId, setEdgeStartNodeId] = useState<string | null>(null);
   
-  // Helper to push state to history
   const pushHistory = useCallback((newNodes: MapNode[], newEdges: MapEdge[]) => {
       const newState = { nodes: [...newNodes], edges: [...newEdges] };
       setHistory(prev => {
@@ -63,22 +61,6 @@ export function NavigationEditor() {
       }
   };
 
-  useEffect(() => {
-    const loadData = async () => {
-      if (db) {
-        const loadedNodes = await db.map_nodes.toArray();
-        const loadedEdges = await db.map_edges.toArray();
-        setNodes(loadedNodes);
-        setEdges(loadedEdges);
-        // Initialize history
-        setHistory([{ nodes: loadedNodes, edges: loadedEdges }]);
-        setHistoryIndex(0);
-      }
-    };
-    loadData();
-  }, []);
-
-  // Update state wrappers to push history
   const updateNodes = (newNodes: MapNode[]) => {
       setNodes(newNodes);
       pushHistory(newNodes, edges);
@@ -88,9 +70,12 @@ export function NavigationEditor() {
       setEdges(newEdges);
       pushHistory(nodes, newEdges);
   };
-  
-  // Default edge type for new edges
-  const [defaultEdgeType, setDefaultEdgeType] = useState<'walkway' | 'road' | 'car_road'>('walkway');
+
+  const updateGraph = (newNodes: MapNode[], newEdges: MapEdge[]) => {
+      setNodes(newNodes);
+      setEdges(newEdges);
+      pushHistory(newNodes, newEdges);
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -99,6 +84,8 @@ export function NavigationEditor() {
         const loadedEdges = await db.map_edges.toArray();
         setNodes(loadedNodes);
         setEdges(loadedEdges);
+        setHistory([{ nodes: loadedNodes, edges: loadedEdges }]);
+        setHistoryIndex(0);
       }
     };
     loadData();
@@ -114,48 +101,19 @@ export function NavigationEditor() {
     const newNodes = [...nodes, newNode];
     updateNodes(newNodes);
     toast.success("Node added");
-  }, [nodes, edges, historyIndex]); // Add dependencies for history wrappers
+  }, [nodes, edges, pushHistory]);
 
-  const handleNodeSelect = useCallback((id: string) => {
+  const handleNodeSelect = useCallback((id: string, multi: boolean) => {
     if (mode === 'add_edge') {
       if (!edgeStartNodeId) {
         setEdgeStartNodeId(id);
-        toast.info("Select target node");
       } else {
         if (edgeStartNodeId === id) {
-           setEdgeStartNodeId(null);
            return;
         }
-        // Check if edge already exists
-        const exists = edges.some(e => 
-            (e.source_id === edgeStartNodeId && e.target_id === id) || 
-            (e.source_id === id && e.target_id === edgeStartNodeId)
-        );
         
-        if (exists) {
-            // Allow overlapping edges if types are different (handled by rendering order or parallel offsets in future)
-            // But user specifically asked to overlap "both", implying they want to upgrade an existing edge or add a second one.
-            // For now, if we want to "mix" them, we should probably update the existing edge to have more permissions
-            // OR allow multiple edges.
-            
-            // Requirement: "make sure that I can overlap both, it does not gives edge alredy exist"
-            // So we remove the blocking check.
-            
-            // toast.error("Edge already exists");
-            // setEdgeStartNodeId(null);
-            // return;
-        }
-
-        let access: TransportMode[] = ['walking'];
-        let type: 'walkway' | 'road' = 'walkway';
-
-        if (defaultEdgeType === 'road') {
-            type = 'road';
-            access = ['walking', 'cycling', 'driving'];
-        } else if (defaultEdgeType === 'car_road') {
-            type = 'road';
-            access = ['cycling', 'driving'];
-        }
+        const access: TransportMode[] = ['walking'];
+        const type: 'walkway' | 'road' = 'walkway';
 
         const newEdge: MapEdge = {
           id: uuidv4(),
@@ -167,26 +125,45 @@ export function NavigationEditor() {
           access: access,
         };
         const newEdges = [...edges, newEdge];
+        
         updateEdges(newEdges);
-        setEdgeStartNodeId(null);
-        toast.success(`Edge created (${defaultEdgeType})`);
+        setEdgeStartNodeId(id); 
+        
+        toast.success(`Edge added`);
       }
     } else {
-      setSelectedNodeId(id);
-      setEdgeStartNodeId(null);
-      setSelectedEdgeId(null);
-    }
-  }, [mode, edgeStartNodeId, defaultEdgeType, edges, nodes, historyIndex]);
-
-  const handleEdgeSelect = useCallback((id: string) => {
-      // Allow selection in any mode except when actively adding something? 
-      // Or explicitly only in select mode. User asked "I want to be able to select an edge to delete it".
-      // They might be in 'select' mode.
-      if (mode === 'select') {
-          setSelectedEdgeId(id);
-          setSelectedNodeId(null);
+      if (multi) {
+        const newSet = new Set(selectedNodeIds);
+        if (newSet.has(id)) {
+          newSet.delete(id);
+        } else {
+          newSet.add(id);
+        }
+        setSelectedNodeIds(newSet);
+      } else {
+        setSelectedNodeIds(new Set([id]));
+        setSelectedEdgeIds(new Set());
+        setEdgeStartNodeId(null);
       }
-  }, [mode]);
+    }
+  }, [mode, edgeStartNodeId, edges, selectedNodeIds, selectedEdgeIds, updateEdges]);
+
+  const handleEdgeSelect = useCallback((id: string, multi: boolean) => {
+      if (mode === 'select') {
+          if (multi) {
+            const newSet = new Set(selectedEdgeIds);
+            if (newSet.has(id)) {
+                newSet.delete(id);
+            } else {
+                newSet.add(id);
+            }
+            setSelectedEdgeIds(newSet);
+          } else {
+            setSelectedEdgeIds(new Set([id]));
+            setSelectedNodeIds(new Set());
+          }
+      }
+  }, [mode, selectedEdgeIds]);
 
   const handleSave = async () => {
     if (!db) return;
@@ -213,27 +190,25 @@ export function NavigationEditor() {
     }
   };
 
-  const handleDeleteNode = useCallback(() => {
-    if (!selectedNodeId) return;
-    const newNodes = nodes.filter(n => n.id !== selectedNodeId);
-    const newEdges = edges.filter(e => e.source_id !== selectedNodeId && e.target_id !== selectedNodeId);
+  const handleBulkDelete = useCallback(() => {
+    const newNodes = nodes.filter(n => !selectedNodeIds.has(n.id));
+    const nodeIdsToDelete = selectedNodeIds;
+    let newEdges = edges.filter(e => !selectedEdgeIds.has(e.id));
     
-    // We need to update both at once for history
-    setNodes(newNodes);
-    setEdges(newEdges);
-    pushHistory(newNodes, newEdges);
+    newEdges = newEdges.filter(e => !nodeIdsToDelete.has(e.source_id) && !nodeIdsToDelete.has(e.target_id));
     
-    setSelectedNodeId(null);
-    toast.success("Node deleted");
-  }, [selectedNodeId, nodes, edges, historyIndex]);
+    updateGraph(newNodes, newEdges);
+    
+    setSelectedNodeIds(new Set());
+    setSelectedEdgeIds(new Set());
+    toast.success("Selection deleted");
+  }, [selectedNodeIds, selectedEdgeIds, nodes, edges, updateGraph]);
 
-  const handleDeleteEdge = useCallback(() => {
-      if (!selectedEdgeId) return;
-      const newEdges = edges.filter(e => e.id !== selectedEdgeId);
-      updateEdges(newEdges);
-      setSelectedEdgeId(null);
-      toast.success("Edge deleted");
-  }, [selectedEdgeId, edges, nodes, historyIndex]);
+  useEffect(() => {
+      if (mode !== 'add_edge') {
+          setEdgeStartNodeId(null);
+      }
+  }, [mode]);
 
   return (
     <div className="flex flex-col md:flex-row h-[calc(100vh-100px)] gap-4">
@@ -242,13 +217,12 @@ export function NavigationEditor() {
           nodes={nodes}
           edges={edges}
           mode={mode}
-          selectedNodeId={selectedNodeId}
-          selectedEdgeId={selectedEdgeId}
+          selectedNodeIds={selectedNodeIds}
+          selectedEdgeIds={selectedEdgeIds}
           edgeStartNodeId={edgeStartNodeId}
           onNodeAdd={handleNodeAdd}
           onNodeSelect={handleNodeSelect}
           onEdgeSelect={handleEdgeSelect}
-          onNodeMove={() => {}}
         />
         
         <Card className="absolute top-4 left-4 p-2 flex flex-col gap-2 z-[1000]">
@@ -282,27 +256,11 @@ export function NavigationEditor() {
             variant={mode === 'add_edge' ? "default" : "ghost"}
             size="icon"
             onClick={() => setMode('add_edge')}
-            title="Add Edge"
+            title="Add Edge (Chain)"
           >
             <Route className="h-4 w-4" />
           </Button>
-          <div className="h-px bg-border my-1" />
           
-          <div className="px-2 py-1">
-             <Label className="text-xs text-muted-foreground mb-1 block">Type</Label>
-             <Select value={defaultEdgeType} onValueChange={(v: 'walkway' | 'road' | 'car_road') => setDefaultEdgeType(v)}>
-                <SelectTrigger className="h-7 text-xs w-[40px] md:w-[100px] flex justify-center p-0 md:p-2">
-                   <div className="md:block hidden"><SelectValue /></div>
-                   <div className="md:hidden block text-[10px]">{defaultEdgeType[0].toUpperCase()}</div>
-                </SelectTrigger>
-                <SelectContent>
-                   <SelectItem value="walkway">Walkway (Walking only)</SelectItem>
-                   <SelectItem value="road">Shared Road (Walk + Drive)</SelectItem>
-                   <SelectItem value="car_road">Car Road (Drive Only)</SelectItem>
-                </SelectContent>
-             </Select>
-          </div>
-
           <div className="h-px bg-border my-1" />
           <Button
             variant="ghost"
@@ -321,31 +279,75 @@ export function NavigationEditor() {
           Nodes: {nodes.length} | Edges: {edges.length}
         </div>
         
-        {selectedNodeId && (
+        {(selectedNodeIds.size > 0 || selectedEdgeIds.size > 0) && (
             <div className="border rounded p-3 bg-muted/50 space-y-3">
-                <div className="font-medium">Selected Node</div>
-                <div className="text-xs font-mono">{selectedNodeId.slice(0, 8)}...</div>
-                <Button variant="destructive" size="sm" className="w-full" onClick={handleDeleteNode}>
-                    <Trash2 className="h-4 w-4 mr-2" /> Delete Node
+                <div className="font-medium flex justify-between items-center">
+                    <span>Selection</span>
+                    <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                        {selectedNodeIds.size + selectedEdgeIds.size} items
+                    </span>
+                </div>
+                
+                {selectedNodeIds.size > 0 && (
+                    <div className="text-xs text-muted-foreground">
+                        {selectedNodeIds.size} Node(s) selected
+                    </div>
+                )}
+                
+                {selectedEdgeIds.size > 0 && (
+                    <div className="text-xs text-muted-foreground">
+                        {selectedEdgeIds.size} Edge(s) selected
+                    </div>
+                )}
+
+                {selectedEdgeIds.size > 0 && (
+                    <div className="space-y-2 pt-2 border-t">
+                        <Label className="text-xs">Bulk Type Change</Label>
+                        <Select 
+                            onValueChange={(v: MapEdge['type']) => {
+                                const newEdges = edges.map(e => 
+                                    selectedEdgeIds.has(e.id) ? { ...e, type: v } : e
+                                );
+                                updateEdges(newEdges);
+                                toast.success(`Updated ${selectedEdgeIds.size} edges`);
+                            }}
+                        >
+                            <SelectTrigger className="h-8 text-xs">
+                                <SelectValue placeholder="Set Type..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="walkway">Walkway</SelectItem>
+                                <SelectItem value="road">Road</SelectItem>
+                                <SelectItem value="corridor">Corridor</SelectItem>
+                                <SelectItem value="stairs">Stairs</SelectItem>
+                                <SelectItem value="elevator">Elevator</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
+
+                <Button variant="destructive" size="sm" className="w-full" onClick={handleBulkDelete}>
+                    <Trash2 className="h-4 w-4 mr-2" /> Delete Selection
                 </Button>
             </div>
         )}
 
-        {selectedEdgeId && (() => {
-            const edge = edges.find(e => e.id === selectedEdgeId);
+        {selectedEdgeIds.size === 1 && (() => {
+            const edgeId = Array.from(selectedEdgeIds)[0];
+            const edge = edges.find(e => e.id === edgeId);
             if (!edge) return null;
             
             const handleEdgeUpdate = (updates: Partial<MapEdge>) => {
                 const newEdges = edges.map(e => 
-                    e.id === selectedEdgeId ? { ...e, ...updates } : e
+                    e.id === edgeId ? { ...e, ...updates } : e
                 );
                 updateEdges(newEdges);
             };
             
             return (
-            <div className="border rounded p-3 bg-muted/50 space-y-3">
-                <div className="font-medium">Selected Edge</div>
-                <div className="text-xs font-mono">{selectedEdgeId.slice(0, 8)}...</div>
+            <div className="border rounded p-3 bg-card space-y-3">
+                <div className="font-medium">Edge Properties</div>
+                <div className="text-xs font-mono text-muted-foreground">{edgeId.slice(0, 8)}...</div>
                 
                 <div className="space-y-2">
                     <Label className="text-xs">Edge Type</Label>
@@ -372,7 +374,7 @@ export function NavigationEditor() {
                         checked={edge.bidirectional}
                         onCheckedChange={(checked) => handleEdgeUpdate({ bidirectional: !!checked })}
                     />
-                    <Label htmlFor="bidirectional" className="text-xs flex items-center gap-1">
+                    <Label htmlFor="bidirectional" className="text-xs flex items-center gap-1 cursor-pointer">
                         {edge.bidirectional ? (
                             <><ArrowLeftRight className="h-3 w-3" /> Two-way</>
                         ) : (
@@ -393,7 +395,7 @@ export function NavigationEditor() {
                                 closure_reason: checked ? edge.closure_reason : undefined 
                             })}
                         />
-                        <Label htmlFor="is_closed" className="text-xs flex items-center gap-1">
+                        <Label htmlFor="is_closed" className="text-xs flex items-center gap-1 cursor-pointer">
                             <AlertTriangle className="h-3 w-3" /> Temporarily Closed
                         </Label>
                     </div>
@@ -480,10 +482,6 @@ export function NavigationEditor() {
                         </div>
                     )}
                 </div>
-                
-                <Button variant="destructive" size="sm" className="w-full" onClick={handleDeleteEdge}>
-                    <Trash2 className="h-4 w-4 mr-2" /> Delete Edge
-                </Button>
             </div>
             );
         })()}
