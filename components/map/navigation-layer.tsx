@@ -86,11 +86,21 @@ export function NavigationLayer({ startPoint, endPoint, mode }: NavigationLayerP
     };
 
     const runPathfinding = async () => {
-      // Wait for nodes to load if they are empty
-      if ((!nodes || nodes.length === 0) && (!edges || edges.length === 0)) {
-         console.log("NavigationLayer: Nodes/Edges empty, waiting...");
-         // We don't return here because we want the fallback to execute if it stays empty
-         // but useLiveQuery should re-trigger this effect when they populate.
+      // 1. DATABASE CHECK: Is the DB open?
+      if (!db.isOpen()) {
+         try {
+            await db.open();
+         } catch (e) {
+            console.error("NavigationLayer: DB Failed to open", e);
+         }
+      }
+
+      // 2. DATA CHECK: Wait for nodes to load if they are empty
+      // If we proceed with empty nodes, we might trigger a premature fallback.
+      // useLiveQuery will re-trigger this effect when data arrives.
+      if (!nodes || nodes.length === 0 || !edges || edges.length === 0) {
+         console.log("NavigationLayer: Waiting for graph data...", { nodes: nodes?.length, edges: edges?.length });
+         return; 
       }
 
       try {
@@ -102,16 +112,18 @@ export function NavigationLayer({ startPoint, endPoint, mode }: NavigationLayerP
         if (startNodeId && endNodeId && nodes && nodes.length > 0 && edges && edges.length > 0) {
           const result = findPath(nodes, edges, startNodeId, endNodeId, mode);
           if (result && result.path.length > 0) {
-            const userPoint = { lat: startPoint.lat, lng: startPoint.lng };
-            const firstPathNode = result.path[0];
-            const distToFirstNode = getDistance(userPoint.lat, userPoint.lng, firstPathNode.lat, firstPathNode.lng);
+            
+            // VISUAL FIX: Append User Start and Destination End to the path to remove gaps
+            const userStartNode = { id: 'user-pos', lat: startPoint.lat, lng: startPoint.lng, type: 'node' } as MapNode;
+            const destEndNode = { id: 'dest-pos', lat: endPoint.lat, lng: endPoint.lng, type: 'node' } as MapNode;
 
-            if (distToFirstNode > 2 && distToFirstNode < 50) {
-              result.path = [
-                { id: 'user-pos', lat: userPoint.lat, lng: userPoint.lng, type: 'node' } as MapNode,
-                ...result.path
-              ];
-            }
+            const newPath = [userStartNode, ...result.path, destEndNode];
+            result.path = newPath;
+
+            // Recalculate distance with the new segments
+            const firstDist = getDistance(startPoint.lat, startPoint.lng, result.path[1].lat, result.path[1].lng);
+            const lastDist = getDistance(result.path[result.path.length - 2].lat, result.path[result.path.length - 2].lng, endPoint.lat, endPoint.lng);
+            result.totalDistance += (firstDist + lastDist);
             
             console.log("NavigationLayer: Internal path found", { nodes: result.path.length });
             setPathResult(result);
