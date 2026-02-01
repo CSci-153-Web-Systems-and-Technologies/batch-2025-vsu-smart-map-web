@@ -225,7 +225,7 @@ function MapView({
   isLoading: boolean;
   error: string | null;
   selectedId: string | null;
-  selectedFacility: Facility | null; // Define type
+  selectedFacility: Facility | null; 
   onSelect: (id: string) => void;
   onClearSelection: () => void;
   onNavigateRequest?: (facility: Facility) => void;
