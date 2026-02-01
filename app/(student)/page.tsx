@@ -193,6 +193,7 @@ function MapTab() {
           isLoading={isLoading}
           error={error}
           selectedId={selectedFacility?.id ?? null}
+          selectedFacility={selectedFacility} // Pass selectedFacility
           onSelect={(id) => {
             const facility = items.find((f) => f.id === id) || null;
             selectFacility(facility);
@@ -215,14 +216,16 @@ function MapView({
   isLoading,
   error,
   selectedId,
+  selectedFacility, // Receive selectedFacility prop
   onSelect,
   onClearSelection,
-  onNavigateRequest, // Add prop to handle external nav requests
+  onNavigateRequest,
 }: {
   filtered: readonly Facility[];
   isLoading: boolean;
   error: string | null;
   selectedId: string | null;
+  selectedFacility: Facility | null; // Define type
   onSelect: (id: string) => void;
   onClearSelection: () => void;
   onNavigateRequest?: (facility: Facility) => void;
