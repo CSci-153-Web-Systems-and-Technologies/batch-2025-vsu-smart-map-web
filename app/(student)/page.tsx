@@ -324,7 +324,11 @@ function MapView({
               and MapView's hook is just for data access. */}
           <UserLocationControl 
               destination={navEnd} 
-              selectedFacility={selectedFacility?.id === selectedId ? (selectedFacility && 'coordinates' in selectedFacility ? selectedFacility.coordinates : null) : null}
+              selectedFacility={
+                selectedFacility?.id === selectedId 
+                  ? (selectedFacility && 'coordinates' in selectedFacility ? selectedFacility.coordinates : null) 
+                  : null
+              }
           />
           
           <NavigationLayer startPoint={navStart} endPoint={navEnd} mode={navMode} />
