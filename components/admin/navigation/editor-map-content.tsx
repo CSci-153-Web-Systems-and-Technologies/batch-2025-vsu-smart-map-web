@@ -69,6 +69,15 @@ export default function EditorMapContent({
     return undefined;
   };
 
+  const groupedEdges = new Map<string, MapEdge[]>();
+  edges.forEach(edge => {
+    const key = [edge.source_id, edge.target_id].sort().join('-');
+    if (!groupedEdges.has(key)) {
+      groupedEdges.set(key, []);
+    }
+    groupedEdges.get(key)!.push(edge);
+  });
+
   return (
     <MapContainer
       center={[MAP_DEFAULT_CENTER.lat, MAP_DEFAULT_CENTER.lng]}
@@ -94,35 +103,61 @@ export default function EditorMapContent({
       
       <MapEvents mode={mode} onNodeAdd={onNodeAdd} />
 
-      {edges.map((edge) => {
-        const source = nodes.find((n) => n.id === edge.source_id);
-        const target = nodes.find((n) => n.id === edge.target_id);
-        if (!source || !target) return null;
+      {Array.from(groupedEdges.values()).flatMap((group) => {
+        return group.map((edge, index) => {
+          const source = nodes.find((n) => n.id === edge.source_id);
+          const target = nodes.find((n) => n.id === edge.target_id);
+          if (!source || !target) return null;
 
-        const isSelected = selectedEdgeIds.has(edge.id);
+          const isSelected = selectedEdgeIds.has(edge.id);
+          
+          let lat1 = source.lat;
+          let lng1 = source.lng;
+          let lat2 = target.lat;
+          let lng2 = target.lng;
 
-        return (
-          <Polyline
-            key={edge.id}
-            positions={[
-              [source.lat, source.lng],
-              [target.lat, target.lng],
-            ]}
-            pathOptions={{ 
-              color: isSelected ? 'yellow' : getEdgeColor(edge), 
-              weight: isSelected ? 6 : 4, 
-              opacity: edge.is_closed ? 0.5 : 0.8,
-              dashArray: isSelected ? undefined : getEdgeDashArray(edge),
-            }}
-            eventHandlers={{
-              click: (e) => {
-                L.DomEvent.stopPropagation(e);
-                const isMulti = e.originalEvent.metaKey || e.originalEvent.ctrlKey || e.originalEvent.shiftKey;
-                onEdgeSelect(edge.id, isMulti);
-              }
-            }}
-          />
-        );
+          if (group.length > 1) {
+            const offsetStep = 0.00003; 
+            const offsetIndex = index - (group.length - 1) / 2;
+            
+            const dx = lng2 - lng1;
+            const dy = lat2 - lat1;
+            const len = Math.sqrt(dx * dx + dy * dy);
+            
+            if (len > 0) {
+                const px = -dy / len * offsetStep * offsetIndex;
+                const py = dx / len * offsetStep * offsetIndex;
+                
+                lat1 += py;
+                lng1 += px;
+                lat2 += py;
+                lng2 += px;
+            }
+          }
+
+          return (
+            <Polyline
+              key={edge.id}
+              positions={[
+                [lat1, lng1],
+                [lat2, lng2],
+              ]}
+              pathOptions={{ 
+                color: isSelected ? 'yellow' : getEdgeColor(edge), 
+                weight: isSelected ? 6 : 4, 
+                opacity: edge.is_closed ? 0.5 : 0.8,
+                dashArray: isSelected ? undefined : getEdgeDashArray(edge),
+              }}
+              eventHandlers={{
+                click: (e) => {
+                  L.DomEvent.stopPropagation(e);
+                  const isMulti = e.originalEvent.metaKey || e.originalEvent.ctrlKey || e.originalEvent.shiftKey;
+                  onEdgeSelect(edge.id, isMulti);
+                }
+              }}
+            />
+          );
+        });
       })}
 
       {nodes.map((node) => {
