@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useMap } from "react-leaflet";
 import { toast } from "sonner";
-import { useGeolocation } from "@/hooks/use-geolocation";
+import type { GeolocationState } from "@/hooks/use-geolocation";
 import { UserLocationMarker } from "./user-location-marker";
 import { MyLocationButton } from "./my-location-button";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
@@ -14,11 +14,14 @@ interface UserLocationControlProps {
   className?: string;
   destination?: { lat: number; lng: number } | null;
   selectedFacility?: { lat: number; lng: number } | null;
+  geo: Pick<GeolocationState, "position" | "heading" | "error" | "isTracking" | "isSupported"> & {
+    startTracking: () => void;
+  };
 }
 
 const LOCATION_PERMISSION_KEY = "vsu-smartmap-location-consent";
 
-export function UserLocationControl({ className, destination, selectedFacility }: UserLocationControlProps) {
+export function UserLocationControl({ className, destination, selectedFacility, geo }: UserLocationControlProps) {
   const map = useMap();
   const [showPermissionDialog, setShowPermissionDialog] = useState(false);
   const {
@@ -28,7 +31,7 @@ export function UserLocationControl({ className, destination, selectedFacility }
     isTracking,
     isSupported,
     startTracking,
-  } = useGeolocation();
+  } = geo;
 
   const hasConsented = useCallback(() => {
     if (typeof window === "undefined") return false;

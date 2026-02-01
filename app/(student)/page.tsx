@@ -234,7 +234,8 @@ function MapView({
   const hasResults = filtered.length > 0;
   const hasActiveFilters = selectedCategories.length > 0 || debouncedQuery.trim().length > 0;
   
-  const { position, startTracking, isTracking } = useGeolocation();
+  const geo = useGeolocation();
+  const { position } = geo;
   
   // Use persistent navigation state
   const { navStart, setNavStart, navEnd, setNavEnd, clearNavigation } = useNavigationPersistence();
@@ -251,13 +252,6 @@ function MapView({
   }, [position, isNavigatingFromUser, navEnd, setNavStart]);
 
   useEffect(() => {
-      const consent = typeof window !== 'undefined' && localStorage.getItem("vsu-smartmap-location-consent") === "true";
-      if (consent && !isTracking) {
-          startTracking();
-      }
-  }, [isTracking, startTracking]);
-
-  useEffect(() => {
       if (!navStart || !navEnd) {
           setMapBounds(null);
       }
@@ -265,18 +259,18 @@ function MapView({
 
   useEffect(() => {
       const handleNavRequest = (e: CustomEvent<Facility>) => {
+          setIsNavigatingFromUser(true);
           if (position) {
               setNavStart({ lat: position.coords.latitude, lng: position.coords.longitude } as LatLng);
-              setIsNavigatingFromUser(true);
           } else {
-              setIsNavigatingFromUser(false);
+              setNavStart(null);
           }
           setNavEnd({ lat: e.detail.coordinates.lat, lng: e.detail.coordinates.lng } as LatLng);
       };
       
       window.addEventListener('navigate-to-facility', handleNavRequest as EventListener);
       return () => window.removeEventListener('navigate-to-facility', handleNavRequest as EventListener);
-  }, [position, setNavStart, setNavEnd]);
+  }, [position, setNavStart, setNavEnd, setIsNavigatingFromUser]);
 
   return (
     <div className="relative h-full w-full">
@@ -307,6 +301,7 @@ function MapView({
                   ? (selectedFacility && 'coordinates' in selectedFacility ? selectedFacility.coordinates : null) 
                   : null
               }
+              geo={geo}
           />
           
           {graphData.nodes.length > 0 && graphData.edges.length > 0 && (
