@@ -36,22 +36,26 @@ export function UserLocationControl({ className, destination, selectedFacility }
     return localStorage.getItem(LOCATION_PERMISSION_KEY) === "true";
   }, []);
 
+  const [hasStartedRef] = useState({ value: false });
+
   useEffect(() => {
-    // Auto-start tracking if consented
-    if (typeof window !== "undefined" && hasConsented() && !isTracking) {
+    // Only auto-start ONCE on mount if consented
+    if (typeof window !== "undefined" && hasConsented() && !isTracking && !hasStartedRef.value) {
+        hasStartedRef.value = true;
         startTracking();
     }
-  }, [hasConsented, isTracking, startTracking]);
+  }, [hasConsented, isTracking, startTracking, hasStartedRef]);
 
   const handleLocate = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent map click event (which clears selection)
+    L.DomEvent.stopPropagation(e as any); // Stronger propagation stop
+    e.preventDefault();
     
     if (!isSupported) {
       toast.error("Geolocation is not supported by your browser");
       return;
     }
 
-    if (isTracking && position) {
+    if (position) {
       // Determine target: Navigation destination > Selected Facility > User Only
       const target = destination || selectedFacility;
       
@@ -60,10 +64,8 @@ export function UserLocationControl({ className, destination, selectedFacility }
               [position.coords.latitude, position.coords.longitude],
               [target.lat, target.lng]
           );
-          // Add padding to ensure both points aren't at the very edge
-          map.fitBounds(bounds, { padding: [50, 50], maxZoom: 18, duration: 0.5 });
+          map.fitBounds(bounds, { padding: [70, 70], maxZoom: 18, duration: 0.5 });
       } else {
-          // Default behavior: Fly to user
           map.flyTo(
             [position.coords.latitude, position.coords.longitude],
             18,

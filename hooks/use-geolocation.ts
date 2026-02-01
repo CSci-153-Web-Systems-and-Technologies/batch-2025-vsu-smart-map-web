@@ -62,6 +62,9 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
     }));
   }, []);
 
+  const lastErrorTimeRef = useRef<number>(0);
+  const errorCountRef = useRef<number>(0);
+
   const handleError = useCallback((error: GeolocationPositionError) => {
     const isTimeout = error.code === error.TIMEOUT || error.code === 3;
 
@@ -97,10 +100,7 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
       watchIdRef.current = null;
     }
 
-    // Do NOT turn off tracking on transient errors (like timeout) unless critical
-    // We want to keep retrying or at least keep the state 'active' so the UI doesn't flicker
-    // Only turn off if permission denied or unavailable
-    const isFatal = error.code === 1 || error.code === 2; // Denied or Unavailable
+    const isFatal = error.code === 1 || error.code === 2; 
 
     if (isFatal) {
         setState((prev) => ({
@@ -109,11 +109,9 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
             isTracking: false,
         }));
     } else {
-        // Just update error state but keep tracking true so we can retry or show stale data
         setState((prev) => ({
             ...prev,
             error,
-            // isTracking: true // Keep it as is
         }));
     }
   }, [state.isTracking, handleSuccess, lowAccuracyOptions]);
