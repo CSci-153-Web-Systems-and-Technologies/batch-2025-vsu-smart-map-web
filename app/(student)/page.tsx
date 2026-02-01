@@ -309,6 +309,7 @@ function MapView({
           
           {graphData.nodes.length > 0 && graphData.edges.length > 0 && (
             <NavigationLayer 
+              key={`nav-${graphData.nodes.length}-${navStart ? 's' : 'x'}-${navEnd ? 'e' : 'x'}`}
               startPoint={navStart} 
               endPoint={navEnd} 
               mode={navMode} 
