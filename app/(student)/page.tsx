@@ -290,7 +290,7 @@ function MapView({
           setNavStart({ lat: position.coords.latitude, lng: position.coords.longitude } as LatLng);
       }
       
-      setNavEnd({ lat: facility.lat, lng: facility.lng } as LatLng);
+      setNavEnd({ lat: facility.coordinates.lat, lng: facility.coordinates.lng } as LatLng);
       
       // Select the facility too so the drawer stays open or re-opens
       onSelect(facility.id);
