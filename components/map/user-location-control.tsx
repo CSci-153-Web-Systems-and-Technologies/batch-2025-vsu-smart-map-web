@@ -87,15 +87,16 @@ export function UserLocationControl({ className, destination, selectedFacility }
     setShowPermissionDialog(false);
   }, []);
 
-  useEffect(() => {
-    if (position && isTracking) {
-      map.flyTo(
-        [position.coords.latitude, position.coords.longitude],
-        Math.max(map.getZoom(), 17),
-        { duration: 0.5 }
-      );
-    }
-  }, [position, isTracking, map]);
+  // Remove the aggressive auto-centering effect
+  // useEffect(() => {
+  //   if (position && isTracking) {
+  //     map.flyTo(
+  //       [position.coords.latitude, position.coords.longitude],
+  //       Math.max(map.getZoom(), 17),
+  //       { duration: 0.5 }
+  //     );
+  //   }
+  // }, [position, isTracking, map]);
 
   useEffect(() => {
     if (error) {
