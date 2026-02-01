@@ -228,10 +228,34 @@ function MapView({
   const hasResults = filtered.length > 0;
   const hasActiveFilters = selectedCategories.length > 0 || debouncedQuery.trim().length > 0;
   
-  const { position } = useGeolocation();
+  const { position, startTracking, isTracking } = useGeolocation();
   const [navStart, setNavStart] = useState<LatLng | null>(null);
   const [navEnd, setNavEnd] = useState<LatLng | null>(null);
   const [navMode, setNavMode] = useState<TransportMode>('walking');
+
+  useEffect(() => {
+      // Auto-start tracking if not enabled, or better yet, let user enable it.
+      // But NavigationControl needs 'position'.
+      // If 'position' is null, NavControl says "Please enable".
+      // But UserLocationControl manages 'startTracking'.
+      // We should probably rely on UserLocationControl for the tracking state logic, 
+      // but 'position' is needed here for NavigationControl.
+      
+      // Actually, useGeolocation() hook instance here in MapView is SEPARATE from the one in UserLocationControl.
+      // THIS IS THE BUG. 
+      // Two useGeolocation hooks = two independent states.
+      // UserLocationControl starts tracking on its own hook instance.
+      // MapView's hook instance stays dormant.
+      
+      // FIX: Move useGeolocation UP to a Context or Prop-drill it?
+      // Or just start tracking here too if consented?
+      
+      // Let's try to sync it via the existing localStorage consent check.
+      const consent = localStorage.getItem("vsu-smartmap-location-consent") === "true";
+      if (consent && !isTracking) {
+          startTracking();
+      }
+  }, [isTracking, startTracking]);
 
   return (
     <div className="relative h-full w-full">
