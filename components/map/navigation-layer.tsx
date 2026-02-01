@@ -1,8 +1,11 @@
 "use client";
 
+"use client";
+
 import { useEffect, useState } from "react";
 import { Polyline, CircleMarker } from "react-leaflet";
 import { db } from "@/lib/db";
+import { useLiveQuery } from "dexie-react-hooks";
 import { findPath, getDistance, findNearestEdge } from "@/lib/pathfinding/astar";
 import { getExternalPath } from "@/lib/pathfinding/external";
 import type { MapNode, MapEdge, PathResult, TransportMode } from "@/lib/types/graph";
@@ -16,28 +19,11 @@ interface NavigationLayerProps {
 }
 
 export function NavigationLayer({ startPoint, endPoint, mode }: NavigationLayerProps) {
-  const [nodes, setNodes] = useState<MapNode[]>([]);
-  const [edges, setEdges] = useState<MapEdge[]>([]);
+  const nodes = useLiveQuery(() => db.map_nodes.toArray(), []) || [];
+  const edges = useLiveQuery(() => db.map_edges.toArray(), []) || [];
   const [pathResult, setPathResult] = useState<PathResult | null>(null);
 
   useEffect(() => {
-    const loadGraph = async () => {
-      if (!db) return;
-      try {
-        const [n, e] = await Promise.all([
-          db.map_nodes.toArray(),
-          db.map_edges.toArray(),
-        ]);
-        setNodes(n);
-        setEdges(e);
-      } catch (err) {
-        console.error("Failed to load navigation graph", err);
-      }
-    };
-    
-    loadGraph();
-    const interval = setInterval(loadGraph, 5000);
-    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {

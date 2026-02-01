@@ -205,6 +205,8 @@ function MapTab() {
   );
 }
 
+import { useNavigationPersistence } from "@/hooks/use-navigation-persistence";
+
 function MapView({
   filtered,
   isLoading,
@@ -227,17 +229,20 @@ function MapView({
   const hasActiveFilters = selectedCategories.length > 0 || debouncedQuery.trim().length > 0;
   
   const { position, startTracking, isTracking } = useGeolocation();
-  const [navStart, setNavStart] = useState<LatLng | null>(null);
-  const [navEnd, setNavEnd] = useState<LatLng | null>(null);
+  
+  // Use persistent navigation state
+  const { navStart, setNavStart, navEnd, setNavEnd, clearNavigation } = useNavigationPersistence();
+  
   const [navMode] = useState<TransportMode>('walking');
   const [mapBounds, setMapBounds] = useState<LatLngBoundsExpression | null>(null);
   const [isNavigatingFromUser, setIsNavigatingFromUser] = useState(false);
 
   useEffect(() => {
+    // Only update if we are actively navigating from user AND position is available
     if (isNavigatingFromUser && position && navEnd) {
       setNavStart({ lat: position.coords.latitude, lng: position.coords.longitude } as LatLng);
     }
-  }, [position, isNavigatingFromUser, navEnd]);
+  }, [position, isNavigatingFromUser, navEnd, setNavStart]);
 
   useEffect(() => {
       const consent = typeof window !== 'undefined' && localStorage.getItem("vsu-smartmap-location-consent") === "true";
@@ -265,13 +270,7 @@ function MapView({
       
       window.addEventListener('navigate-to-facility', handleNavRequest as EventListener);
       return () => window.removeEventListener('navigate-to-facility', handleNavRequest as EventListener);
-  }, [position]);
-
-  const clearNavigation = () => {
-    setNavStart(null);
-    setNavEnd(null);
-    setIsNavigatingFromUser(false);
-  };
+  }, [position, setNavStart, setNavEnd]);
 
   return (
     <div className="relative h-full w-full">
@@ -290,7 +289,6 @@ function MapView({
             }}
             onClearSelection={() => {
               onClearSelection();
-              clearNavigation();
             }}
           />
           {/* ... */}
@@ -312,7 +310,10 @@ function MapView({
               variant="destructive" 
               size="sm" 
               className="rounded-full shadow-lg h-8 px-4 text-xs font-semibold uppercase tracking-wider"
-              onClick={clearNavigation}
+              onClick={() => {
+                clearNavigation();
+                setIsNavigatingFromUser(false);
+              }}
             >
               Clear Route
             </Button>
