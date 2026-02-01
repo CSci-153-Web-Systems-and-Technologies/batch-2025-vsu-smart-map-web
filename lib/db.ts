@@ -59,6 +59,19 @@ export class VSUDatabase extends Dexie {
           if (!edge.access) edge.access = ['walking'];
        });
     });
+
+    this.version(6).stores({
+      map_edges: "id, source_id, target_id, type, is_closed",
+    }).upgrade(tx => {
+       return tx.table("map_edges").toCollection().modify(edge => {
+          if (edge.bidirectional === undefined) edge.bidirectional = true;
+       });
+    });
+
+    this.version(7).stores({
+      map_edges: "id, source_id, target_id, type, is_closed", 
+      // Dexie doesn't strict schema for non-indexed fields, but version bump is good practice
+    });
   }
 }
 

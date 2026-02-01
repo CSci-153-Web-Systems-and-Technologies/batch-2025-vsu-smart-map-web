@@ -2,22 +2,12 @@
 
 import "leaflet/dist/leaflet.css";
 
-import { useEffect, useState, useCallback } from "react";
 import { useTheme } from "next-themes";
-import { MapContainer, TileLayer, CircleMarker, Polyline, useMapEvents, Marker, ZoomControl } from "react-leaflet";
-import type { LatLng } from "leaflet";
+import { MapContainer, TileLayer, CircleMarker, Polyline, useMapEvents, ZoomControl } from "react-leaflet";
 import L from "leaflet";
 import { MAP_MAX_ZOOM, MAP_MIN_ZOOM, MAP_TILES, MAP_DEFAULT_CENTER } from "@/lib/constants/map";
 import { useMapStyle } from "@/lib/context/map-style-context";
 import type { MapNode, MapEdge } from "@/lib/types/graph";
-
-// Fix Leaflet marker icons
-const icon = L.icon({
-  iconUrl: "/images/marker-icon.png",
-  shadowUrl: "/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-});
 
 interface EditorMapContentProps {
   nodes: MapNode[];
@@ -29,7 +19,6 @@ interface EditorMapContentProps {
   onNodeAdd: (lat: number, lng: number) => void;
   onNodeSelect: (id: string) => void;
   onEdgeSelect: (id: string) => void;
-  onNodeMove: (id: string, lat: number, lng: number) => void;
 }
 
 function MapEvents({ mode, onNodeAdd }: { mode: string; onNodeAdd: (lat: number, lng: number) => void }) {
@@ -53,7 +42,6 @@ export default function EditorMapContent({
   onNodeAdd,
   onNodeSelect,
   onEdgeSelect,
-  onNodeMove,
 }: EditorMapContentProps) {
   const { resolvedTheme } = useTheme();
   const { mapStyle } = useMapStyle();
@@ -64,13 +52,21 @@ export default function EditorMapContent({
   })();
 
   const getEdgeColor = (edge: MapEdge) => {
+    if (edge.is_closed) return '#ef4444';
+    
     const access = edge.access || [];
     const hasWalk = access.includes('walking');
     const hasDrive = access.includes('driving');
 
-    if (hasWalk && hasDrive) return '#f97316'; // Orange (Mixed)
-    if (hasDrive) return '#3b82f6'; // Blue (Car/Bike only)
-    return '#22c55e'; // Green (Walkway)
+    if (hasWalk && hasDrive) return '#f97316';
+    if (hasDrive) return '#3b82f6';
+    return '#22c55e';
+  };
+
+  const getEdgeDashArray = (edge: MapEdge) => {
+    if (edge.is_closed) return '5, 10';
+    if (!edge.bidirectional) return '10, 5';
+    return undefined;
   };
 
   return (
@@ -115,7 +111,8 @@ export default function EditorMapContent({
             pathOptions={{ 
               color: isSelected ? 'yellow' : getEdgeColor(edge), 
               weight: isSelected ? 6 : 4, 
-              opacity: 0.8 
+              opacity: edge.is_closed ? 0.5 : 0.8,
+              dashArray: isSelected ? undefined : getEdgeDashArray(edge),
             }}
             eventHandlers={{
               click: (e) => {
@@ -146,9 +143,6 @@ export default function EditorMapContent({
                 L.DomEvent.stopPropagation(e);
                 onNodeSelect(node.id);
               },
-              mousedown: (e) => {
-                 
-              }
             }}
           />
         );

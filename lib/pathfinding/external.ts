@@ -7,7 +7,9 @@ export async function getExternalPath(
   end: { lat: number; lng: number },
   mode: TransportMode = 'walking'
 ): Promise<PathResult | null> {
+  // Skip external API call if offline or no API key
   if (!MAPTILER_KEY) return null;
+  if (typeof navigator !== 'undefined' && !navigator.onLine) return null;
 
   const profile = mode === 'driving' ? 'car' : mode === 'cycling' ? 'bicycle' : 'walking';
   const url = `https://api.maptiler.com/routing/v1/${profile}/${start.lng},${start.lat};${end.lng},${end.lat}?key=${MAPTILER_KEY}&alternatives=false&geometries=geojson&overview=full`;

@@ -18,18 +18,23 @@ export interface MapEdge {
   weight: number;
   bidirectional: boolean;
   
-  // New fields for multimodal support
   type: 'road' | 'walkway' | 'corridor' | 'stairs' | 'elevator'; 
   
-  // Explicit permissions overrides (optional, defaults based on type)
   access?: TransportMode[]; 
 
-  // Temporarily closed or blocked
   is_closed?: boolean;
+  closed_from?: string;
+  closed_until?: string;
+  closure_reason?: string;
+  
+  // Recurring closure (e.g. closed every night 10PM-6AM)
+  closure_recurring_start?: string; // "HH:MM" 24h format
+  closure_recurring_end?: string;   // "HH:MM" 24h format
+  closure_recurring_days?: number[]; // 0=Sunday, 1=Monday, ...
 }
 
 export interface PathResult {
   path: MapNode[];
   totalDistance: number;
-  estimatedTime?: number; // In minutes
+  estimatedTime?: number;
 }

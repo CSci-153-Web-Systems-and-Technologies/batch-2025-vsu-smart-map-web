@@ -3,12 +3,15 @@
 import { useState, useCallback, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { EditorMap } from "./editor-map";
-import type { MapNode, MapEdge } from "@/lib/types/graph";
+import type { MapNode, MapEdge, TransportMode } from "@/lib/types/graph";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { MousePointer2, Plus, GripHorizontal, Save, Trash2, Route, Undo2, Redo2 } from "lucide-react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { MousePointer2, Plus, Save, Trash2, Route, Undo2, Redo2, ArrowLeftRight, ArrowRight, AlertTriangle, Clock } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { db } from "@/lib/db";
 import { saveMapGraph } from "@/lib/supabase/queries/navigation";
 import { toast } from "sonner";
@@ -143,7 +146,7 @@ export function NavigationEditor() {
             // return;
         }
 
-        let access: any[] = ['walking'];
+        let access: TransportMode[] = ['walking'];
         let type: 'walkway' | 'road' = 'walkway';
 
         if (defaultEdgeType === 'road') {
@@ -287,7 +290,7 @@ export function NavigationEditor() {
           
           <div className="px-2 py-1">
              <Label className="text-xs text-muted-foreground mb-1 block">Type</Label>
-             <Select value={defaultEdgeType} onValueChange={(v: any) => setDefaultEdgeType(v)}>
+             <Select value={defaultEdgeType} onValueChange={(v: 'walkway' | 'road' | 'car_road') => setDefaultEdgeType(v)}>
                 <SelectTrigger className="h-7 text-xs w-[40px] md:w-[100px] flex justify-center p-0 md:p-2">
                    <div className="md:block hidden"><SelectValue /></div>
                    <div className="md:hidden block text-[10px]">{defaultEdgeType[0].toUpperCase()}</div>
@@ -328,15 +331,162 @@ export function NavigationEditor() {
             </div>
         )}
 
-        {selectedEdgeId && (
+        {selectedEdgeId && (() => {
+            const edge = edges.find(e => e.id === selectedEdgeId);
+            if (!edge) return null;
+            
+            const handleEdgeUpdate = (updates: Partial<MapEdge>) => {
+                const newEdges = edges.map(e => 
+                    e.id === selectedEdgeId ? { ...e, ...updates } : e
+                );
+                updateEdges(newEdges);
+            };
+            
+            return (
             <div className="border rounded p-3 bg-muted/50 space-y-3">
                 <div className="font-medium">Selected Edge</div>
                 <div className="text-xs font-mono">{selectedEdgeId.slice(0, 8)}...</div>
+                
+                <div className="space-y-2">
+                    <Label className="text-xs">Edge Type</Label>
+                    <Select 
+                        value={edge.type} 
+                        onValueChange={(v: MapEdge['type']) => handleEdgeUpdate({ type: v })}
+                    >
+                        <SelectTrigger className="h-8 text-xs">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="walkway">Walkway</SelectItem>
+                            <SelectItem value="road">Road</SelectItem>
+                            <SelectItem value="corridor">Corridor</SelectItem>
+                            <SelectItem value="stairs">Stairs</SelectItem>
+                            <SelectItem value="elevator">Elevator</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                    <Checkbox 
+                        id="bidirectional"
+                        checked={edge.bidirectional}
+                        onCheckedChange={(checked) => handleEdgeUpdate({ bidirectional: !!checked })}
+                    />
+                    <Label htmlFor="bidirectional" className="text-xs flex items-center gap-1">
+                        {edge.bidirectional ? (
+                            <><ArrowLeftRight className="h-3 w-3" /> Two-way</>
+                        ) : (
+                            <><ArrowRight className="h-3 w-3" /> One-way</>
+                        )}
+                    </Label>
+                </div>
+                
+                <div className="border-t pt-2 mt-2">
+                    <div className="flex items-center gap-2 mb-2">
+                        <Checkbox 
+                            id="is_closed"
+                            checked={edge.is_closed ?? false}
+                            onCheckedChange={(checked) => handleEdgeUpdate({ 
+                                is_closed: !!checked,
+                                closed_from: checked ? edge.closed_from : undefined,
+                                closed_until: checked ? edge.closed_until : undefined,
+                                closure_reason: checked ? edge.closure_reason : undefined 
+                            })}
+                        />
+                        <Label htmlFor="is_closed" className="text-xs flex items-center gap-1">
+                            <AlertTriangle className="h-3 w-3" /> Temporarily Closed
+                        </Label>
+                    </div>
+                    
+                    {edge.is_closed && (
+                        <div className="space-y-2 pl-5">
+                            <div>
+                                <Label className="text-xs">Closed From</Label>
+                                <Input 
+                                    type="date" 
+                                    className="h-7 text-xs"
+                                    value={edge.closed_from?.split('T')[0] ?? ''}
+                                    onChange={(e) => handleEdgeUpdate({ 
+                                        closed_from: e.target.value ? new Date(e.target.value).toISOString() : undefined 
+                                    })}
+                                />
+                            </div>
+                            <div>
+                                <Label className="text-xs">Closed Until</Label>
+                                <Input 
+                                    type="date" 
+                                    className="h-7 text-xs"
+                                    value={edge.closed_until?.split('T')[0] ?? ''}
+                                    onChange={(e) => handleEdgeUpdate({ 
+                                        closed_until: e.target.value ? new Date(e.target.value).toISOString() : undefined 
+                                    })}
+                                />
+                            </div>
+                            <div>
+                                <Label className="text-xs">Reason (optional)</Label>
+                                <Input 
+                                    type="text" 
+                                    className="h-7 text-xs"
+                                    placeholder="e.g., Construction"
+                                    value={edge.closure_reason ?? ''}
+                                    onChange={(e) => handleEdgeUpdate({ closure_reason: e.target.value || undefined })}
+                                />
+                            </div>
+
+                            <div className="pt-2 border-t">
+                                <Label className="text-xs font-semibold flex items-center gap-1 mb-2">
+                                    <Clock className="h-3 w-3" /> Recurring Schedule
+                                </Label>
+                                
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] text-muted-foreground">Days of Week</Label>
+                                    <ToggleGroup 
+                                        type="multiple" 
+                                        variant="outline" 
+                                        size="sm"
+                                        className="justify-start flex-wrap gap-1"
+                                        value={edge.closure_recurring_days?.map(String) || []}
+                                        onValueChange={(vals) => handleEdgeUpdate({ closure_recurring_days: vals.map(Number) })}
+                                    >
+                                        {['S','M','T','W','T','F','S'].map((day, i) => (
+                                            <ToggleGroupItem key={i} value={String(i)} className="h-6 w-6 p-0 text-[10px]">
+                                                {day}
+                                            </ToggleGroupItem>
+                                        ))}
+                                    </ToggleGroup>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2 mt-2">
+                                    <div>
+                                        <Label className="text-[10px] text-muted-foreground">Start Time</Label>
+                                        <Input 
+                                            type="time" 
+                                            className="h-7 text-xs"
+                                            value={edge.closure_recurring_start ?? ''}
+                                            onChange={(e) => handleEdgeUpdate({ closure_recurring_start: e.target.value || undefined })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label className="text-[10px] text-muted-foreground">End Time</Label>
+                                        <Input 
+                                            type="time" 
+                                            className="h-7 text-xs"
+                                            value={edge.closure_recurring_end ?? ''}
+                                            onChange={(e) => handleEdgeUpdate({ closure_recurring_end: e.target.value || undefined })}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+                
                 <Button variant="destructive" size="sm" className="w-full" onClick={handleDeleteEdge}>
                     <Trash2 className="h-4 w-4 mr-2" /> Delete Edge
                 </Button>
             </div>
-        )}
+            );
+        })()}
       </Card>
     </div>
   );

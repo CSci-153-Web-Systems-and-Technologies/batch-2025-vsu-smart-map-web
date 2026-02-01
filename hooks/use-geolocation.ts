@@ -63,9 +63,6 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
     }));
   }, []);
 
-  const lastErrorTimeRef = useRef<number>(0);
-  const errorCountRef = useRef<number>(0);
-
   const handleError = useCallback((error: GeolocationPositionError) => {
     // Notify user of error only if the error code has changed or if it's the first error
     // to prevent infinite toast loops in watchPosition

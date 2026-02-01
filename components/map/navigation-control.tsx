@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Navigation, X, Footprints, Bike, Car } from "lucide-react";
+import { Navigation, Footprints, Bike, Car } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { useMap } from "react-leaflet";
 import type { LatLng } from "leaflet";
+import L from "leaflet";
 import { toast } from "sonner";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import type { TransportMode } from "@/lib/types/graph";
@@ -41,7 +42,7 @@ export function NavigationControl({ onNavigate, userLocation }: NavigationContro
     setIsOpen(true);
     toast.info("Tap anywhere on the map to navigate there");
     
-    const onMapClick = (e: any) => {
+    const onMapClick = (e: L.LeafletMouseEvent) => {
         onNavigate(userLocation, e.latlng, mode);
         setIsOpen(false);
         map.off('click', onMapClick);

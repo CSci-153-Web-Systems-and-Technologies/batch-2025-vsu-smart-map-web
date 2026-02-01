@@ -1,7 +1,5 @@
-import { db, type CacheMetaEntry } from "@/lib/db";
+import { db } from "@/lib/db";
 import type { MapNode, MapEdge } from "@/lib/types/graph";
-
-const NAVIGATION_META_KEY = "navigation" as const;
 
 export async function getCachedNavigationGraph() {
   if (typeof window === "undefined") return null;

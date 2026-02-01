@@ -10,10 +10,9 @@ import { useApp } from "@/lib/context/app-context";
 interface ActionButtonsProps {
     facility: Facility;
     className?: string;
-    onNavigate?: (facility: Facility) => void;
 }
 
-export function ActionButtons({ facility, className, onNavigate }: ActionButtonsProps) {
+export function ActionButtons({ facility, className }: ActionButtonsProps) {
     const router = useRouter();
     const pathname = usePathname();
     const { setFacilitySheetOpen } = useApp();

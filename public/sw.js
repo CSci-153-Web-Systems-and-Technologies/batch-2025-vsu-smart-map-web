@@ -1,20 +1,23 @@
-const CACHE_NAME = 'vsu-smartmap-v8';
+const CACHE_NAME = 'vsu-smartmap-v9';
 const TILE_CACHE_NAME = 'map-tiles-v1';
 const API_CACHE_NAME = 'api-cache-v2';
 
 const STATIC_ASSETS = [
   '/',
   '/directory',
+  '/chat',
+  '/info',
   '/offline',
   '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
 ];
 
-// Only cache these public Supabase endpoints (facilities data)
 const CACHEABLE_API_PATTERNS = [
   '/rest/v1/facilities',
   '/rest/v1/rooms',
+  '/rest/v1/map_nodes',
+  '/rest/v1/map_edges',
 ];
 
 function isMapTileRequest(url) {

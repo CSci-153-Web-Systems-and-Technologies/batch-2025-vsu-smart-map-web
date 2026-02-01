@@ -11,8 +11,64 @@ const DEFAULT_ACCESS: Record<string, TransportMode[]> = {
   walkway: ['walking'],
 };
 
+function isEdgeClosed(edge: MapEdge): boolean {
+  if (!edge.is_closed) return false;
+  
+  const now = new Date();
+
+  // 1. Check Date Range (if defined)
+  // If we are outside the date range, the closure (temporary or recurring) doesn't apply?
+  // User Requirement: "sometimes roads ... open on a certain time only"
+  // Interpretation: "is_closed" activates the logic.
+  // If dates are provided, it's only closed within those dates.
+  
+  if (edge.closed_from) {
+    if (now < new Date(edge.closed_from)) return false;
+  }
+  if (edge.closed_until) {
+    if (now > new Date(edge.closed_until)) return false;
+  }
+
+  // 2. Check Recurring Days (if defined)
+  if (edge.closure_recurring_days && edge.closure_recurring_days.length > 0) {
+    const day = now.getDay();
+    if (!edge.closure_recurring_days.includes(day)) return false;
+  }
+
+  // 3. Check Recurring Time (if defined)
+  if (edge.closure_recurring_start && edge.closure_recurring_end) {
+    const [startH, startM] = edge.closure_recurring_start.split(':').map(Number);
+    const [endH, endM] = edge.closure_recurring_end.split(':').map(Number);
+    
+    const currentH = now.getHours();
+    const currentM = now.getMinutes();
+    
+    const currentMinutes = currentH * 60 + currentM;
+    const startMinutes = startH * 60 + startM;
+    const endMinutes = endH * 60 + endM;
+    
+    // Handle overnight range (e.g. 22:00 to 06:00)
+    if (startMinutes > endMinutes) {
+      // It's closed if current time is AFTER start OR BEFORE end
+      if (currentMinutes >= startMinutes || currentMinutes <= endMinutes) {
+        return true;
+      }
+      return false;
+    } else {
+      // Standard range (e.g. 08:00 to 17:00)
+      if (currentMinutes >= startMinutes && currentMinutes <= endMinutes) {
+        return true;
+      }
+      return false;
+    }
+  }
+
+  // If no specific time restrictions are met (or defined), and we passed date checks, it's closed.
+  return true;
+}
+
 function canTraverse(edge: MapEdge, mode: TransportMode): boolean {
-  if (edge.is_closed) return false;
+  if (isEdgeClosed(edge)) return false;
 
   if (edge.access && edge.access.length > 0) {
     return edge.access.includes(mode);
