@@ -1,7 +1,5 @@
 "use client";
 
-"use client";
-
 import { useEffect, useState } from "react";
 import { Polyline, CircleMarker } from "react-leaflet";
 import { findPath, getDistance, findNearestEdge } from "@/lib/pathfinding/astar";
@@ -9,6 +7,8 @@ import { getExternalPath } from "@/lib/pathfinding/external";
 import type { MapNode, MapEdge, PathResult, TransportMode } from "@/lib/types/graph";
 import type { LatLng } from "leaflet";
 import { toast } from "sonner";
+
+const TOAST_ID = 'navigation-status';
 
 interface NavigationLayerProps {
   startPoint: LatLng | null;
@@ -21,16 +21,19 @@ interface NavigationLayerProps {
 
 export function NavigationLayer({ startPoint, endPoint, mode, nodes, edges, waitingForUserLocation }: NavigationLayerProps) {
   const [pathResult, setPathResult] = useState<PathResult | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [hasShownToast, setHasShownToast] = useState(false);
+
+  // Reset toast state when destination or mode changes
+  useEffect(() => {
+    setHasShownToast(false);
+  }, [endPoint?.lat, endPoint?.lng, mode]);
 
   useEffect(() => {
-    // Re-run whenever data or endpoints change
-  }, []);
-
-  useEffect(() => {
+    // Guard: only show waiting toast if we haven't shown any toast yet
     if (waitingForUserLocation) {
-        toast.dismiss();
-        toast.loading("Waiting for user location...");
+        if (!hasShownToast) {
+            toast.loading("Waiting for user location...", { id: TOAST_ID });
+        }
         setPathResult(null);
         return;
     }
@@ -94,15 +97,14 @@ export function NavigationLayer({ startPoint, endPoint, mode, nodes, edges, wait
     };
 
     const runPathfinding = async () => {
-      setIsLoading(true);
       setPathResult(null);
-      toast.loading("Loading route...");
+      if (!hasShownToast) {
+        toast.loading("Loading route...", { id: TOAST_ID });
+      }
 
-      // 2. DATA CHECK: Wait for nodes to load if they are empty
-      // If we proceed with empty nodes, we might trigger a premature fallback.
+      // DATA CHECK: Wait for nodes to load if they are empty
       if (!nodes || nodes.length === 0 || !edges || edges.length === 0) {
          console.log("NavigationLayer: Waiting for graph data...", { nodes: nodes?.length, edges: edges?.length });
-         setIsLoading(false);
          return; 
       }
 
@@ -130,9 +132,10 @@ export function NavigationLayer({ startPoint, endPoint, mode, nodes, edges, wait
             
             console.log("NavigationLayer: Internal path found", { nodes: result.path.length });
             setPathResult(result);
-            toast.dismiss();
-            toast.success("Route found!");
-            setIsLoading(false);
+            if (!hasShownToast) {
+              toast.success("Route found!", { id: TOAST_ID });
+              setHasShownToast(true);
+            }
             return;
           }
         }
@@ -148,8 +151,10 @@ export function NavigationLayer({ startPoint, endPoint, mode, nodes, edges, wait
         if (externalResult && externalResult.path.length > 0) {
           console.log("NavigationLayer: External path found", { nodes: externalResult.path.length });
           setPathResult(externalResult);
-          toast.dismiss();
-          toast.success("Route found (external)!");
+          if (!hasShownToast) {
+            toast.success("Route found (external)!", { id: TOAST_ID });
+            setHasShownToast(true);
+          }
         } else {
           console.warn("NavigationLayer: External routing failed, showing straight line");
           setPathResult({
@@ -159,20 +164,22 @@ export function NavigationLayer({ startPoint, endPoint, mode, nodes, edges, wait
             ],
             totalDistance: getDistance(startPoint.lat, startPoint.lng, endPoint.lat, endPoint.lng)
           });
-          toast.dismiss();
-          toast.error("No route found.");
+          if (!hasShownToast) {
+            toast.error("No route found.", { id: TOAST_ID });
+            setHasShownToast(true);
+          }
         }
       } catch (err) {
         console.error("NavigationLayer: Process error", err);
-        toast.dismiss();
-        toast.error("An error occurred during routing.");
-      } finally {
-        setIsLoading(false);
+        if (!hasShownToast) {
+          toast.error("An error occurred during routing.", { id: TOAST_ID });
+          setHasShownToast(true);
+        }
       }
     };
 
     runPathfinding();
-  }, [startPoint, endPoint, nodes, edges, mode]);
+  }, [startPoint, endPoint, nodes, edges, mode, waitingForUserLocation]);
 
   if (!pathResult) return null;
 
