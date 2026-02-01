@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { toast } from "sonner";
 
 interface DeviceOrientationEventWithCompass extends DeviceOrientationEvent {
   webkitCompassHeading?: number;
@@ -66,6 +67,15 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
   const errorCountRef = useRef<number>(0);
 
   const handleError = useCallback((error: GeolocationPositionError) => {
+    // Notify user of error
+    if (error.code === 1) { // PERMISSION_DENIED
+      toast.error("Location access denied. Please enable location services.");
+    } else if (error.code === 2) { // POSITION_UNAVAILABLE
+      toast.error("Location unavailable. Please check your GPS signal.");
+    } else if (error.code === 3) { // TIMEOUT
+      toast.error("Location request timed out.");
+    }
+
     const isTimeout = error.code === error.TIMEOUT || error.code === 3;
 
     if (
