@@ -1,4 +1,4 @@
-export type GraphNodeType = 'node' | 'room_entry' | 'building_entry' | 'building_corner';
+export type GraphNodeType = 'node' | 'room_entry' | 'building_entry' | 'building_corner' | 'path_start' | 'path_middle' | 'path_end';
 export type TransportMode = 'walking' | 'cycling' | 'driving';
 
 export interface MapNode {

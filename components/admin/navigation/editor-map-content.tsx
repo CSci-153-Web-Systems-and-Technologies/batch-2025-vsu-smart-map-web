@@ -78,6 +78,20 @@ export default function EditorMapContent({
     groupedEdges.get(key)!.push(edge);
   });
 
+  const getNodeColor = (node: MapNode, isSelected: boolean, isChainStart: boolean) => {
+    if (isSelected) return 'yellow';
+    if (isChainStart) return 'cyan';
+    
+    switch (node.type) {
+      case 'path_start': return '#22c55e';
+      case 'path_middle': return '#eab308';
+      case 'path_end': return '#ef4444';
+      case 'room_entry':
+      case 'building_entry': return '#a855f7';
+      default: return '#3b82f6';
+    }
+  };
+
   return (
     <MapContainer
       center={[MAP_DEFAULT_CENTER.lat, MAP_DEFAULT_CENTER.lng]}
@@ -170,8 +184,8 @@ export default function EditorMapContent({
             center={[node.lat, node.lng]}
             radius={isSelected || isStartNode ? 8 : 5}
             pathOptions={{
-              color: isSelected ? 'yellow' : (isStartNode ? 'cyan' : 'blue'),
-              fillColor: isSelected ? 'yellow' : (isStartNode ? 'cyan' : 'blue'),
+              color: getNodeColor(node, isSelected, isStartNode),
+              fillColor: getNodeColor(node, isSelected, isStartNode),
               fillOpacity: 0.8,
             }}
             eventHandlers={{

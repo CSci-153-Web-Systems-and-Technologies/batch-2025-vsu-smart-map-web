@@ -31,6 +31,7 @@ export function NavigationEditor() {
   const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
   const [selectedEdgeIds, setSelectedEdgeIds] = useState<Set<string>>(new Set());
   const [edgeStartNodeId, setEdgeStartNodeId] = useState<string | null>(null);
+  const [newEdgeBidirectional, setNewEdgeBidirectional] = useState(true);
   
   const pushHistory = useCallback((newNodes: MapNode[], newEdges: MapEdge[]) => {
       const newState = { nodes: [...newNodes], edges: [...newEdges] };
@@ -41,7 +42,7 @@ export function NavigationEditor() {
       setHistoryIndex(prev => prev + 1);
   }, [historyIndex]);
 
-  const handleUndo = () => {
+  const handleUndo = useCallback(() => {
       if (historyIndex > 0) {
           const prevState = history[historyIndex - 1];
           setNodes(prevState.nodes);
@@ -49,9 +50,9 @@ export function NavigationEditor() {
           setHistoryIndex(historyIndex - 1);
           toast.success("Undo");
       }
-  };
+  }, [historyIndex, history]);
 
-  const handleRedo = () => {
+  const handleRedo = useCallback(() => {
       if (historyIndex < history.length - 1) {
           const nextState = history[historyIndex + 1];
           setNodes(nextState.nodes);
@@ -59,23 +60,23 @@ export function NavigationEditor() {
           setHistoryIndex(historyIndex + 1);
           toast.success("Redo");
       }
-  };
+  }, [historyIndex, history]);
 
-  const updateNodes = (newNodes: MapNode[]) => {
+  const updateNodes = useCallback((newNodes: MapNode[]) => {
       setNodes(newNodes);
       pushHistory(newNodes, edges);
-  };
+  }, [edges, pushHistory]);
 
-  const updateEdges = (newEdges: MapEdge[]) => {
+  const updateEdges = useCallback((newEdges: MapEdge[]) => {
       setEdges(newEdges);
       pushHistory(nodes, newEdges);
-  };
+  }, [nodes, pushHistory]);
 
-  const updateGraph = (newNodes: MapNode[], newEdges: MapEdge[]) => {
+  const updateGraph = useCallback((newNodes: MapNode[], newEdges: MapEdge[]) => {
       setNodes(newNodes);
       setEdges(newEdges);
       pushHistory(newNodes, newEdges);
-  };
+  }, [pushHistory]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -101,7 +102,7 @@ export function NavigationEditor() {
     const newNodes = [...nodes, newNode];
     updateNodes(newNodes);
     toast.success("Node added");
-  }, [nodes, edges, pushHistory]);
+  }, [nodes, updateNodes]);
 
   const handleNodeSelect = useCallback((id: string, multi: boolean) => {
     if (mode === 'add_edge') {
@@ -112,6 +113,17 @@ export function NavigationEditor() {
            return;
         }
         
+        const existingEdge = edges.find(e => 
+            (e.source_id === edgeStartNodeId && e.target_id === id) || 
+            (e.source_id === id && e.target_id === edgeStartNodeId)
+        );
+
+        if (existingEdge) {
+            toast.info("Edge already exists between these nodes");
+            setEdgeStartNodeId(id);
+            return;
+        }
+
         const access: TransportMode[] = ['walking'];
         const type: 'walkway' | 'road' = 'walkway';
 
@@ -120,7 +132,7 @@ export function NavigationEditor() {
           source_id: edgeStartNodeId,
           target_id: id,
           weight: 0,
-          bidirectional: true,
+          bidirectional: newEdgeBidirectional,
           type: type,
           access: access,
         };
@@ -146,7 +158,7 @@ export function NavigationEditor() {
         setEdgeStartNodeId(null);
       }
     }
-  }, [mode, edgeStartNodeId, edges, selectedNodeIds, selectedEdgeIds, updateEdges]);
+  }, [mode, edgeStartNodeId, edges, selectedNodeIds, updateEdges, newEdgeBidirectional]);
 
   const handleEdgeSelect = useCallback((id: string, multi: boolean) => {
       if (mode === 'select') {
@@ -294,6 +306,29 @@ export function NavigationEditor() {
           >
             <Route className="h-4 w-4" />
           </Button>
+
+          {mode === 'add_edge' && (
+              <div className="flex flex-col gap-1 border-t pt-1">
+                  <Button
+                    variant={newEdgeBidirectional ? "secondary" : "ghost"}
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setNewEdgeBidirectional(true)}
+                    title="Two-way"
+                  >
+                    <ArrowLeftRight className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={!newEdgeBidirectional ? "secondary" : "ghost"}
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setNewEdgeBidirectional(false)}
+                    title="One-way"
+                  >
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+              </div>
+          )}
           
           <div className="h-px bg-border my-1" />
           <Button
@@ -360,6 +395,73 @@ export function NavigationEditor() {
                 </Button>
             </div>
         )}
+
+        {selectedNodeIds.size === 1 && selectedEdgeIds.size === 0 && (() => {
+            const nodeId = Array.from(selectedNodeIds)[0];
+            const node = nodes.find(n => n.id === nodeId);
+            if (!node) return null;
+            
+            const handleNodeUpdate = (updates: Partial<MapNode>) => {
+                const newNodes = nodes.map(n => 
+                    n.id === nodeId ? { ...n, ...updates } : n
+                );
+                updateNodes(newNodes);
+            };
+            
+            return (
+              <div className="border rounded p-3 bg-card space-y-3">
+                <div className="font-medium">Node Properties</div>
+                <div className="text-xs font-mono text-muted-foreground">{nodeId.slice(0, 8)}...</div>
+                
+                <div className="space-y-2">
+                    <Label className="text-xs">Node Type</Label>
+                    <div className="flex gap-1">
+                        <Button 
+                            variant={node.type === 'path_start' ? "default" : "outline"} 
+                            size="sm" 
+                            className="flex-1 text-[10px] px-1 h-7"
+                            onClick={() => handleNodeUpdate({ type: 'path_start' })}
+                        >
+                            Start
+                        </Button>
+                        <Button 
+                            variant={node.type === 'path_middle' ? "default" : "outline"} 
+                            size="sm" 
+                            className="flex-1 text-[10px] px-1 h-7"
+                            onClick={() => handleNodeUpdate({ type: 'path_middle' })}
+                        >
+                            Middle
+                        </Button>
+                        <Button 
+                            variant={node.type === 'path_end' ? "default" : "outline"} 
+                            size="sm" 
+                            className="flex-1 text-[10px] px-1 h-7"
+                            onClick={() => handleNodeUpdate({ type: 'path_end' })}
+                        >
+                            End
+                        </Button>
+                    </div>
+                    <Select 
+                        value={node.type} 
+                        onValueChange={(v) => handleNodeUpdate({ type: v as MapNode['type'] })}
+                    >
+                        <SelectTrigger className="h-8 text-xs">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="node">Standard Node</SelectItem>
+                            <SelectItem value="path_start">Start Node</SelectItem>
+                            <SelectItem value="path_middle">Middle Node</SelectItem>
+                            <SelectItem value="path_end">End Node</SelectItem>
+                            <SelectItem value="room_entry">Room Entry</SelectItem>
+                            <SelectItem value="building_entry">Building Entry</SelectItem>
+                            <SelectItem value="building_corner">Building Corner</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+              </div>
+            );
+        })()}
 
         {selectedEdgeIds.size === 1 && (() => {
             const edgeId = Array.from(selectedEdgeIds)[0];
