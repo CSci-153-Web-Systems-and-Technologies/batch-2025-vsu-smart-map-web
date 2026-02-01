@@ -31,6 +31,13 @@ export function UserLocationControl({ className }: UserLocationControlProps) {
     return localStorage.getItem(LOCATION_PERMISSION_KEY) === "true";
   }, []);
 
+  useEffect(() => {
+    // Auto-start tracking if consented
+    if (typeof window !== "undefined" && hasConsented() && !isTracking) {
+        startTracking();
+    }
+  }, [hasConsented, isTracking, startTracking]);
+
   const handleLocate = useCallback(() => {
     if (!isSupported) {
       toast.error("Geolocation is not supported by your browser");
@@ -83,7 +90,7 @@ export function UserLocationControl({ className }: UserLocationControlProps) {
 
   return (
     <>
-      {position && isTracking && (
+      {position && (
         <UserLocationMarker position={position} heading={heading} />
       )}
 

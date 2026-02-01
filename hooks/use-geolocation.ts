@@ -97,11 +97,25 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
       watchIdRef.current = null;
     }
 
-    setState((prev) => ({
-      ...prev,
-      error,
-      isTracking: false,
-    }));
+    // Do NOT turn off tracking on transient errors (like timeout) unless critical
+    // We want to keep retrying or at least keep the state 'active' so the UI doesn't flicker
+    // Only turn off if permission denied or unavailable
+    const isFatal = error.code === 1 || error.code === 2; // Denied or Unavailable
+
+    if (isFatal) {
+        setState((prev) => ({
+            ...prev,
+            error,
+            isTracking: false,
+        }));
+    } else {
+        // Just update error state but keep tracking true so we can retry or show stale data
+        setState((prev) => ({
+            ...prev,
+            error,
+            // isTracking: true // Keep it as is
+        }));
+    }
   }, [state.isTracking, handleSuccess, lowAccuracyOptions]);
 
   const handleOrientation = useCallback((event: DeviceOrientationEventWithCompass) => {
