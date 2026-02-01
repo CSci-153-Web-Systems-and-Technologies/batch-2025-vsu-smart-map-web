@@ -210,6 +210,40 @@ export function NavigationEditor() {
       }
   }, [mode]);
 
+  const getEdgeTypePreset = (edge: MapEdge) => {
+      if (edge.type === 'walkway') return 'walkway';
+      if (edge.type === 'road') {
+          if (edge.access?.includes('walking')) return 'road'; // Shared
+          return 'car_road'; // Drive/Bike only
+      }
+      return edge.type; // Fallback for other types
+  };
+
+  const handleTypePresetChange = (preset: string, edgeIds: Set<string>) => {
+      let type: MapEdge['type'] = 'walkway';
+      let access: TransportMode[] = ['walking'];
+
+      if (preset === 'walkway') {
+          type = 'walkway';
+          access = ['walking'];
+      } else if (preset === 'road') {
+          type = 'road';
+          access = ['walking', 'cycling', 'driving'];
+      } else if (preset === 'car_road') {
+          type = 'road';
+          access = ['cycling', 'driving'];
+      } else {
+          // Handle valid fallback types like corridor, stairs
+          type = preset as MapEdge['type'];
+          access = ['walking'];
+      }
+
+      const newEdges = edges.map(e => 
+          edgeIds.has(e.id) ? { ...e, type, access } : e
+      );
+      updateEdges(newEdges);
+  };
+
   return (
     <div className="flex flex-col md:flex-row h-[calc(100vh-100px)] gap-4">
       <div className="flex-1 relative rounded-lg border overflow-hidden min-h-[400px]">
@@ -304,11 +338,8 @@ export function NavigationEditor() {
                     <div className="space-y-2 pt-2 border-t">
                         <Label className="text-xs">Bulk Type Change</Label>
                         <Select 
-                            onValueChange={(v: MapEdge['type']) => {
-                                const newEdges = edges.map(e => 
-                                    selectedEdgeIds.has(e.id) ? { ...e, type: v } : e
-                                );
-                                updateEdges(newEdges);
+                            onValueChange={(v) => {
+                                handleTypePresetChange(v, selectedEdgeIds);
                                 toast.success(`Updated ${selectedEdgeIds.size} edges`);
                             }}
                         >
@@ -316,11 +347,9 @@ export function NavigationEditor() {
                                 <SelectValue placeholder="Set Type..." />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="walkway">Walkway</SelectItem>
-                                <SelectItem value="road">Road</SelectItem>
-                                <SelectItem value="corridor">Corridor</SelectItem>
-                                <SelectItem value="stairs">Stairs</SelectItem>
-                                <SelectItem value="elevator">Elevator</SelectItem>
+                                <SelectItem value="walkway">Walkway (Walking only)</SelectItem>
+                                <SelectItem value="road">Shared Road (Walk + Drive)</SelectItem>
+                                <SelectItem value="car_road">Car Road (Drive Only)</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -352,42 +381,21 @@ export function NavigationEditor() {
                 <div className="space-y-2">
                     <Label className="text-xs">Edge Type</Label>
                     <Select 
-                        value={edge.type} 
-                        onValueChange={(v: MapEdge['type']) => handleEdgeUpdate({ type: v })}
+                        value={getEdgeTypePreset(edge)} 
+                        onValueChange={(v) => handleTypePresetChange(v, new Set([edgeId]))}
                     >
                         <SelectTrigger className="h-8 text-xs">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="walkway">Walkway</SelectItem>
-                            <SelectItem value="road">Road</SelectItem>
+                            <SelectItem value="walkway">Walkway (Walking only)</SelectItem>
+                            <SelectItem value="road">Shared Road (Walk + Drive)</SelectItem>
+                            <SelectItem value="car_road">Car Road (Drive Only)</SelectItem>
                             <SelectItem value="corridor">Corridor</SelectItem>
                             <SelectItem value="stairs">Stairs</SelectItem>
                             <SelectItem value="elevator">Elevator</SelectItem>
                         </SelectContent>
                     </Select>
-                </div>
-
-                <div className="space-y-2">
-                    <Label className="text-xs">Allowed Access</Label>
-                    <div className="flex flex-wrap gap-2">
-                        {(['walking', 'cycling', 'driving'] as const).map(mode => (
-                            <div key={mode} className="flex items-center gap-1">
-                                <Checkbox 
-                                    id={`access-${mode}`}
-                                    checked={edge.access?.includes(mode) ?? false}
-                                    onCheckedChange={(checked) => {
-                                        const current = edge.access || [];
-                                        const newAccess = checked 
-                                            ? [...current, mode]
-                                            : current.filter(m => m !== mode);
-                                        handleEdgeUpdate({ access: newAccess });
-                                    }}
-                                />
-                                <Label htmlFor={`access-${mode}`} className="text-xs capitalize cursor-pointer">{mode}</Label>
-                            </div>
-                        ))}
-                    </div>
                 </div>
                 
                 <div className="flex items-center gap-2 pt-2 border-t">
