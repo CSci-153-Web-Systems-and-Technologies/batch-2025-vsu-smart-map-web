@@ -38,12 +38,14 @@ export function NavigationLayer({ startPoint, endPoint, mode }: NavigationLayerP
   }, []);
 
   useEffect(() => {
-    if (!startPoint || !endPoint || nodes.length === 0) {
+    if (!startPoint || !endPoint) {
       setPathResult(null);
       return;
     }
 
     const snapToGraph = (lat: number, lng: number): string | null => {
+      if (nodes.length === 0 || edges.length === 0) return null;
+
       const { nearestEdge } = findNearestEdge(lat, lng, nodes, edges, mode);
       
       if (nearestEdge) {
@@ -95,19 +97,25 @@ export function NavigationLayer({ startPoint, endPoint, mode }: NavigationLayerP
     };
 
     const runPathfinding = async () => {
-      let isCancelled = false;
-      
       const startNodeId = snapToGraph(startPoint.lat, startPoint.lng);
       const endNodeId = snapToGraph(endPoint.lat, endPoint.lng);
 
-      if (startNodeId && endNodeId) {
+      if (startNodeId && endNodeId && nodes.length > 0 && edges.length > 0) {
         const result = findPath(nodes, edges, startNodeId, endNodeId, mode);
-        if (result && !isCancelled) {
-          setPathResult(result);
-          if (result.path.length === 0) {
-            toast.error("No path found");
+        if (result) {
+          const userPoint = { lat: startPoint.lat, lng: startPoint.lng };
+          const firstPathNode = result.path[0];
+          const distToFirstNode = getDistance(userPoint.lat, userPoint.lng, firstPathNode.lat, firstPathNode.lng);
+
+          if (distToFirstNode > 2 && distToFirstNode < 50) {
+            result.path = [
+              { id: 'user-pos', lat: userPoint.lat, lng: userPoint.lng, type: 'node' } as MapNode,
+              ...result.path
+            ];
           }
-          return () => { isCancelled = true; };
+          
+          setPathResult(result);
+          return;
         }
       }
 
@@ -117,11 +125,8 @@ export function NavigationLayer({ startPoint, endPoint, mode }: NavigationLayerP
         mode
       );
 
-      if (isCancelled) return;
-
       if (externalResult) {
         setPathResult(externalResult);
-        toast.info("Using external routing for this path.");
       } else {
         setPathResult({
           path: [
@@ -130,7 +135,6 @@ export function NavigationLayer({ startPoint, endPoint, mode }: NavigationLayerP
           ],
           totalDistance: getDistance(startPoint.lat, startPoint.lng, endPoint.lat, endPoint.lng)
         });
-        toast.info("Pathfinding failed. Showing direct line.");
       }
     };
 
