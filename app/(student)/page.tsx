@@ -248,13 +248,7 @@ function MapView({
   }, [isTracking, startTracking]);
 
   useEffect(() => {
-      if (navStart && navEnd) {
-          const bounds = L.latLngBounds(
-              [navStart.lat, navStart.lng],
-              [navEnd.lat, navEnd.lng]
-          );
-          setMapBounds(bounds);
-      } else {
+      if (!navStart || !navEnd) {
           setMapBounds(null);
       }
   }, [navStart, navEnd]);
