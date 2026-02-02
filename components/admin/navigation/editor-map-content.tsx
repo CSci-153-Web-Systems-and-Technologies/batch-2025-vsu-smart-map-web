@@ -86,7 +86,6 @@ export default function EditorMapContent({
       case 'path_start': return '#22c55e';
       case 'path_middle': return '#eab308';
       case 'path_end': return '#ef4444';
-      case 'room_entry':
       case 'building_entry': return '#a855f7';
       default: return '#3b82f6';
     }
