@@ -230,7 +230,7 @@ function MapView({
   onClearSelection: () => void;
   graphData: { nodes: MapNode[], edges: MapEdge[] };
 }) {
-  const { selectedCategories, debouncedQuery } = useApp();
+  const { selectedCategories, debouncedQuery, defaultTransportMode } = useApp();
   const hasResults = filtered.length > 0;
   const hasActiveFilters = selectedCategories.length > 0 || debouncedQuery.trim().length > 0;
   
@@ -240,9 +240,13 @@ function MapView({
   // Use persistent navigation state
   const { navStart, setNavStart, navEnd, setNavEnd, clearNavigation } = useNavigationPersistence();
   
-  const [navMode] = useState<TransportMode>('walking');
+  const [navMode, setNavMode] = useState<TransportMode>('walking');
   const [mapBounds, setMapBounds] = useState<LatLngBoundsExpression | null>(null);
   const [isNavigatingFromUser, setIsNavigatingFromUser] = useState(false);
+
+  useEffect(() => {
+    setNavMode(defaultTransportMode);
+  }, [defaultTransportMode]);
 
   useEffect(() => {
     // Only update if we are actively navigating from user AND position is available

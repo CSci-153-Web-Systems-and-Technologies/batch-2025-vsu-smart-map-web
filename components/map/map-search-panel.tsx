@@ -7,7 +7,6 @@ import { useApp } from "@/lib/context/app-context";
 import { CategoryFilters } from "./category-filters";
 import { searchRooms } from "@/lib/supabase/queries/rooms";
 import { getCachedRooms } from "@/lib/cache/rooms-cache";
-import { MapSettings } from "@/components/settings/map-settings";
 
 
 type MapSearchPanelProps = {
@@ -105,7 +104,6 @@ export function MapSearchPanel({
         onChange={setCategories}
         onToggle={toggleCategory}
         />
-        <MapSettings />
     </div>
   );
 }
