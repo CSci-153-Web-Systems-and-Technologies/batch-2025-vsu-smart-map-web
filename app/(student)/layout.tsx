@@ -16,9 +16,9 @@ export default function StudentLayout({
           <AppHeader tabsSlot={<StudentTabs placement="inline" />} />
           <main id="main-content" tabIndex={-1} className="flex-1 relative w-full overflow-hidden outline-none">
             {children}
-            <FacilitySheet />
           </main>
           <StudentTabs placement="bottom" />
+          <FacilitySheet />
         </div>
       </AppProvider>
     </Suspense>

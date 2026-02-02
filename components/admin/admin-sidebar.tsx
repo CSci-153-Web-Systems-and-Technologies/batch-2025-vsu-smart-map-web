@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Building, Lightbulb, Bug, Info, Map, Globe, Route } from 'lucide-react';
+import { LayoutDashboard, Building, Lightbulb, Bug, Info, Map, Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { ThemeSwitcher } from '@/components/theme-switcher';
@@ -13,7 +13,6 @@ import { useMapStyle } from '@/lib/context/map-style-context';
 const NAV_ITEMS = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/facilities', label: 'Facilities', icon: Building },
-  { href: '/admin/navigation', label: 'Navigation', icon: Route },
   { href: '/admin/suggestions', label: 'Suggestions', icon: Lightbulb },
   { href: '/admin/bugs', label: 'Bug Reports', icon: Bug },
   { href: '/info', label: 'Project Info', icon: Info },
