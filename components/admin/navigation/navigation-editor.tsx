@@ -7,7 +7,7 @@ import type { MapNode, MapEdge, TransportMode, GraphNodeType } from "@/lib/types
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { MousePointer2, Plus, Save, Trash2, Route, Undo2, Redo2, ArrowLeftRight, ArrowRight, AlertTriangle, Clock } from "lucide-react";
+import { MousePointer2, Plus, Save, Trash2, Route, Undo2, Redo2, ArrowLeftRight, ArrowRight, AlertTriangle, Clock, Wand2, RefreshCw } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { db } from "@/lib/db";
 import { saveMapGraph } from "@/lib/supabase/queries/navigation";
 import { getFacilitiesLite } from "@/lib/supabase/queries/facilities";
+import { getDistance } from "@/lib/pathfinding/astar";
 import type { FacilityLite } from "@/lib/types/facility";
 import { toast } from "sonner";
 
@@ -36,7 +37,7 @@ export function NavigationEditor() {
   const [selectedEdgeIds, setSelectedEdgeIds] = useState<Set<string>>(new Set());
   const [edgeStartNodeId, setEdgeStartNodeId] = useState<string | null>(null);
   const [newEdgeBidirectional, setNewEdgeBidirectional] = useState(true);
-  const [newEdgeType, setNewEdgeType] = useState<'walkway' | 'road'>('walkway');
+  const [newEdgeType, setNewEdgeType] = useState<'walkway' | 'road' | 'car_road'>('walkway');
   
   const pushHistory = useCallback((newNodes: MapNode[], newEdges: MapEdge[]) => {
       const newState = { nodes: [...newNodes], edges: [...newEdges] };
@@ -131,8 +132,16 @@ export function NavigationEditor() {
             return;
         }
 
-         const access: TransportMode[] = newEdgeType === 'road' ? ['walking', 'cycling', 'driving'] : ['walking'];
-         const type = newEdgeType;
+         let access: TransportMode[] = ['walking'];
+         let type: MapEdge['type'] = 'walkway';
+
+         if (newEdgeType === 'road') {
+             type = 'road';
+             access = ['walking', 'cycling', 'driving'];
+         } else if (newEdgeType === 'car_road') {
+             type = 'road';
+             access = ['cycling', 'driving'];
+         }
 
          const newEdge: MapEdge = {
            id: uuidv4(),
@@ -257,6 +266,56 @@ export function NavigationEditor() {
           edgeIds.has(e.id) ? { ...e, type, access } : e
       );
       updateEdges(newEdges);
+  };
+
+  const handleSwapEdgeDirection = (edgeId: string) => {
+      const newEdges = edges.map(e => {
+          if (e.id === edgeId) {
+              return {
+                  ...e,
+                  source_id: e.target_id,
+                  target_id: e.source_id
+              };
+          }
+          return e;
+      });
+      updateEdges(newEdges);
+      toast.success("Direction swapped");
+  };
+
+  const autoAssociateBuildings = (nodeId: string) => {
+      const node = nodes.find(n => n.id === nodeId);
+      if (!node || facilities.length === 0) return;
+
+      const MAX_DIST = 20; 
+      const nearby = facilities.filter(f => {
+          const d = getDistance(node.lat, node.lng, f.coordinates.lat, f.coordinates.lng);
+          return d <= MAX_DIST;
+      }).sort((a, b) => {
+          const da = getDistance(node.lat, node.lng, a.coordinates.lat, a.coordinates.lng);
+          const db = getDistance(node.lat, node.lng, b.coordinates.lat, b.coordinates.lng);
+          return da - db;
+      });
+
+      if (nearby.length === 0) {
+          toast.info("No buildings found within 20m");
+          return;
+      }
+
+      const currentIds = node.building_ids ?? [];
+      let nextIndex = 0;
+
+      if (currentIds.length > 0) {
+          const firstId = currentIds[0];
+          const currentIndex = nearby.findIndex(f => f.id === firstId);
+          if (currentIndex !== -1) {
+              nextIndex = (currentIndex + 1) % nearby.length;
+          }
+      }
+
+      const nextFacility = nearby[nextIndex];
+      handleBulkNodeUpdate({ building_ids: [nextFacility.id] }, new Set([nodeId]));
+      toast.success(`Suggested: ${nextFacility.name} (${nextIndex + 1}/${nearby.length})`);
   };
 
   const handleBulkEdgeUpdate = (updates: Partial<MapEdge>, edgeIds: Set<string>) => {
@@ -391,13 +450,14 @@ export function NavigationEditor() {
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                   <div className="h-px bg-border my-1" />
-                  <Select value={newEdgeType} onValueChange={(v: 'walkway' | 'road') => setNewEdgeType(v)}>
+                  <Select value={newEdgeType} onValueChange={(v: 'walkway' | 'road' | 'car_road') => setNewEdgeType(v)}>
                       <SelectTrigger className="h-8 w-8 p-0 border-none bg-transparent hover:bg-accent flex items-center justify-center">
                           <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                           <SelectItem value="walkway">Walkway</SelectItem>
-                          <SelectItem value="road">Road</SelectItem>
+                          <SelectItem value="road">Shared Road</SelectItem>
+                          <SelectItem value="car_road">Car Road (Drive Only)</SelectItem>
                       </SelectContent>
                   </Select>
               </div>
@@ -448,7 +508,7 @@ export function NavigationEditor() {
              </div>
          )}
 
-         {selectedNodeIds.size > 0 && selectedEdgeIds.size === 0 && (() => {
+         {selectedNodeIds.size > 0 && (() => {
              const firstNodeId = Array.from(selectedNodeIds)[0];
              const firstNode = nodes.find(n => n.id === firstNodeId);
              if (!firstNode) return null;
@@ -517,22 +577,41 @@ export function NavigationEditor() {
 
                 {selectedNodeIds.size === 1 && firstNode.type === 'building_entry' && (
                     <div className="space-y-2 pt-2 border-t">
-                        <Label className="text-xs">Associated Building</Label>
-                        <Select 
-                            value={firstNode.building_id} 
-                            onValueChange={(v) => handleBulkNodeUpdate({ building_id: v }, selectedNodeIds)}
-                        >
-                            <SelectTrigger className="h-8 text-xs">
-                                <SelectValue placeholder="Select Building..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {facilities.map(f => (
-                                    <SelectItem key={f.id} value={f.id}>
-                                        {f.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <div className="flex items-center justify-between">
+                            <Label className="text-xs">Associated Buildings</Label>
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-6 w-6" 
+                                title="Auto-associate closest buildings"
+                                onClick={() => autoAssociateBuildings(firstNodeId)}
+                            >
+                                <Wand2 className="h-3 w-3" />
+                            </Button>
+                        </div>
+                        <div className="max-h-40 overflow-y-auto space-y-2 border rounded p-2 bg-muted/30">
+                            {facilities.map(f => {
+                                const isChecked = firstNode.building_ids?.includes(f.id) ?? false;
+                                return (
+                                    <div key={f.id} className="flex items-center gap-2">
+                                        <Checkbox 
+                                            id={`f-${f.id}`}
+                                            checked={isChecked}
+                                            onCheckedChange={(checked) => {
+                                                const currentIds = firstNode.building_ids ?? [];
+                                                const newIds = checked 
+                                                    ? [...currentIds, f.id]
+                                                    : currentIds.filter(id => id !== f.id);
+                                                handleBulkNodeUpdate({ building_ids: newIds }, selectedNodeIds);
+                                            }}
+                                        />
+                                        <Label htmlFor={`f-${f.id}`} className="text-[10px] leading-tight cursor-pointer">
+                                            {f.name}
+                                        </Label>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
                 )}
 
@@ -545,8 +624,12 @@ export function NavigationEditor() {
                                 <span className="font-mono text-primary uppercase">{firstNode.type}</span>
                             </div>
                             <div className="flex justify-between border-t border-white/5 pt-1 mt-1">
-                                <span className="text-muted-foreground">Transitions:</span>
-                                <span className="font-mono">{edges.filter(e => e.source_id === firstNodeId || (e.bidirectional && e.target_id === firstNodeId)).length} edge(s)</span>
+                                <span className="text-muted-foreground">In-Degree:</span>
+                                <span className="font-mono">{edges.filter(e => e.target_id === firstNodeId || (e.bidirectional && e.source_id === firstNodeId)).length}</span>
+                            </div>
+                            <div className="flex justify-between border-t border-white/5 pt-1 mt-1">
+                                <span className="text-muted-foreground">Out-Degree:</span>
+                                <span className="font-mono">{edges.filter(e => e.source_id === firstNodeId || (e.bidirectional && e.target_id === firstNodeId)).length}</span>
                             </div>
                             <div className="flex justify-between border-t border-white/5 pt-1 mt-1">
                                 <span className="text-muted-foreground">Group Size:</span>
@@ -603,13 +686,24 @@ export function NavigationEditor() {
                          checked={commonBidi}
                          onCheckedChange={(checked) => handleBulkEdgeUpdate({ bidirectional: !!checked }, selectedEdgeIds)}
                      />
-                     <Label htmlFor="bidirectional" className="text-xs flex items-center gap-1 cursor-pointer">
+                     <Label htmlFor="bidirectional" className="text-xs flex items-center gap-1 cursor-pointer flex-1">
                          {commonBidi ? (
                              <><ArrowLeftRight className="h-3 w-3" /> Two-way</>
                          ) : (
                              <><ArrowRight className="h-3 w-3" /> One-way</>
                          )}
                      </Label>
+                     {selectedEdgeIds.size === 1 && !commonBidi && (
+                         <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6" 
+                            title="Swap Direction"
+                            onClick={() => handleSwapEdgeDirection(firstEdgeId)}
+                         >
+                            <RefreshCw className="h-3 w-3" />
+                         </Button>
+                     )}
                  </div>
                  
                  <div className="border-t pt-2 mt-2">

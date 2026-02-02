@@ -7,7 +7,7 @@ export interface MapNode {
   lng: number;
   label?: string;
   type: GraphNodeType;
-  building_id?: string;
+  building_ids?: string[];
   floor_level?: number;
 }
 

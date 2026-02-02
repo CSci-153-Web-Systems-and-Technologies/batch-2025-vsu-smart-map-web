@@ -72,6 +72,17 @@ export class VSUDatabase extends Dexie {
       map_edges: "id, source_id, target_id, type, is_closed", 
       // Dexie doesn't strict schema for non-indexed fields, but version bump is good practice
     });
+
+    this.version(8).stores({
+      map_nodes: "id, type",
+    }).upgrade(tx => {
+       return tx.table("map_nodes").toCollection().modify(node => {
+          if (node.building_id) {
+              node.building_ids = [node.building_id];
+              delete node.building_id;
+          }
+       });
+    });
   }
 }
 
