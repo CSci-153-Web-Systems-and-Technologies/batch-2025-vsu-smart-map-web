@@ -3,7 +3,7 @@
 import "leaflet/dist/leaflet.css";
 
 import { useTheme } from "next-themes";
-import { MapContainer, TileLayer, CircleMarker, Polyline, useMapEvents, ZoomControl } from "react-leaflet";
+import { MapContainer, TileLayer, CircleMarker, Polyline, useMapEvents, ZoomControl, Marker } from "react-leaflet";
 import L from "leaflet";
 import { MAP_MAX_ZOOM, MAP_MIN_ZOOM, MAP_TILES, MAP_DEFAULT_CENTER } from "@/lib/constants/map";
 import { useMapStyle } from "@/lib/context/map-style-context";
@@ -19,6 +19,7 @@ interface EditorMapContentProps {
   onNodeAdd: (lat: number, lng: number) => void;
   onNodeSelect: (id: string, multi: boolean) => void;
   onEdgeSelect: (id: string, multi: boolean) => void;
+  onNodeMove: (id: string, lat: number, lng: number) => void;
 }
 
 function MapEvents({ mode, onNodeAdd }: { mode: string; onNodeAdd: (lat: number, lng: number) => void }) {
@@ -42,6 +43,7 @@ export default function EditorMapContent({
   onNodeAdd,
   onNodeSelect,
   onEdgeSelect,
+  onNodeMove,
 }: EditorMapContentProps) {
   const { resolvedTheme } = useTheme();
   const { mapStyle } = useMapStyle();
@@ -176,23 +178,33 @@ export default function EditorMapContent({
       {nodes.map((node) => {
         const isSelected = selectedNodeIds.has(node.id);
         const isStartNode = node.id === edgeStartNodeId;
+        const color = getNodeColor(node, isSelected, isStartNode);
+        const radius = isSelected || isStartNode ? 8 : 5;
+
+        const icon = L.divIcon({
+          className: 'custom-node-icon',
+          html: `<div style="background-color: ${color}; width: ${radius*2}px; height: ${radius*2}px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 4px rgba(0,0,0,0.3);"></div>`,
+          iconSize: [radius*2, radius*2],
+          iconAnchor: [radius, radius],
+        });
         
         return (
-          <CircleMarker
+          <Marker
             key={node.id}
-            center={[node.lat, node.lng]}
-            radius={isSelected || isStartNode ? 8 : 5}
-            pathOptions={{
-              color: getNodeColor(node, isSelected, isStartNode),
-              fillColor: getNodeColor(node, isSelected, isStartNode),
-              fillOpacity: 0.8,
-            }}
+            position={[node.lat, node.lng]}
+            icon={icon}
+            draggable={mode === 'select'}
             eventHandlers={{
               click: (e) => {
                 L.DomEvent.stopPropagation(e);
                 const isMulti = e.originalEvent.metaKey || e.originalEvent.ctrlKey || e.originalEvent.shiftKey;
                 onNodeSelect(node.id, isMulti);
               },
+              dragend: (e) => {
+                const marker = e.target;
+                const position = marker.getLatLng();
+                onNodeMove(node.id, position.lat, position.lng);
+              }
             }}
           />
         );

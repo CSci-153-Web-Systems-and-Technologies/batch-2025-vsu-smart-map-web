@@ -23,6 +23,7 @@ export interface MapEdge {
   access?: TransportMode[]; 
 
   is_closed?: boolean;
+  closed_until_toggled?: boolean;
   closed_from?: string;
   closed_until?: string;
   closure_reason?: string;
@@ -31,6 +32,9 @@ export interface MapEdge {
   closure_recurring_start?: string; // "HH:MM" 24h format
   closure_recurring_end?: string;   // "HH:MM" 24h format
   closure_recurring_days?: number[]; // 0=Sunday, 1=Monday, ...
+
+  // Advanced daily schedule (different times per day)
+  closure_daily_schedule?: Record<number, { start: string, end: string }>; // key: 0-6
 }
 
 export interface PathResult {

@@ -16,7 +16,10 @@ function isEdgeClosed(edge: MapEdge): boolean {
   
   const now = new Date();
 
-  // 1. Check Date Range (if defined)
+  // 1. Check Permanent Toggle
+  if (edge.closed_until_toggled) return true;
+
+  // 2. Check Date Range (if defined)
   // If we are outside the date range, the closure (temporary or recurring) doesn't apply?
   // User Requirement: "sometimes roads ... open on a certain time only"
   // Interpretation: "is_closed" activates the logic.
@@ -29,13 +32,34 @@ function isEdgeClosed(edge: MapEdge): boolean {
     if (now > new Date(edge.closed_until)) return false;
   }
 
-  // 2. Check Recurring Days (if defined)
+  // 3. Check Daily Schedule (Advanced)
+  const day = now.getDay();
+  if (edge.closure_daily_schedule?.[day]) {
+    const { start, end } = edge.closure_daily_schedule[day];
+    const [startH, startM] = start.split(':').map(Number);
+    const [endH, endM] = end.split(':').map(Number);
+    
+    const currentH = now.getHours();
+    const currentM = now.getMinutes();
+    const currentMinutes = currentH * 60 + currentM;
+    const startMinutes = startH * 60 + startM;
+    const endMinutes = endH * 60 + endM;
+
+    if (startMinutes > endMinutes) {
+      if (currentMinutes >= startMinutes || currentMinutes <= endMinutes) return true;
+      return false;
+    } else {
+      if (currentMinutes >= startMinutes && currentMinutes <= endMinutes) return true;
+      return false;
+    }
+  }
+
+  // 4. Check Recurring Days (Legacy/Simple)
   if (edge.closure_recurring_days && edge.closure_recurring_days.length > 0) {
-    const day = now.getDay();
     if (!edge.closure_recurring_days.includes(day)) return false;
   }
 
-  // 3. Check Recurring Time (if defined)
+  // 5. Check Recurring Time (Legacy/Simple)
   if (edge.closure_recurring_start && edge.closure_recurring_end) {
     const [startH, startM] = edge.closure_recurring_start.split(':').map(Number);
     const [endH, endM] = edge.closure_recurring_end.split(':').map(Number);

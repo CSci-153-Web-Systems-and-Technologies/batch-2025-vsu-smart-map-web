@@ -22,6 +22,7 @@ interface EditorMapProps {
   onNodeAdd: (lat: number, lng: number) => void;
   onNodeSelect: (id: string, multi: boolean) => void;
   onEdgeSelect: (id: string, multi: boolean) => void;
+  onNodeMove: (id: string, lat: number, lng: number) => void;
 }
 
 export function EditorMap(props: EditorMapProps) {
