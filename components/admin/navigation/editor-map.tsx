@@ -15,7 +15,7 @@ const EditorMapContent = dynamic(
 interface EditorMapProps {
   nodes: MapNode[];
   edges: MapEdge[];
-  mode: 'select' | 'add_node' | 'add_edge';
+  mode: 'select' | 'add_node' | 'add_edge' | 'mixed';
   selectedNodeIds: Set<string>;
   selectedEdgeIds: Set<string>;
   edgeStartNodeId: string | null;

@@ -32,7 +32,9 @@ export function NavigationEditor() {
   const [history, setHistory] = useState<HistoryState[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   
-  const [mode, setMode] = useState<'select' | 'add_node' | 'add_edge'>('select');
+  const [isAddNodeMode, setIsAddNodeMode] = useState(false);
+  const [isAddEdgeMode, setIsAddEdgeMode] = useState(false);
+  
   const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
   const [selectedEdgeIds, setSelectedEdgeIds] = useState<Set<string>>(new Set());
   const [edgeStartNodeId, setEdgeStartNodeId] = useState<string | null>(null);
@@ -109,12 +111,49 @@ export function NavigationEditor() {
       type: 'node',
     };
     const newNodes = [...nodes, newNode];
+    
+    // If adding edges simultaneously, connect to the previous node
+    if (isAddEdgeMode && edgeStartNodeId) {
+        // Prevent self-loop if clicked too fast or logic error (though usually startNode is different)
+        if (edgeStartNodeId !== newNode.id) {
+             let access: TransportMode[] = ['walking'];
+             let type: MapEdge['type'] = 'walkway';
+
+             if (newEdgeType === 'road') {
+                 type = 'road';
+                 access = ['walking', 'cycling', 'driving'];
+             } else if (newEdgeType === 'car_road') {
+                 type = 'road';
+                 access = ['cycling', 'driving'];
+             }
+
+             const newEdge: MapEdge = {
+                id: uuidv4(),
+                source_id: edgeStartNodeId,
+                target_id: newNode.id,
+                weight: 0,
+                bidirectional: newEdgeBidirectional,
+                type: type,
+                access: access,
+              };
+              
+              const newEdges = [...edges, newEdge];
+              updateGraph(newNodes, newEdges); // Update both
+              setEdgeStartNodeId(newNode.id); // Advance chain
+              toast.success("Node & Edge added");
+              return;
+        }
+    }
+    
     updateNodes(newNodes);
+    if (isAddEdgeMode) {
+        setEdgeStartNodeId(newNode.id); // Start chain if not started
+    }
     toast.success("Node added");
-  }, [nodes, updateNodes]);
+  }, [nodes, edges, updateNodes, updateGraph, isAddEdgeMode, edgeStartNodeId, newEdgeBidirectional, newEdgeType]);
 
   const handleNodeSelect = useCallback((id: string, multi: boolean) => {
-    if (mode === 'add_edge') {
+    if (isAddEdgeMode) {
       if (!edgeStartNodeId) {
         setEdgeStartNodeId(id);
       } else {
@@ -175,10 +214,12 @@ export function NavigationEditor() {
         setEdgeStartNodeId(null);
       }
     }
-  }, [mode, edgeStartNodeId, edges, selectedNodeIds, updateEdges, newEdgeBidirectional, newEdgeType]);
+  }, [isAddEdgeMode, edgeStartNodeId, edges, selectedNodeIds, updateEdges, newEdgeBidirectional, newEdgeType]);
 
   const handleEdgeSelect = useCallback((id: string, multi: boolean) => {
-      if (mode === 'select') {
+      // Allow selection only if NOT adding nodes/edges, OR if we decide to allow it.
+      // Standard behavior: 'select' mode only.
+      if (!isAddNodeMode && !isAddEdgeMode) {
           if (multi) {
             const newSet = new Set(selectedEdgeIds);
             if (newSet.has(id)) {
@@ -192,7 +233,7 @@ export function NavigationEditor() {
             setSelectedNodeIds(new Set());
           }
       }
-  }, [mode, selectedEdgeIds]);
+  }, [isAddNodeMode, isAddEdgeMode, selectedEdgeIds]);
 
   const handleSave = async () => {
     if (!db) return;
@@ -234,10 +275,10 @@ export function NavigationEditor() {
   }, [selectedNodeIds, selectedEdgeIds, nodes, edges, updateGraph]);
 
   useEffect(() => {
-      if (mode !== 'add_edge') {
+      if (!isAddEdgeMode) {
           setEdgeStartNodeId(null);
       }
-  }, [mode]);
+  }, [isAddEdgeMode]);
 
   const getEdgeTypePreset = (edge: MapEdge) => {
       if (edge.type === 'walkway') return 'walkway';
@@ -288,7 +329,7 @@ export function NavigationEditor() {
       const node = nodes.find(n => n.id === nodeId);
       if (!node || facilities.length === 0) return;
 
-      const MAX_DIST = 20; 
+      const MAX_DIST = 50; 
       const nearby = facilities.filter(f => {
           const d = getDistance(node.lat, node.lng, f.coordinates.lat, f.coordinates.lng);
           return d <= MAX_DIST;
@@ -418,7 +459,7 @@ export function NavigationEditor() {
         <EditorMap
           nodes={nodes}
           edges={edges}
-          mode={mode}
+          mode={isAddNodeMode && isAddEdgeMode ? 'mixed' : (isAddNodeMode ? 'add_node' : (isAddEdgeMode ? 'add_edge' : 'select')) as any}
           selectedNodeIds={selectedNodeIds}
           selectedEdgeIds={selectedEdgeIds}
           edgeStartNodeId={edgeStartNodeId}
@@ -440,31 +481,31 @@ export function NavigationEditor() {
           <div className="h-px bg-border my-1" />
           
           <Button
-            variant={mode === 'select' ? "default" : "ghost"}
+            variant={(!isAddNodeMode && !isAddEdgeMode) ? "default" : "ghost"}
             size="icon"
-            onClick={() => setMode('select')}
+            onClick={() => { setIsAddNodeMode(false); setIsAddEdgeMode(false); }}
             title="Select Mode"
           >
             <MousePointer2 className="h-4 w-4" />
           </Button>
           <Button
-            variant={mode === 'add_node' ? "default" : "ghost"}
+            variant={isAddNodeMode ? "default" : "ghost"}
             size="icon"
-            onClick={() => setMode('add_node')}
+            onClick={() => setIsAddNodeMode(!isAddNodeMode)}
             title="Add Node"
           >
             <Plus className="h-4 w-4" />
           </Button>
           <Button
-            variant={mode === 'add_edge' ? "default" : "ghost"}
+            variant={isAddEdgeMode ? "default" : "ghost"}
             size="icon"
-            onClick={() => setMode('add_edge')}
+            onClick={() => setIsAddEdgeMode(!isAddEdgeMode)}
             title="Add Edge (Chain)"
           >
             <Route className="h-4 w-4" />
           </Button>
 
-          {mode === 'add_edge' && (
+          {isAddEdgeMode && (
               <div className="flex flex-col gap-1 border-t pt-1">
                   <Button
                     variant={newEdgeBidirectional ? "secondary" : "ghost"}
@@ -837,18 +878,30 @@ export function NavigationEditor() {
                  </div>
                  
                  <div className="flex items-center gap-2 pt-2 border-t">
-                     <Checkbox 
-                         id="bidirectional"
-                         checked={commonBidi}
-                         onCheckedChange={(checked) => handleBulkEdgeUpdate({ bidirectional: !!checked }, selectedEdgeIds)}
-                     />
-                      <Label htmlFor="bidirectional" className="text-xs flex items-center gap-1 cursor-pointer flex-1">
-                          {commonBidi ? (
-                              <><ArrowLeftRight className="h-3 w-3" /> Two-way</>
-                          ) : (
-                              <><ArrowRight className="h-3 w-3" /> One-way</>
-                          )}
-                      </Label>
+                     <ToggleGroup type="single" value={commonBidi ? "bidi" : "one-way"} onValueChange={(val) => {
+                         if (val) handleBulkEdgeUpdate({ bidirectional: val === "bidi" }, selectedEdgeIds);
+                     }}>
+                        <ToggleGroupItem value="bidi" size="sm" aria-label="Two-way" className="h-8 px-2 text-xs">
+                            <ArrowLeftRight className="h-3 w-3 mr-1" /> Two-way
+                        </ToggleGroupItem>
+                        <ToggleGroupItem value="one-way" size="sm" aria-label="One-way" className="h-8 px-2 text-xs">
+                            <ArrowRight className="h-3 w-3 mr-1" /> One-way
+                        </ToggleGroupItem>
+                     </ToggleGroup>
+                     
+                     {!commonBidi && (
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 ml-auto"
+                            title="Swap Direction"
+                            onClick={() => {
+                                selectedEdgeIds.forEach(id => handleSwapEdgeDirection(id));
+                            }}
+                        >
+                            <RefreshCw className="h-4 w-4" />
+                        </Button>
+                     )}
                   </div>
 
                  

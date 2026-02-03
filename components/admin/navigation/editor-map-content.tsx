@@ -12,7 +12,7 @@ import type { MapNode, MapEdge } from "@/lib/types/graph";
 interface EditorMapContentProps {
   nodes: MapNode[];
   edges: MapEdge[];
-  mode: 'select' | 'add_node' | 'add_edge';
+  mode: 'select' | 'add_node' | 'add_edge' | 'mixed';
   selectedNodeIds: Set<string>;
   selectedEdgeIds: Set<string>;
   edgeStartNodeId: string | null;
@@ -25,7 +25,7 @@ interface EditorMapContentProps {
 function MapEvents({ mode, onNodeAdd }: { mode: string; onNodeAdd: (lat: number, lng: number) => void }) {
   useMapEvents({
     click(e) {
-      if (mode === 'add_node') {
+      if (mode === 'add_node' || mode === 'mixed') {
         onNodeAdd(e.latlng.lat, e.latlng.lng);
       }
     },
