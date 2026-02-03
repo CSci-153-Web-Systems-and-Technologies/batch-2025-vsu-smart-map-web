@@ -311,8 +311,12 @@ export function NavigationEditor() {
   };
 
   const handleSwapEdgeDirection = (edgeId: string) => {
+      handleBulkSwapEdgeDirection(new Set([edgeId]));
+  };
+
+  const handleBulkSwapEdgeDirection = (edgeIds: Set<string>) => {
       const newEdges = edges.map(e => {
-          if (e.id === edgeId) {
+          if (edgeIds.has(e.id)) {
               return {
                   ...e,
                   source_id: e.target_id,
@@ -322,7 +326,7 @@ export function NavigationEditor() {
           return e;
       });
       updateEdges(newEdges);
-      toast.success("Direction swapped");
+      toast.success(`Direction swapped for ${edgeIds.size} edge(s)`);
   };
 
   const autoAssociateBuildings = (nodeId: string) => {
@@ -895,9 +899,7 @@ export function NavigationEditor() {
                             size="icon" 
                             className="h-8 w-8 ml-auto"
                             title="Swap Direction"
-                            onClick={() => {
-                                selectedEdgeIds.forEach(id => handleSwapEdgeDirection(id));
-                            }}
+                            onClick={() => handleBulkSwapEdgeDirection(selectedEdgeIds)}
                         >
                             <RefreshCw className="h-4 w-4" />
                         </Button>
