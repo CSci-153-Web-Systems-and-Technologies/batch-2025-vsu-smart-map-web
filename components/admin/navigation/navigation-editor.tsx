@@ -439,8 +439,17 @@ export function NavigationEditor() {
           }
           return e;
       });
-      updateEdges(newEdges);
-      toast.success(`Swapped direction of ${edgesToSwap.size} edge(s) in the group`);
+
+      const newNodes = nodes.map(n => {
+          if (visitedNodes.has(n.id)) {
+              if (n.type === 'path_start') return { ...n, type: 'path_end' as GraphNodeType };
+              if (n.type === 'path_end') return { ...n, type: 'path_start' as GraphNodeType };
+          }
+          return n;
+      });
+
+      updateGraph(newNodes, newEdges);
+      toast.success(`Swapped direction of ${edgesToSwap.size} edge(s) and updated node roles`);
   };
 
   const getConnectedGroups = useCallback(() => {
@@ -662,24 +671,30 @@ export function NavigationEditor() {
                      {hasAnyInferred && (
                          <div className="flex flex-col gap-2">
                              <div className="flex gap-1">
-                                 <div className={cn(
-                                     "flex-1 text-[10px] px-1 h-7 flex items-center justify-center rounded border",
-                                     commonType === 'path_start' ? "bg-primary text-primary-foreground" : "bg-muted"
-                                 )}>
+                                 <Button 
+                                     variant={commonType === 'path_start' ? "default" : "outline"}
+                                     size="sm"
+                                     className="flex-1 text-[10px] px-1 h-7"
+                                     onClick={() => handleBulkNodeUpdate({ type: 'path_start' }, selectedNodeIds)}
+                                 >
                                      Start
-                                 </div>
-                                 <div className={cn(
-                                     "flex-1 text-[10px] px-1 h-7 flex items-center justify-center rounded border",
-                                     commonType === 'path_middle' ? "bg-primary text-primary-foreground" : "bg-muted"
-                                 )}>
+                                 </Button>
+                                 <Button 
+                                     variant={commonType === 'path_middle' ? "default" : "outline"}
+                                     size="sm"
+                                     className="flex-1 text-[10px] px-1 h-7"
+                                     onClick={() => handleBulkNodeUpdate({ type: 'path_middle' }, selectedNodeIds)}
+                                 >
                                      Middle
-                                 </div>
-                                 <div className={cn(
-                                     "flex-1 text-[10px] px-1 h-7 flex items-center justify-center rounded border",
-                                     commonType === 'path_end' ? "bg-primary text-primary-foreground" : "bg-muted"
-                                 )}>
+                                 </Button>
+                                 <Button 
+                                     variant={commonType === 'path_end' ? "default" : "outline"}
+                                     size="sm"
+                                     className="flex-1 text-[10px] px-1 h-7"
+                                     onClick={() => handleBulkNodeUpdate({ type: 'path_end' }, selectedNodeIds)}
+                                 >
                                      End
-                                 </div>
+                                 </Button>
                              </div>
                              <p className="text-[10px] text-muted-foreground italic">
                                  {selectedNodeIds.size === 1 
@@ -1007,9 +1022,12 @@ export function NavigationEditor() {
                               </div>
 
                               <div className="pt-2 border-t">
-                                  <Label className="text-xs font-semibold flex items-center gap-1 mb-2">
+                                  <Label className="text-xs font-semibold flex items-center gap-1">
                                       <Clock className="h-3 w-3" /> Recurring Schedule
                                   </Label>
+                                  <p className="text-[10px] text-muted-foreground mt-1 mb-2">
+                                      Select times when this path is <strong>CLOSED</strong>.
+                                  </p>
                                   
                                   <div className="space-y-2">
                                       <div className="flex items-center justify-between">
