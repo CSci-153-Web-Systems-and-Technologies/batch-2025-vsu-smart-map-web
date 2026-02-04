@@ -3,7 +3,7 @@
 import "leaflet/dist/leaflet.css";
 
 import { useTheme } from "next-themes";
-import { MapContainer, TileLayer, CircleMarker, Polyline, useMapEvents, ZoomControl, Marker } from "react-leaflet";
+import { MapContainer, TileLayer, Polyline, useMapEvents, ZoomControl, Marker } from "react-leaflet";
 import L from "leaflet";
 import { MAP_MAX_ZOOM, MAP_MIN_ZOOM, MAP_TILES, MAP_DEFAULT_CENTER } from "@/lib/constants/map";
 import { useMapStyle } from "@/lib/context/map-style-context";

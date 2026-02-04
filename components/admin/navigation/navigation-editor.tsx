@@ -7,12 +7,11 @@ import type { MapNode, MapEdge, TransportMode, GraphNodeType } from "@/lib/types
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { MousePointer2, Plus, Save, Trash2, Route, Undo2, Redo2, ArrowLeftRight, ArrowRight, AlertTriangle, Clock, Wand2, RefreshCw, Footprints, Bike, Car, ListChecks, ChevronRight } from "lucide-react";
+import { MousePointer2, Plus, Save, Trash2, Route, Undo2, Redo2, ArrowLeftRight, ArrowRight, AlertTriangle, Clock, Wand2, RefreshCw, Footprints, Car, ChevronRight } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
 import { db } from "@/lib/db";
 import { saveMapGraph } from "@/lib/supabase/queries/navigation";
 import { getFacilitiesLite } from "@/lib/supabase/queries/facilities";
@@ -336,11 +335,7 @@ export function NavigationEditor() {
       updateEdges(newEdges);
   };
 
-  const handleSwapEdgeDirection = (edgeId: string) => {
-      handleBulkSwapEdgeDirection(new Set([edgeId]));
-  };
-
-  const handleBulkSwapEdgeDirection = (edgeIds: Set<string>) => {
+  const handleBulkSwapEdgeDirection = useCallback((edgeIds: Set<string>) => {
       const newEdges = edges.map(e => {
           if (edgeIds.has(e.id)) {
               return {
@@ -356,7 +351,7 @@ export function NavigationEditor() {
       updateGraph(sanitizedNodes, newEdges);
       
       toast.success(`Direction swapped for ${edgeIds.size} edge(s)`);
-  };
+  }, [nodes, edges, updateGraph, sanitizeNodeTypes]);
 
   const autoAssociateBuildings = (nodeId: string) => {
       const node = nodes.find(n => n.id === nodeId);
@@ -529,7 +524,7 @@ export function NavigationEditor() {
         <EditorMap
           nodes={nodes}
           edges={edges}
-          mode={isAddNodeMode && isAddEdgeMode ? 'mixed' : (isAddNodeMode ? 'add_node' : (isAddEdgeMode ? 'add_edge' : 'select')) as any}
+          mode={isAddNodeMode && isAddEdgeMode ? 'mixed' : (isAddNodeMode ? 'add_node' : (isAddEdgeMode ? 'add_edge' : 'select'))}
           selectedNodeIds={selectedNodeIds}
           selectedEdgeIds={selectedEdgeIds}
           edgeStartNodeId={edgeStartNodeId}
@@ -683,8 +678,6 @@ export function NavigationEditor() {
               const commonType = allSameType ? firstNode.type : undefined;
 
               const inferredTypes = Array.from(selectedNodeIds).map(id => ({ id, type: getInferredNodeType(id) }));
-              const allInferred = inferredTypes.every(t => t.type !== null);
-              const commonInferred = allInferred && inferredTypes.every(t => t.type === inferredTypes[0].type) ? inferredTypes[0].type : null;
               const hasAnyInferred = inferredTypes.some(t => t.type !== null);
 
               return (
@@ -879,19 +872,29 @@ export function NavigationEditor() {
              });
              const commonPreset = allSameType ? getEdgeTypePreset(firstEdge) : undefined;
              
-             const allSameBidi = Array.from(selectedEdgeIds).every(id => edges.find(e => e.id === id)?.bidirectional === firstEdge.bidirectional);
-             const commonBidi = allSameBidi ? firstEdge.bidirectional : false;
+              const allSameBidi = Array.from(selectedEdgeIds).every(id => edges.find(e => e.id === id)?.bidirectional === firstEdge.bidirectional);
+              const commonBidi = allSameBidi ? firstEdge.bidirectional : false;
 
-              const allSameClosed = Array.from(selectedEdgeIds).every(id => edges.find(e => e.id === id)?.is_closed === firstEdge.is_closed);
-              const commonClosed = allSameClosed ? firstEdge.is_closed : false;
-
-              const allSameUntilToggled = Array.from(selectedEdgeIds).every(id => edges.find(e => e.id === id)?.closed_until_toggled === firstEdge.closed_until_toggled);
+               const allSameUntilToggled = Array.from(selectedEdgeIds).every(id => edges.find(e => e.id === id)?.closed_until_toggled === firstEdge.closed_until_toggled);
               const commonUntilToggled = allSameUntilToggled ? firstEdge.closed_until_toggled : false;
 
               return (
 
              <div className="border rounded p-3 bg-card space-y-3">
-                 <div className="font-medium">Edge Properties {selectedEdgeIds.size > 1 && `(${selectedEdgeIds.size})`}</div>
+                      <div className="font-medium flex justify-between items-center">
+                          <span>Edge Properties {selectedEdgeIds.size > 1 && `(${selectedEdgeIds.size})`}</span>
+                          {!commonBidi && (
+                              <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-6 w-6"
+                                  title="Swap Direction"
+                                  onClick={() => handleBulkSwapEdgeDirection(selectedEdgeIds)}
+                              >
+                                  <RefreshCw className="h-3 w-3" />
+                              </Button>
+                          )}
+                      </div>
                  
                  <div className="space-y-2">
                       <Label className="text-xs flex items-center gap-1"><Route className="h-3 w-3" /> Edge Type</Label>
