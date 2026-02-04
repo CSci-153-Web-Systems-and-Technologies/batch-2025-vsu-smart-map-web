@@ -150,7 +150,28 @@ export default function EditorMapContent({
             }
           }
 
+          const showArrow = !edge.bidirectional;
+          const arrowIcon = showArrow ? (() => {
+              const angle = Math.atan2(lat2 - lat1, lng2 - lng1) * 180 / Math.PI;
+              const color = getEdgeColor(edge);
+              // CSS rotation is clockwise. 0deg is East (right).
+              // atan2 gives counter-clockwise from East.
+              // So we need -angle.
+              return L.divIcon({
+                  className: 'bg-transparent border-none',
+                  html: `<div style="transform: rotate(${-angle}deg); width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-left: 12px solid ${isSelected ? 'yellow' : color};"></div>`,
+                  iconSize: [12, 12],
+                  iconAnchor: [6, 6], // Center of the 12x12 box? No, center of rotation. 
+                  // If arrow is border-left, the tip is at right. The 'center' of the triangle visually is roughly 1/3 from left.
+                  // But let's just center the div.
+              });
+          })() : null;
+
+          const midLat = (lat1 + lat2) / 2;
+          const midLng = (lng1 + lng2) / 2;
+
           return (
+            <>
             <Polyline
               key={edge.id}
               positions={[
@@ -171,6 +192,20 @@ export default function EditorMapContent({
                 }
               }}
             />
+            {showArrow && (
+                <Marker 
+                    position={[midLat, midLng]}
+                    icon={arrowIcon!}
+                    eventHandlers={{
+                        click: (e) => {
+                            L.DomEvent.stopPropagation(e);
+                            const isMulti = e.originalEvent.metaKey || e.originalEvent.ctrlKey || e.originalEvent.shiftKey;
+                            onEdgeSelect(edge.id, isMulti);
+                        }
+                    }}
+                />
+            )}
+            </>
           );
         });
       })}

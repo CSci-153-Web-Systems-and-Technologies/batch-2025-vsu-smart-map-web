@@ -395,20 +395,42 @@ export function NavigationEditor() {
   }, [edges]);
 
   const handleSwapNodeDirection = (nodeIds: Set<string>) => {
-      const edgeIdsToSwap = new Set<string>();
-      edges.forEach(e => {
-          if (!e.bidirectional && (nodeIds.has(e.source_id) || nodeIds.has(e.target_id))) {
-              edgeIdsToSwap.add(e.id);
-          }
-      });
+      // Find the connected component of one-way edges involving these nodes
+      const edgesToSwap = new Set<string>();
+      const visitedNodes = new Set<string>();
+      const queue = Array.from(nodeIds);
+      
+      queue.forEach(id => visitedNodes.add(id));
 
-      if (edgeIdsToSwap.size === 0) {
+      while (queue.length > 0) {
+          const nodeId = queue.shift()!;
+          
+          // Find all one-way edges connected to this node
+          const connectedOneWay = edges.filter(e => 
+              !e.bidirectional && (e.source_id === nodeId || e.target_id === nodeId)
+          );
+
+          connectedOneWay.forEach(edge => {
+              if (!edgesToSwap.has(edge.id)) {
+                  edgesToSwap.add(edge.id);
+                  
+                  // Add the other node to queue if not visited
+                  const otherNodeId = edge.source_id === nodeId ? edge.target_id : edge.source_id;
+                  if (!visitedNodes.has(otherNodeId)) {
+                      visitedNodes.add(otherNodeId);
+                      queue.push(otherNodeId);
+                  }
+              }
+          });
+      }
+
+      if (edgesToSwap.size === 0) {
           toast.info("No one-way edges connected to selected nodes");
           return;
       }
 
       const newEdges = edges.map(e => {
-          if (edgeIdsToSwap.has(e.id)) {
+          if (edgesToSwap.has(e.id)) {
               return {
                   ...e,
                   source_id: e.target_id,
@@ -418,7 +440,7 @@ export function NavigationEditor() {
           return e;
       });
       updateEdges(newEdges);
-      toast.success(`Swapped direction of ${edgeIdsToSwap.size} edge(s)`);
+      toast.success(`Swapped direction of ${edgesToSwap.size} edge(s) in the group`);
   };
 
   const getConnectedGroups = useCallback(() => {
@@ -637,7 +659,7 @@ export function NavigationEditor() {
                   
                   <div className="space-y-2">
                      <Label className="text-xs">Node Type</Label>
-                     {hasAnyInferred ? (
+                     {hasAnyInferred && (
                          <div className="flex flex-col gap-2">
                              <div className="flex gap-1">
                                  <div className={cn(
@@ -683,20 +705,23 @@ export function NavigationEditor() {
                                  <Wand2 className="h-3 w-3 mr-2" /> Auto-apply Roles
                              </Button>
                          </div>
-                     ) : (
-                         <Select 
-                             value={commonType} 
-                             onValueChange={(v: GraphNodeType) => handleBulkNodeUpdate({ type: v }, selectedNodeIds)}
-                         >
-                             <SelectTrigger className="h-8 text-xs">
-                                 <SelectValue placeholder={!allSameType ? "Multiple Types" : "Select Type..."} />
-                             </SelectTrigger>
-                             <SelectContent>
-                                 <SelectItem value="node">Standard Node</SelectItem>
-                                 <SelectItem value="building_entry">Building Entry</SelectItem>
-                             </SelectContent>
-                         </Select>
                      )}
+                     
+                     <Select 
+                         value={commonType} 
+                         onValueChange={(v: GraphNodeType) => handleBulkNodeUpdate({ type: v }, selectedNodeIds)}
+                     >
+                         <SelectTrigger className="h-8 text-xs">
+                             <SelectValue placeholder={!allSameType ? "Multiple Types" : "Select Type..."} />
+                         </SelectTrigger>
+                         <SelectContent>
+                             <SelectItem value="node">Standard Node</SelectItem>
+                             <SelectItem value="building_entry">Building Entry</SelectItem>
+                             <SelectItem value="path_start">Path Start</SelectItem>
+                             <SelectItem value="path_middle">Path Middle</SelectItem>
+                             <SelectItem value="path_end">Path End</SelectItem>
+                         </SelectContent>
+                     </Select>
                   </div>
 
 
@@ -892,18 +917,6 @@ export function NavigationEditor() {
                             <ArrowRight className="h-3 w-3 mr-1" /> One-way
                         </ToggleGroupItem>
                      </ToggleGroup>
-                     
-                     {!commonBidi && (
-                        <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 ml-auto"
-                            title="Swap Direction"
-                            onClick={() => handleBulkSwapEdgeDirection(selectedEdgeIds)}
-                        >
-                            <RefreshCw className="h-4 w-4" />
-                        </Button>
-                     )}
                   </div>
 
                  
