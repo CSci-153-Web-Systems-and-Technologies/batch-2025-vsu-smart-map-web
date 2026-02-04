@@ -62,7 +62,6 @@ export function BugReportsTable() {
   const [reports, setReports] = useState<BugReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedReport, setSelectedReport] = useState<BugReport | null>(null);
-  const supabase = createClient();
 
   const fetchReports = useCallback(async () => {
     try {
@@ -89,6 +88,7 @@ export function BugReportsTable() {
 
   const updateStatus = async (id: string, newStatus: BugStatus) => {
     try {
+      const supabase = createClient();
       const { error } = await supabase
         .from("bug_reports")
         .update({ status: newStatus })

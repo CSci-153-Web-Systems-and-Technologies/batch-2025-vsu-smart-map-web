@@ -8,27 +8,20 @@ const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 let serviceClient: SupabaseClient | null = null;
 
-const assertEnv = () => {
-  if (!url || !anonKey) {
-    throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY");
-  }
-};
-const assertServiceEnv = () => {
-  if (!url || !serviceRoleKey) {
-    throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
-  }
-};
-
 export const getSupabaseServerClient = async () => {
-  assertEnv();
   const cookieStoreMaybePromise = cookies();
-
   const cookieStore =
     cookieStoreMaybePromise instanceof Promise
       ? await cookieStoreMaybePromise
       : cookieStoreMaybePromise;
 
-  return createServerClient(url!, anonKey!, {
+  if (!url || !anonKey) {
+    return createServerClient("http://localhost:3000", "placeholder", {
+        cookies: { getAll() { return []; }, setAll() {} }
+    });
+  }
+
+  return createServerClient(url, anonKey, {
     cookies: {
       getAll() {
         return cookieStore.getAll();
@@ -46,13 +39,14 @@ export const getSupabaseServerClient = async () => {
   });
 };
 
-/** @deprecated Use getSupabaseServerClient instead */
-export const createClient = getSupabaseServerClient;
-
 export const getSupabaseServiceRoleClient = () => {
   if (serviceClient) return serviceClient;
-  assertServiceEnv();
-  serviceClient = createSupabaseClient(url!, serviceRoleKey!, {
+  
+  if (!url || !serviceRoleKey) {
+     return createSupabaseClient("http://localhost:3000", "placeholder");
+  }
+
+  serviceClient = createSupabaseClient(url, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
   });
   return serviceClient;

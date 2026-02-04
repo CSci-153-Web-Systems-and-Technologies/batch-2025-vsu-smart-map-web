@@ -109,7 +109,7 @@ export async function getFacilitiesForChat(
     return { data: null, error: normalizeError(error) };
   }
 
-  const mapped = data.map((f) => ({
+  const mapped = (data as any[]).map((f) => ({
     id: f.id as string,
     name: f.name as string,
     code: (f.code ?? undefined) as string | undefined,
