@@ -7,6 +7,7 @@ import { MapContainer, TileLayer, CircleMarker, Polyline, useMapEvents, ZoomCont
 import L from "leaflet";
 import { MAP_MAX_ZOOM, MAP_MIN_ZOOM, MAP_TILES, MAP_DEFAULT_CENTER } from "@/lib/constants/map";
 import { useMapStyle } from "@/lib/context/map-style-context";
+import { isEdgeClosed } from "@/lib/pathfinding/astar";
 import type { MapNode, MapEdge } from "@/lib/types/graph";
 
 interface EditorMapContentProps {
@@ -54,7 +55,7 @@ export default function EditorMapContent({
   })();
 
   const getEdgeColor = (edge: MapEdge) => {
-    if (edge.is_closed || edge.closed_until_toggled) return '#ef4444';
+    if (isEdgeClosed(edge)) return '#ef4444';
     
     const access = edge.access || [];
     const hasWalk = access.includes('walking');
@@ -66,7 +67,7 @@ export default function EditorMapContent({
   };
 
   const getEdgeDashArray = (edge: MapEdge) => {
-    if (edge.is_closed || edge.closed_until_toggled) return '5, 10';
+    if (isEdgeClosed(edge)) return '5, 10';
     if (!edge.bidirectional) return '10, 5';
     return undefined;
   };
@@ -181,7 +182,7 @@ export default function EditorMapContent({
               pathOptions={{ 
                 color: isSelected ? 'yellow' : getEdgeColor(edge), 
                 weight: isSelected ? 6 : 4, 
-                opacity: edge.is_closed ? 0.5 : 0.8,
+                opacity: isEdgeClosed(edge) ? 0.5 : 0.8,
                 dashArray: isSelected ? undefined : getEdgeDashArray(edge),
               }}
               eventHandlers={{

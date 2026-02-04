@@ -11,7 +11,7 @@ const DEFAULT_ACCESS: Record<string, TransportMode[]> = {
   walkway: ['walking'],
 };
 
-function isTimeInRange(now: Date, start: string, end: string): boolean {
+export function isTimeInRange(now: Date, start: string, end: string): boolean {
   const [startH, startM] = start.split(':').map(Number);
   const [endH, endM] = end.split(':').map(Number);
   
@@ -30,7 +30,7 @@ function isTimeInRange(now: Date, start: string, end: string): boolean {
   }
 }
 
-function isEdgeClosed(edge: MapEdge): boolean {
+export function isEdgeClosed(edge: MapEdge): boolean {
   const now = new Date();
 
   // 1. Force Close (Permanent Toggle)

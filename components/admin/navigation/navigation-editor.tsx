@@ -260,19 +260,35 @@ export function NavigationEditor() {
     }
   };
 
+  const sanitizeNodeTypes = useCallback((currentNodes: MapNode[], currentEdges: MapEdge[]) => {
+      return currentNodes.map(node => {
+          if (['path_start', 'path_middle', 'path_end'].includes(node.type)) {
+              const hasOneWayConnection = currentEdges.some(e => 
+                  !e.bidirectional && (e.source_id === node.id || e.target_id === node.id)
+              );
+              if (!hasOneWayConnection) {
+                  return { ...node, type: 'node' as GraphNodeType };
+              }
+          }
+          return node;
+      });
+  }, []);
+
   const handleBulkDelete = useCallback(() => {
-    const newNodes = nodes.filter(n => !selectedNodeIds.has(n.id));
+    const remainingNodes = nodes.filter(n => !selectedNodeIds.has(n.id));
     const nodeIdsToDelete = selectedNodeIds;
     let newEdges = edges.filter(e => !selectedEdgeIds.has(e.id));
     
     newEdges = newEdges.filter(e => !nodeIdsToDelete.has(e.source_id) && !nodeIdsToDelete.has(e.target_id));
     
-    updateGraph(newNodes, newEdges);
+    const sanitizedNodes = sanitizeNodeTypes(remainingNodes, newEdges);
+    
+    updateGraph(sanitizedNodes, newEdges);
     
     setSelectedNodeIds(new Set());
     setSelectedEdgeIds(new Set());
     toast.success("Selection deleted");
-  }, [selectedNodeIds, selectedEdgeIds, nodes, edges, updateGraph]);
+  }, [selectedNodeIds, selectedEdgeIds, nodes, edges, updateGraph, sanitizeNodeTypes]);
 
   useEffect(() => {
       if (!isAddEdgeMode) {
@@ -325,7 +341,10 @@ export function NavigationEditor() {
           }
           return e;
       });
-      updateEdges(newEdges);
+
+      const sanitizedNodes = sanitizeNodeTypes(nodes, newEdges);
+      updateGraph(sanitizedNodes, newEdges);
+      
       toast.success(`Direction swapped for ${edgeIds.size} edge(s)`);
   };
 
@@ -368,7 +387,13 @@ export function NavigationEditor() {
       const newEdges = edges.map(e => 
           edgeIds.has(e.id) ? { ...e, ...updates } : e
       );
-      updateEdges(newEdges);
+      
+      if ('bidirectional' in updates) {
+          const sanitizedNodes = sanitizeNodeTypes(nodes, newEdges);
+          updateGraph(sanitizedNodes, newEdges);
+      } else {
+          updateEdges(newEdges);
+      }
   };
 
   const handleBulkNodeUpdate = (updates: Partial<MapNode>, nodeIds: Set<string>) => {
