@@ -7,7 +7,7 @@ import type { MapNode, MapEdge, TransportMode, GraphNodeType } from "@/lib/types
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { MousePointer2, Plus, Save, Trash2, Route, Undo2, Redo2, ArrowLeftRight, ArrowRight, AlertTriangle, Clock, Wand2, RefreshCw, Footprints, Bike, Car, ListChecks } from "lucide-react";
+import { MousePointer2, Plus, Save, Trash2, Route, Undo2, Redo2, ArrowLeftRight, ArrowRight, AlertTriangle, Clock, Wand2, RefreshCw, Footprints, Bike, Car, ListChecks, ChevronRight } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -722,6 +722,7 @@ export function NavigationEditor() {
                          </div>
                      )}
                      
+                     {!hasAnyInferred && (
                      <Select 
                          value={commonType} 
                          onValueChange={(v: GraphNodeType) => handleBulkNodeUpdate({ type: v }, selectedNodeIds)}
@@ -735,6 +736,7 @@ export function NavigationEditor() {
                           </SelectContent>
 
                      </Select>
+                     )}
                   </div>
 
 
@@ -837,45 +839,6 @@ export function NavigationEditor() {
               const allSameUntilToggled = Array.from(selectedEdgeIds).every(id => edges.find(e => e.id === id)?.closed_until_toggled === firstEdge.closed_until_toggled);
               const commonUntilToggled = allSameUntilToggled ? firstEdge.closed_until_toggled : false;
 
-              const handleApplyClosureToPath = () => {
-                  const visited = new Set<string>();
-                  const queue = [...Array.from(selectedEdgeIds)];
-                  const pathEdges = new Set<string>(queue);
-
-                  while (queue.length > 0) {
-                      const currId = queue.shift()!;
-                      const currEdge = edges.find(e => e.id === currId);
-                      if (!currEdge) continue;
-
-                      // Find connected edges
-                      const connected = edges.filter(e => 
-                          !pathEdges.has(e.id) && 
-                          (e.source_id === currEdge.source_id || e.source_id === currEdge.target_id || 
-                           e.target_id === currEdge.source_id || e.target_id === currEdge.target_id)
-                      );
-
-                      connected.forEach(e => {
-                          pathEdges.add(e.id);
-                          queue.push(e.id);
-                      });
-                  }
-
-                  const updates = {
-                      is_closed: firstEdge.is_closed,
-                      closed_until_toggled: firstEdge.closed_until_toggled,
-                      closed_from: firstEdge.closed_from,
-                      closed_until: firstEdge.closed_until,
-                      closure_reason: firstEdge.closure_reason,
-                      closure_recurring_days: firstEdge.closure_recurring_days,
-                      closure_recurring_start: firstEdge.closure_recurring_start,
-                      closure_recurring_end: firstEdge.closure_recurring_end,
-                      closure_daily_schedule: firstEdge.closure_daily_schedule,
-                  };
-
-                  handleBulkEdgeUpdate(updates, pathEdges);
-                  toast.success(`Applied closure settings to ${pathEdges.size} edges in path`);
-              };
-
               return (
 
              <div className="border rounded p-3 bg-card space-y-3">
@@ -934,58 +897,13 @@ export function NavigationEditor() {
 
                  
                       <div className="border-t pt-2 mt-2">
-                          <Button
-                              variant="ghost"
-                              className="w-full justify-between p-0 h-8 font-semibold text-xs hover:bg-transparent"
-                              onClick={() => {
-                                  // Toggle local visibility state if we had one, but since we are replacing the checkbox 
-                                  // that controlled the visibility of the section, we need a state for it?
-                                  // The previous code used `firstEdge.is_closed` to show/hide the detailed fields.
-                                  // Now we want the fields to be visible on demand, OR always visible?
-                                  // "Temporarily Closed toggle should not be a toggle maybe just make it a menu dropdown... It acts as a section header."
-                                  // So I'll make it a collapsible section.
-                                  // Since I don't have a local state for this section, I can use a standard <details> or just show it always?
-                                  // Or simpler: Just a header "Closure Rules" and always show the fields?
-                                  // "When clicked it should not make the edge closed... it should just open like what it does currently"
-                                  // This implies expanding/collapsing.
-                                  // I'll assume for now I can just show it, or I need to add state.
-                                  // Adding state requires re-rendering the whole component which is fine.
-                                  // But `handleEdgeSelect` is where selection happens.
-                                  // Let's check if I can just use `closed_until_toggled` or existence of closure fields to auto-expand?
-                                  // No, user wants to click to open.
-                                  // I'll add a local state `isClosureSectionOpen`? No, that resets on selection change.
-                              }}
-                          >
-                              <div className="flex items-center gap-1">
-                                  <AlertTriangle className="h-3 w-3" /> Closure Rules
-                              </div>
-                              {/* Add Apply Path button here if needed */}
-                          </Button>
 
-                          {/* Since I can't easily add state without rewriting the whole component body to add useState, 
-                              and I'm editing a huge file... 
-                              Actually, I can use <details> and <summary> for a native disclosure widget without React state! 
-                          */}
-                          <details className="group">
-                              <summary className="list-none cursor-pointer flex items-center justify-between text-xs font-semibold py-1">
+                          <details className="group open:pb-2">
+                              <summary className="list-none cursor-pointer flex items-center justify-between text-xs font-semibold py-2 hover:bg-muted/50 px-1 -mx-1 rounded select-none">
                                   <div className="flex items-center gap-1">
-                                      <AlertTriangle className="h-3 w-3" /> Restrictions & Opening Hours
+                                      <AlertTriangle className="h-3 w-3" /> Closure Rules
                                   </div>
-                                  <div className="flex items-center">
-                                      {/* Re-add Apply Path button */}
-                                      <Button 
-                                        variant="ghost" 
-                                        size="icon" 
-                                        className="h-6 w-6" 
-                                        title="Apply these settings to the entire connected path"
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            handleApplyClosureToPath();
-                                        }}
-                                      >
-                                          <ListChecks className="h-3 w-3" />
-                                      </Button>
-                                  </div>
+                                  <ChevronRight className="h-3 w-3 transition-transform group-open:rotate-90" />
                               </summary>
                               
                               <div className="space-y-2 pt-2 pl-2 border-l-2 border-muted ml-1">
