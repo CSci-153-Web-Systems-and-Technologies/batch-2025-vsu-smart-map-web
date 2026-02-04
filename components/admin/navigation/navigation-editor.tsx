@@ -344,7 +344,7 @@ export function NavigationEditor() {
       });
 
       if (nearby.length === 0) {
-          toast.info("No buildings found within 20m");
+          toast.info("No buildings found within 50m");
           return;
       }
 
@@ -938,7 +938,7 @@ export function NavigationEditor() {
                           )}
                       </div>
                       
-                      {selectedEdgeIds.size === 1 && firstEdge.is_closed && (
+                      {firstEdge.is_closed && (
                           <div className="space-y-2 pl-5">
                               <div className="flex items-center gap-2">
                                   <Checkbox 
