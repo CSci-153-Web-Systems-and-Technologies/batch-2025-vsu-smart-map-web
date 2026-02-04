@@ -238,17 +238,25 @@ export function NavigationEditor() {
   const handleSave = async () => {
     if (!db) return;
     try {
+      const nodeIds = new Set(nodes.map(n => n.id));
+      const validEdges = edges.filter(e => nodeIds.has(e.source_id) && nodeIds.has(e.target_id));
+      
       await db.transaction('rw', db.map_nodes, db.map_edges, async () => {
         await db.map_nodes.clear();
         await db.map_nodes.bulkAdd(nodes);
         await db.map_edges.clear();
-        await db.map_edges.bulkAdd(edges);
+        await db.map_edges.bulkAdd(validEdges);
       });
 
       toast.loading("Syncing to server...");
-      const { error } = await saveMapGraph(nodes, edges);
+      const { error } = await saveMapGraph(nodes, validEdges);
       if (error) {
         throw new Error(error.message);
+      }
+
+      if (validEdges.length !== edges.length) {
+          setEdges(validEdges);
+          pushHistory(nodes, validEdges);
       }
 
       toast.dismiss();
@@ -871,17 +879,25 @@ export function NavigationEditor() {
                  
                  <div className="space-y-2">
                       <Label className="text-xs flex items-center gap-1"><Route className="h-3 w-3" /> Edge Type</Label>
-                      <Select 
-                          value={commonPreset} 
-                          onValueChange={(v) => handleBulkTypePresetChange(v, selectedEdgeIds)}
-                      >
-                          <SelectTrigger className="h-8 text-xs">
-                              <SelectValue placeholder={!allSameType ? "Multiple Types" : "Select Type..."}>
-                                  {commonPreset === 'walkway' && <Footprints className="h-4 w-4" />}
-                                  {commonPreset === 'road' && <div className="relative h-4 w-4"><Footprints className="h-3 w-3 absolute -top-0.5 -left-0.5" /><Car className="h-3 w-3 absolute -bottom-0.5 -right-0.5" /></div>}
-                                  {commonPreset === 'car_road' && <Car className="h-4 w-4" />}
-                              </SelectValue>
-                          </SelectTrigger>
+                       <Select 
+                           value={commonPreset} 
+                           onValueChange={(v) => handleBulkTypePresetChange(v, selectedEdgeIds)}
+                       >
+                           <SelectTrigger className="h-8 text-xs">
+                               <SelectValue placeholder={!allSameType ? "Multiple Types" : "Select Type..."}>
+                                   <div className="flex items-center gap-2">
+                                       {commonPreset === 'walkway' && <Footprints className="h-4 w-4" />}
+                                       {commonPreset === 'road' && <div className="relative h-4 w-4"><Footprints className="h-3 w-3 absolute -top-0.5 -left-0.5" /><Car className="h-3 w-3 absolute -bottom-0.5 -right-0.5" /></div>}
+                                       {commonPreset === 'car_road' && <Car className="h-4 w-4" />}
+                                       <span>
+                                           {commonPreset === 'walkway' ? 'Walkway' : 
+                                            commonPreset === 'road' ? 'Shared Road' : 
+                                            commonPreset === 'car_road' ? 'Car Road' : 
+                                            !allSameType ? 'Multiple Types' : 'Select Type...'}
+                                       </span>
+                                   </div>
+                               </SelectValue>
+                           </SelectTrigger>
 
                           <SelectContent>
                               <SelectItem value="walkway">
