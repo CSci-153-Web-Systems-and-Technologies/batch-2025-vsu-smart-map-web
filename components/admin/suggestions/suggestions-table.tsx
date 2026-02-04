@@ -102,8 +102,9 @@ export function SuggestionsTable({ suggestions, facilityNames }: SuggestionsTabl
             variant="destructive"
             onClick={() => setShowRejectDialog(true)}
             disabled={pending}
+            loading={pending}
           >
-            {pending ? "Processing..." : "Reject Selected"}
+            Reject Selected
           </Button>
           <Button
             size="sm"
@@ -116,8 +117,8 @@ export function SuggestionsTable({ suggestions, facilityNames }: SuggestionsTabl
         </div>
       )}
 
-      <div className="overflow-hidden rounded-lg border border-border">
-        <table className="w-full text-sm">
+      <div className="overflow-x-auto rounded-lg border border-border">
+        <table className="w-full text-sm min-w-[600px]">
           <thead className="bg-muted/40">
             <tr className="text-left text-muted-foreground">
               <th className="px-4 py-3 w-10">

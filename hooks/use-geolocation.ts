@@ -23,8 +23,8 @@ interface UseGeolocationOptions {
 
 const defaultOptions: UseGeolocationOptions = {
   enableHighAccuracy: true,
-  timeout: 45000,
-  maximumAge: 60000,
+  timeout: 30000,
+  maximumAge: 10000,
 };
 
 export function useGeolocation(options: UseGeolocationOptions = {}) {
@@ -170,8 +170,8 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
 
     const fastOptions: PositionOptions = {
       enableHighAccuracy: false,
-      timeout: 5000,
-      maximumAge: 300000,
+      timeout: 10000,
+      maximumAge: 60000,
     };
 
     navigator.geolocation.getCurrentPosition(

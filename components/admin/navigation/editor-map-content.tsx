@@ -55,6 +55,7 @@ export default function EditorMapContent({
   })();
 
   const getEdgeColor = (edge: MapEdge) => {
+    if (edge.closed_until_toggled) return '#ef4444';
     if (isEdgeClosed(edge)) return '#ef4444';
     
     const access = edge.access || [];
@@ -67,7 +68,7 @@ export default function EditorMapContent({
   };
 
   const getEdgeDashArray = (edge: MapEdge) => {
-    if (isEdgeClosed(edge)) return '5, 10';
+    if (edge.closed_until_toggled || isEdgeClosed(edge)) return '5, 10';
     if (!edge.bidirectional) return '10, 5';
     return undefined;
   };

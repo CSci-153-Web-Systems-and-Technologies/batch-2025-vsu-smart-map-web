@@ -41,6 +41,7 @@ export function NavigationEditor() {
   const [newEdgeBidirectional, setNewEdgeBidirectional] = useState(true);
   const [newEdgeType, setNewEdgeType] = useState<'walkway' | 'road' | 'car_road'>('walkway');
   const [buildingSearchQuery, setBuildingSearchQuery] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   
   const pushHistory = useCallback((newNodes: MapNode[], newEdges: MapEdge[]) => {
       const newState = { nodes: [...newNodes], edges: [...newEdges] };
@@ -237,6 +238,7 @@ export function NavigationEditor() {
 
   const handleSave = async () => {
     if (!db) return;
+    setIsSaving(true);
     try {
       const nodeIds = new Set(nodes.map(n => n.id));
       const validEdges = edges.filter(e => nodeIds.has(e.source_id) && nodeIds.has(e.target_id));
@@ -248,7 +250,7 @@ export function NavigationEditor() {
         await db.map_edges.bulkAdd(validEdges);
       });
 
-      toast.loading("Syncing to server...");
+      toast.loading("Syncing to server...", { id: "save-sync" });
       const { error } = await saveMapGraph(nodes, validEdges);
       if (error) {
         throw new Error(error.message);
@@ -259,12 +261,12 @@ export function NavigationEditor() {
           pushHistory(nodes, validEdges);
       }
 
-      toast.dismiss();
-      toast.success("Graph saved to server & local");
+      toast.success("Graph saved to server & local", { id: "save-sync" });
     } catch (e) {
-      toast.dismiss();
-      toast.error("Failed to save: " + (e instanceof Error ? e.message : "Unknown error"));
+      toast.error("Failed to save: " + (e instanceof Error ? e.message : "Unknown error"), { id: "save-sync" });
       console.error(e);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -632,6 +634,7 @@ export function NavigationEditor() {
             size="icon"
             onClick={handleSave}
             title="Save"
+            loading={isSaving}
           >
             <Save className="h-4 w-4" />
           </Button>
@@ -699,78 +702,91 @@ export function NavigationEditor() {
                       </Button>
                   </div>
                   
-                  <div className="space-y-2">
-                     <Label className="text-xs">Node Type</Label>
-                     {hasAnyInferred && (
-                         <div className="flex flex-col gap-2">
-                             <div className="flex gap-1">
-                                 <Button 
-                                     variant={commonType === 'path_start' ? "default" : "outline"}
-                                     size="sm"
-                                     className="flex-1 text-[10px] px-1 h-7"
-                                     onClick={() => handleBulkNodeUpdate({ type: 'path_start' }, selectedNodeIds)}
-                                 >
-                                     Start
-                                 </Button>
-                                 <Button 
-                                     variant={commonType === 'path_middle' ? "default" : "outline"}
-                                     size="sm"
-                                     className="flex-1 text-[10px] px-1 h-7"
-                                     onClick={() => handleBulkNodeUpdate({ type: 'path_middle' }, selectedNodeIds)}
-                                 >
-                                     Middle
-                                 </Button>
-                                 <Button 
-                                     variant={commonType === 'path_end' ? "default" : "outline"}
-                                     size="sm"
-                                     className="flex-1 text-[10px] px-1 h-7"
-                                     onClick={() => handleBulkNodeUpdate({ type: 'path_end' }, selectedNodeIds)}
-                                 >
-                                     End
-                                 </Button>
-                             </div>
-                             <p className="text-[10px] text-muted-foreground italic">
-                                 {selectedNodeIds.size === 1 
-                                    ? "Auto-detected from one-way connections." 
-                                    : `Auto-detected roles for ${inferredTypes.filter(t => t.type !== null).length}/${selectedNodeIds.size} nodes.`}
-                             </p>
-                             <Button 
-                                 variant="outline" 
-                                 size="sm" 
-                                 className="w-full text-[10px] h-7"
-                                 onClick={() => {
-                                     const newNodes = nodes.map(n => {
-                                         if (selectedNodeIds.has(n.id)) {
-                                             const inferred = getInferredNodeType(n.id);
-                                             if (inferred) return { ...n, type: inferred };
-                                         }
-                                         return n;
-                                     });
-                                     updateNodes(newNodes);
-                                     toast.success("Applied auto-detected roles");
-                                 }}
-                             >
-                                 <Wand2 className="h-3 w-3 mr-2" /> Auto-apply Roles
-                             </Button>
-                         </div>
-                     )}
-                     
-                     {!hasAnyInferred && (
-                     <Select 
-                         value={commonType} 
-                         onValueChange={(v: GraphNodeType) => handleBulkNodeUpdate({ type: v }, selectedNodeIds)}
-                     >
-                         <SelectTrigger className="h-8 text-xs">
-                             <SelectValue placeholder={!allSameType ? "Multiple Types" : "Select Type..."} />
-                         </SelectTrigger>
-                         <SelectContent>
-                              <SelectItem value="node">Standard Node</SelectItem>
-                              <SelectItem value="building_entry">Building Entry</SelectItem>
-                          </SelectContent>
-
-                     </Select>
-                     )}
-                  </div>
+                   <div className="space-y-2">
+                      <Label className="text-xs">Node Type</Label>
+                      {hasAnyInferred ? (
+                          <div className="flex flex-col gap-2">
+                              <div className="grid grid-cols-3 gap-1">
+                                  <Button 
+                                      variant={commonType === 'path_start' ? "default" : "outline"}
+                                      size="sm"
+                                      className="text-[10px] px-1 h-7"
+                                      onClick={() => handleBulkNodeUpdate({ type: 'path_start' }, selectedNodeIds)}
+                                  >
+                                      Start
+                                  </Button>
+                                  <Button 
+                                      variant={commonType === 'path_middle' ? "default" : "outline"}
+                                      size="sm"
+                                      className="text-[10px] px-1 h-7"
+                                      onClick={() => handleBulkNodeUpdate({ type: 'path_middle' }, selectedNodeIds)}
+                                  >
+                                      Middle
+                                  </Button>
+                                  <Button 
+                                      variant={commonType === 'path_end' ? "default" : "outline"}
+                                      size="sm"
+                                      className="text-[10px] px-1 h-7"
+                                      onClick={() => handleBulkNodeUpdate({ type: 'path_end' }, selectedNodeIds)}
+                                  >
+                                      End
+                                  </Button>
+                                  <Button 
+                                      variant={commonType === 'node' ? "default" : "outline"}
+                                      size="sm"
+                                      className="text-[10px] px-1 h-7"
+                                      onClick={() => handleBulkNodeUpdate({ type: 'node' }, selectedNodeIds)}
+                                  >
+                                      Standard
+                                  </Button>
+                                  <Button 
+                                      variant={commonType === 'building_entry' ? "default" : "outline"}
+                                      size="sm"
+                                      className="text-[10px] px-1 h-7 col-span-2"
+                                      onClick={() => handleBulkNodeUpdate({ type: 'building_entry' }, selectedNodeIds)}
+                                  >
+                                      Building Entry
+                                  </Button>
+                              </div>
+                              <p className="text-[10px] text-muted-foreground italic">
+                                  {selectedNodeIds.size === 1 
+                                     ? "One-way connections detected." 
+                                     : `One-way roles for ${inferredTypes.filter(t => t.type !== null).length}/${selectedNodeIds.size} nodes.`}
+                              </p>
+                              <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="w-full text-[10px] h-7"
+                                  onClick={() => {
+                                      const newNodes = nodes.map(n => {
+                                          if (selectedNodeIds.has(n.id)) {
+                                              const inferred = getInferredNodeType(n.id);
+                                              if (inferred) return { ...n, type: inferred };
+                                          }
+                                          return n;
+                                      });
+                                      updateNodes(newNodes);
+                                      toast.success("Applied auto-detected roles");
+                                  }}
+                              >
+                                  <Wand2 className="h-3 w-3 mr-2" /> Auto-apply Roles
+                              </Button>
+                          </div>
+                      ) : (
+                        <Select 
+                            value={commonType} 
+                            onValueChange={(v: GraphNodeType) => handleBulkNodeUpdate({ type: v }, selectedNodeIds)}
+                        >
+                            <SelectTrigger className="h-8 text-xs">
+                                <SelectValue placeholder={!allSameType ? "Multiple Types" : "Select Type..."} />
+                            </SelectTrigger>
+                            <SelectContent>
+                                 <SelectItem value="node">Standard Node</SelectItem>
+                                 <SelectItem value="building_entry">Building Entry</SelectItem>
+                             </SelectContent>
+                        </Select>
+                      )}
+                   </div>
 
 
                 {selectedNodeIds.size === 1 && firstNode.type === 'building_entry' && (
@@ -879,27 +895,15 @@ export function NavigationEditor() {
                  
                  <div className="space-y-2">
                       <Label className="text-xs flex items-center gap-1"><Route className="h-3 w-3" /> Edge Type</Label>
-                       <Select 
-                           value={commonPreset} 
-                           onValueChange={(v) => handleBulkTypePresetChange(v, selectedEdgeIds)}
-                       >
-                           <SelectTrigger className="h-8 text-xs">
-                               <SelectValue placeholder={!allSameType ? "Multiple Types" : "Select Type..."}>
-                                   <div className="flex items-center gap-2">
-                                       {commonPreset === 'walkway' && <Footprints className="h-4 w-4" />}
-                                       {commonPreset === 'road' && <div className="relative h-4 w-4"><Footprints className="h-3 w-3 absolute -top-0.5 -left-0.5" /><Car className="h-3 w-3 absolute -bottom-0.5 -right-0.5" /></div>}
-                                       {commonPreset === 'car_road' && <Car className="h-4 w-4" />}
-                                       <span>
-                                           {commonPreset === 'walkway' ? 'Walkway' : 
-                                            commonPreset === 'road' ? 'Shared Road' : 
-                                            commonPreset === 'car_road' ? 'Car Road' : 
-                                            !allSameType ? 'Multiple Types' : 'Select Type...'}
-                                       </span>
-                                   </div>
-                               </SelectValue>
-                           </SelectTrigger>
+                        <Select 
+                            value={commonPreset} 
+                            onValueChange={(v) => handleBulkTypePresetChange(v, selectedEdgeIds)}
+                        >
+                            <SelectTrigger className="h-8 text-xs">
+                                <SelectValue placeholder={!allSameType ? "Multiple Types" : "Select Type..."} />
+                            </SelectTrigger>
 
-                          <SelectContent>
+                            <SelectContent>
                               <SelectItem value="walkway">
                                   <div className="flex items-center gap-2">
                                       <Footprints className="h-3 w-3" />

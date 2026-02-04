@@ -7,6 +7,7 @@ import type { GeolocationState } from "@/hooks/use-geolocation";
 import { UserLocationMarker } from "./user-location-marker";
 import { MyLocationButton } from "./my-location-button";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
+import { useApp } from "@/lib/context/app-context";
 
 import L from "leaflet";
 
@@ -23,7 +24,7 @@ const LOCATION_PERMISSION_KEY = "vsu-smartmap-location-consent";
 
 export function UserLocationControl({ className, destination, selectedFacility, geo }: UserLocationControlProps) {
   const map = useMap();
-  const [showPermissionDialog, setShowPermissionDialog] = useState(false);
+  const { locationPromptOpen, setLocationPromptOpen } = useApp();
   const {
     position,
     heading,
@@ -86,19 +87,19 @@ export function UserLocationControl({ className, destination, selectedFacility, 
     } else if (hasConsented()) {
       startTracking();
     } else {
-      setShowPermissionDialog(true);
+      setLocationPromptOpen(true);
     }
-  }, [isSupported, position, map, startTracking, hasConsented, destination, selectedFacility]);
+  }, [isSupported, position, map, startTracking, hasConsented, destination, selectedFacility, setLocationPromptOpen]);
 
   const handlePermissionConfirm = useCallback(() => {
     localStorage.setItem(LOCATION_PERMISSION_KEY, "true");
-    setShowPermissionDialog(false);
+    setLocationPromptOpen(false);
     startTracking();
-  }, [startTracking]);
+  }, [startTracking, setLocationPromptOpen]);
 
   const handlePermissionCancel = useCallback(() => {
-    setShowPermissionDialog(false);
-  }, []);
+    setLocationPromptOpen(false);
+  }, [setLocationPromptOpen]);
 
   // Remove the aggressive auto-centering effect
   // useEffect(() => {
@@ -136,7 +137,7 @@ export function UserLocationControl({ className, destination, selectedFacility, 
       />
 
       <ConfirmDialog
-        open={showPermissionDialog}
+        open={locationPromptOpen}
         title="Enable Location Access?"
         description="VSU SmartMap would like to access your location to show where you are on campus. Your location data stays on your device and is not stored or shared."
         confirmLabel="Enable Location"

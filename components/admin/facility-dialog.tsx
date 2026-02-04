@@ -452,9 +452,9 @@ export function FacilityDialog({
                 <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={submitting}>
-                  {submitting ? resolvedSubmitting : resolvedSubmit}
-                </Button>
+                 <Button type="submit" loading={submitting}>
+                   {submitting ? resolvedSubmitting : resolvedSubmit}
+                 </Button>
               </div>
             </DialogScaffoldFooter>
           </form>

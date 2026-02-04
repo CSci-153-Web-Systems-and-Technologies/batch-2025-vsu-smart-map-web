@@ -18,6 +18,8 @@ export function ActionButtons({ facility, className }: ActionButtonsProps) {
     const { setFacilitySheetOpen } = useApp();
     const [copied, setCopied] = useState(false);
 
+    const [isNavigating, setIsNavigating] = useState(false);
+
     const handleShare = async () => {
         const url = `${window.location.origin}/?facility=${facility.id}`;
         try {
@@ -30,14 +32,18 @@ export function ActionButtons({ facility, className }: ActionButtonsProps) {
     };
 
     const handleDirections = () => {
+        setIsNavigating(true);
         // Dispatch event for MapView to catch
         const event = new CustomEvent('navigate-to-facility', { detail: facility });
         window.dispatchEvent(event);
-        setFacilitySheetOpen(false);
         
-        if (pathname !== "/") {
-            router.push('/');
-        }
+        setTimeout(() => {
+            setFacilitySheetOpen(false);
+            if (pathname !== "/") {
+                router.push('/');
+            }
+            setIsNavigating(false);
+        }, 300);
     };
 
     return (
@@ -56,7 +62,7 @@ export function ActionButtons({ facility, className }: ActionButtonsProps) {
                     )}
                     {copied ? "Copied" : "Share"}
                 </Button>
-                <Button size="sm" className="w-full gap-2" onClick={handleDirections}>
+                <Button size="sm" className="w-full gap-2" onClick={handleDirections} loading={isNavigating}>
                     <Navigation className="h-4 w-4" />
                     Navigate
                 </Button>

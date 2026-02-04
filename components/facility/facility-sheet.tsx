@@ -74,7 +74,7 @@ export function FacilitySheet() {
         <DialogContent
           overlayClassName="hidden"
           onInteractOutside={(e) => e.preventDefault()}
-          className="flex h-[100dvh] max-h-[100dvh] w-full max-w-full flex-col gap-0 p-0 sm:h-[90dvh] sm:max-h-[90dvh] sm:max-w-lg sm:rounded-lg"
+          className="fixed bottom-0 top-auto flex h-auto max-h-[85vh] w-full max-w-full translate-y-0 flex-col gap-0 rounded-t-xl p-0 duration-300 data-[state=closed]:translate-y-full data-[state=open]:translate-y-0 sm:bottom-auto sm:top-1/2 sm:h-[90dvh] sm:max-h-[90dvh] sm:max-w-lg sm:-translate-y-1/2 sm:rounded-lg"
         >
           <VisuallyHidden>
             <DialogTitle>{displayFacility?.name ?? "Facility Details"}</DialogTitle>
@@ -83,6 +83,10 @@ export function FacilitySheet() {
 
           {displayFacility && (
             <>
+              <div className="flex w-full items-center justify-center pt-2 sm:hidden">
+                <div className="h-1.5 w-12 rounded-full bg-muted-foreground/20" />
+              </div>
+
               <div className="flex shrink-0 items-center gap-2 px-6 pt-4">
                 <Button
                   type="button"

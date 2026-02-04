@@ -113,7 +113,7 @@ export async function updateFacilityAction(id: string, input: unknown) {
         type: "EDIT_FACILITY",
         targetId: id,
         status: "APPROVED",
-        payload: { ...changes, source: "ADMIN" },
+        payload: { ...changes, name: currentFacility?.name, source: "ADMIN" },
       },
       adminClient
     );
@@ -133,9 +133,25 @@ export async function updateFacilityAction(id: string, input: unknown) {
 
 export async function deleteFacilityAction(id: string) {
   const client = await getSupabaseServerClient();
+  
+  const { data: facility } = await getFacilityById({ id, client });
+
   const { error } = await deleteFacilityQuery(id, client);
   if (error) {
     return { error: error.message ?? GENERIC_ERROR };
+  }
+
+  if (facility) {
+    const { client: adminClient } = await getSupabaseAdminClient({ requireServiceRole: true });
+    await createSuggestion(
+      {
+        type: "EDIT_FACILITY", 
+        targetId: id,
+        status: "APPROVED",
+        payload: { name: facility.name, deleted: true, source: "ADMIN" },
+      },
+      adminClient
+    );
   }
 
   await revalidateFacilitiesCache();
@@ -206,7 +222,7 @@ export async function updateRoomAction(id: string, input: unknown) {
           type: "EDIT_ROOM",
           targetId: data.facility_id,
           status: "APPROVED",
-          payload: { ...changes, roomId: id, roomCode: data.room_code, source: "ADMIN" },
+          payload: { ...changes, roomCode: data.room_code, name: currentRoom?.name, source: "ADMIN" },
         },
         adminClient
       );
@@ -244,9 +260,24 @@ export async function updateRoomAction(id: string, input: unknown) {
 
 export async function deleteRoomAction(id: string) {
   const client = await getSupabaseServerClient();
+  const { data: room } = await getRoomById({ id, client });
+
   const { error } = await deleteRoomQuery(id, client);
   if (error) {
     return { error: error.message ?? GENERIC_ERROR };
+  }
+
+  if (room && !("facility" in room)) {
+    const { client: adminClient } = await getSupabaseAdminClient({ requireServiceRole: true });
+    await createSuggestion(
+      {
+        type: "EDIT_ROOM",
+        targetId: room.facility_id,
+        status: "APPROVED",
+        payload: { roomCode: room.room_code, name: room.name, deleted: true, source: "ADMIN" },
+      },
+      adminClient
+    );
   }
 
   revalidatePath("/admin/facilities");

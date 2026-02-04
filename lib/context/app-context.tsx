@@ -26,6 +26,7 @@ interface AppState {
   activeTab: "map" | "directory" | "chat";
   mapStyle: "vector" | "satellite";
   defaultTransportMode: TransportMode;
+  locationPromptOpen: boolean;
 }
 
 interface AppContextValue extends AppState {
@@ -41,6 +42,7 @@ interface AppContextValue extends AppState {
   ) => void;
   setMapStyle: (style: "vector" | "satellite") => void;
   setDefaultTransportMode: (mode: TransportMode) => void;
+  setLocationPromptOpen: (open: boolean) => void;
   clearFilters: () => void;
 }
 
@@ -89,6 +91,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [debouncedQuery, setDebouncedQuery] = useState(initialSearch);
   const [activeTab, setActiveTabState] = useState<AppState["activeTab"]>("map");
   const [defaultTransportMode, setDefaultTransportModeState] = useState<TransportMode>("walking");
+  const [locationPromptOpen, setLocationPromptOpen] = useState(false);
 
   // Hydrate from localStorage on client-side mount ONCE (not on every searchParams change)
   useEffect(() => {
@@ -323,6 +326,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     activeTab,
     mapStyle,
     defaultTransportMode,
+    locationPromptOpen,
     selectFacility,
     resolvePendingFacility,
     setFacilitySheetOpen,
@@ -330,6 +334,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setActiveTab,
     setMapStyle,
     setDefaultTransportMode,
+    setLocationPromptOpen,
     clearFilters,
   }), [
     selectedFacility,
@@ -341,6 +346,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     activeTab,
     mapStyle,
     defaultTransportMode,
+    locationPromptOpen,
     selectFacility,
     resolvePendingFacility,
     setFacilitySheetOpen,
@@ -350,6 +356,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setActiveTab,
     setMapStyle,
     setDefaultTransportMode,
+    setLocationPromptOpen,
     clearFilters,
   ]);
 
