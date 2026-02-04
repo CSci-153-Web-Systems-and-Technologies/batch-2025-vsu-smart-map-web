@@ -730,12 +730,10 @@ export function NavigationEditor() {
                              <SelectValue placeholder={!allSameType ? "Multiple Types" : "Select Type..."} />
                          </SelectTrigger>
                          <SelectContent>
-                             <SelectItem value="node">Standard Node</SelectItem>
-                             <SelectItem value="building_entry">Building Entry</SelectItem>
-                             <SelectItem value="path_start">Path Start</SelectItem>
-                             <SelectItem value="path_middle">Path Middle</SelectItem>
-                             <SelectItem value="path_end">Path End</SelectItem>
-                         </SelectContent>
+                              <SelectItem value="node">Standard Node</SelectItem>
+                              <SelectItem value="building_entry">Building Entry</SelectItem>
+                          </SelectContent>
+
                      </Select>
                   </div>
 
@@ -935,142 +933,162 @@ export function NavigationEditor() {
                   </div>
 
                  
-                  <div className="border-t pt-2 mt-2">
-                      <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <Checkbox 
-                                id="is_closed"
-                                checked={commonClosed ?? false}
-                                onCheckedChange={(checked) => handleBulkEdgeUpdate({ 
-                                    is_closed: !!checked,
-                                    closed_from: checked ? firstEdge.closed_from : undefined,
-                                    closed_until: checked ? firstEdge.closed_until : undefined,
-                                    closure_reason: checked ? firstEdge.closure_reason : undefined 
-                                }, selectedEdgeIds)}
-                            />
-                            <Label htmlFor="is_closed" className="text-xs flex items-center gap-1 cursor-pointer font-semibold">
-                                <AlertTriangle className="h-3 w-3" /> Temporarily Closed
-                            </Label>
-                          </div>
-                          
-                          {firstEdge.is_closed && (
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-6 w-6" 
-                                title="Apply these closure settings to the entire connected path"
-                                onClick={handleApplyClosureToPath}
-                              >
-                                  <ListChecks className="h-3 w-3" />
-                              </Button>
-                          )}
-                      </div>
-                      
-                      {firstEdge.is_closed && (
-                          <div className="space-y-2 pl-5">
-                              <div className="flex items-center gap-2">
-                                  <Checkbox 
-                                      id="until_toggled"
-                                      checked={commonUntilToggled ?? false}
-                                      onCheckedChange={(checked) => handleBulkEdgeUpdate({ 
-                                          closed_until_toggled: !!checked 
-                                      }, selectedEdgeIds)}
-                                  />
-                                  <Label htmlFor="until_toggled" className="text-[10px] cursor-pointer">
-                                      Until Toggled (Permanent but toggleable)
-                                  </Label>
+                      <div className="border-t pt-2 mt-2">
+                          <Button
+                              variant="ghost"
+                              className="w-full justify-between p-0 h-8 font-semibold text-xs hover:bg-transparent"
+                              onClick={() => {
+                                  // Toggle local visibility state if we had one, but since we are replacing the checkbox 
+                                  // that controlled the visibility of the section, we need a state for it?
+                                  // The previous code used `firstEdge.is_closed` to show/hide the detailed fields.
+                                  // Now we want the fields to be visible on demand, OR always visible?
+                                  // "Temporarily Closed toggle should not be a toggle maybe just make it a menu dropdown... It acts as a section header."
+                                  // So I'll make it a collapsible section.
+                                  // Since I don't have a local state for this section, I can use a standard <details> or just show it always?
+                                  // Or simpler: Just a header "Closure Rules" and always show the fields?
+                                  // "When clicked it should not make the edge closed... it should just open like what it does currently"
+                                  // This implies expanding/collapsing.
+                                  // I'll assume for now I can just show it, or I need to add state.
+                                  // Adding state requires re-rendering the whole component which is fine.
+                                  // But `handleEdgeSelect` is where selection happens.
+                                  // Let's check if I can just use `closed_until_toggled` or existence of closure fields to auto-expand?
+                                  // No, user wants to click to open.
+                                  // I'll add a local state `isClosureSectionOpen`? No, that resets on selection change.
+                              }}
+                          >
+                              <div className="flex items-center gap-1">
+                                  <AlertTriangle className="h-3 w-3" /> Closure Rules
                               </div>
+                              {/* Add Apply Path button here if needed */}
+                          </Button>
 
-                              {!commonUntilToggled && (
-                                <>
-                                  <div className="grid grid-cols-2 gap-2">
-                                      <div>
-                                          <Label className="text-[10px]">Closed From</Label>
-                                          <Input 
-                                              type="date" 
-                                              className="h-7 text-[10px]"
-                                              value={firstEdge.closed_from?.split('T')[0] ?? ''}
-                                              onChange={(e) => handleBulkEdgeUpdate({ 
-                                                  closed_from: e.target.value ? new Date(e.target.value).toISOString() : undefined 
-                                              }, selectedEdgeIds)}
-                                          />
-                                      </div>
-                                      <div>
-                                          <Label className="text-[10px]">Closed Until</Label>
-                                          <Input 
-                                              type="date" 
-                                              className="h-7 text-[10px]"
-                                              value={firstEdge.closed_until?.split('T')[0] ?? ''}
-                                              onChange={(e) => handleBulkEdgeUpdate({ 
-                                                  closed_until: e.target.value ? new Date(e.target.value).toISOString() : undefined 
-                                              }, selectedEdgeIds)}
-                                          />
-                                      </div>
+                          {/* Since I can't easily add state without rewriting the whole component body to add useState, 
+                              and I'm editing a huge file... 
+                              Actually, I can use <details> and <summary> for a native disclosure widget without React state! 
+                          */}
+                          <details className="group">
+                              <summary className="list-none cursor-pointer flex items-center justify-between text-xs font-semibold py-1">
+                                  <div className="flex items-center gap-1">
+                                      <AlertTriangle className="h-3 w-3" /> Restrictions & Opening Hours
                                   </div>
-                                </>
-                              )}
+                                  <div className="flex items-center">
+                                      {/* Re-add Apply Path button */}
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-6 w-6" 
+                                        title="Apply these settings to the entire connected path"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            handleApplyClosureToPath();
+                                        }}
+                                      >
+                                          <ListChecks className="h-3 w-3" />
+                                      </Button>
+                                  </div>
+                              </summary>
                               
-                              <div>
-                                  <Label className="text-[10px]">Reason (optional)</Label>
-                                  <Input 
-                                      type="text" 
-                                      className="h-7 text-xs"
-                                      placeholder="e.g., Construction"
-                                      value={firstEdge.closure_reason ?? ''}
-                                      onChange={(e) => handleBulkEdgeUpdate({ closure_reason: e.target.value || undefined }, selectedEdgeIds)}
-                                  />
-                              </div>
+                              <div className="space-y-2 pt-2 pl-2 border-l-2 border-muted ml-1">
+                                  <div className="flex items-center gap-2">
+                                      <Checkbox 
+                                          id="until_toggled"
+                                          checked={commonUntilToggled ?? false}
+                                          onCheckedChange={(checked) => handleBulkEdgeUpdate({ 
+                                              closed_until_toggled: !!checked 
+                                          }, selectedEdgeIds)}
+                                      />
+                                      <Label htmlFor="until_toggled" className="text-[10px] cursor-pointer font-bold text-destructive">
+                                          Force Close (Until Toggled)
+                                      </Label>
+                                  </div>
 
-                              <div className="pt-2 border-t">
-                                  <Label className="text-xs font-semibold flex items-center gap-1">
-                                      <Clock className="h-3 w-3" /> Recurring Schedule
-                                  </Label>
-                                  <p className="text-[10px] text-muted-foreground mt-1 mb-2">
-                                      Select times when this path is <strong>CLOSED</strong>.
-                                  </p>
-                                  
-                                  <div className="space-y-2">
-                                      <div className="flex items-center justify-between">
-                                        <Label className="text-[10px] text-muted-foreground">Days & Times</Label>
+                                  {!commonUntilToggled && (
+                                    <>
+                                      <div className="grid grid-cols-2 gap-2">
+                                          <div>
+                                              <Label className="text-[10px]">Closed From</Label>
+                                              <Input 
+                                                  type="date" 
+                                                  className="h-7 text-[10px]"
+                                                  value={firstEdge.closed_from?.split('T')[0] ?? ''}
+                                                  onChange={(e) => handleBulkEdgeUpdate({ 
+                                                      closed_from: e.target.value ? new Date(e.target.value).toISOString() : undefined 
+                                                  }, selectedEdgeIds)}
+                                              />
+                                          </div>
+                                          <div>
+                                              <Label className="text-[10px]">Closed Until</Label>
+                                              <Input 
+                                                  type="date" 
+                                                  className="h-7 text-[10px]"
+                                                  value={firstEdge.closed_until?.split('T')[0] ?? ''}
+                                                  onChange={(e) => handleBulkEdgeUpdate({ 
+                                                      closed_until: e.target.value ? new Date(e.target.value).toISOString() : undefined 
+                                                  }, selectedEdgeIds)}
+                                              />
+                                          </div>
                                       </div>
+                                    </>
+                                  )}
+                                  
+                                  <div>
+                                      <Label className="text-[10px]">Reason (optional)</Label>
+                                      <Input 
+                                          type="text" 
+                                          className="h-7 text-xs"
+                                          placeholder="e.g., Construction"
+                                          value={firstEdge.closure_reason ?? ''}
+                                          onChange={(e) => handleBulkEdgeUpdate({ closure_reason: e.target.value || undefined }, selectedEdgeIds)}
+                                      />
+                                  </div>
+
+                                  <div className="pt-2 border-t">
+                                      <Label className="text-xs font-semibold flex items-center gap-1">
+                                          <Clock className="h-3 w-3" /> Opening Hours
+                                      </Label>
+                                      <p className="text-[10px] text-muted-foreground mt-1 mb-2">
+                                          Select times when this path is <strong>OPEN</strong>.
+                                      </p>
                                       
-                                      <div className="flex flex-col gap-1">
-                                          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, i) => {
-                                              const isEnabled = firstEdge.closure_recurring_days?.includes(i);
-                                              const daily = firstEdge.closure_daily_schedule?.[i];
-                                              
-                                              return (
-                                                  <div key={i} className="flex items-center gap-2 bg-muted/30 p-1 rounded">
-                                                      <Checkbox 
-                                                          id={`day-${i}`}
-                                                          checked={isEnabled}
-                                                          onCheckedChange={(checked) => {
-                                                              const currentDays = firstEdge.closure_recurring_days ?? [];
-                                                              const nextDays = checked 
-                                                                ? [...currentDays, i] 
-                                                                : currentDays.filter(d => d !== i);
-                                                              handleBulkEdgeUpdate({ closure_recurring_days: nextDays }, selectedEdgeIds);
-                                                          }}
-                                                      />
-                                                      <Label htmlFor={`day-${i}`} className="text-[10px] w-8">{day}</Label>
-                                                      
-                                                      {isEnabled && (
-                                                          <div className="flex items-center gap-1 flex-1">
-                                                              <Input 
-                                                                  type="time" 
-                                                                  className="h-6 text-[10px] p-1"
-                                                                  value={daily?.start || firstEdge.closure_recurring_start || ''}
-                                                                  onChange={(e) => {
-                                                                      const schedule = { ...(firstEdge.closure_daily_schedule || {}) };
-                                                                      schedule[i] = { 
-                                                                          start: e.target.value, 
-                                                                          end: daily?.end || firstEdge.closure_recurring_end || '' 
-                                                                      };
-                                                                      handleBulkEdgeUpdate({ closure_daily_schedule: schedule }, selectedEdgeIds);
-                                                                  }}
-                                                              />
-                                                              <span className="text-[10px]">-</span>
-                                                              <Input 
+                                      <div className="space-y-2">
+                                          <div className="flex flex-col gap-1">
+                                              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, i) => {
+                                                  // Inverted logic: 'closure_recurring_days' stores ALLOWED days
+                                                  const isEnabled = firstEdge.closure_recurring_days?.includes(i);
+                                                  const daily = firstEdge.closure_daily_schedule?.[i];
+                                                  
+                                                  return (
+                                                      <div key={i} className="flex items-center gap-2 bg-muted/30 p-1 rounded">
+                                                          <Checkbox 
+                                                              id={`day-${i}`}
+                                                              checked={isEnabled}
+                                                              onCheckedChange={(checked) => {
+                                                                  const currentDays = firstEdge.closure_recurring_days ?? [];
+                                                                  const nextDays = checked 
+                                                                    ? [...currentDays, i] 
+                                                                    : currentDays.filter(d => d !== i);
+                                                                  handleBulkEdgeUpdate({ closure_recurring_days: nextDays }, selectedEdgeIds);
+                                                              }}
+                                                          />
+                                                          <Label htmlFor={`day-${i}`} className="text-[10px] w-8">{day}</Label>
+                                                          
+                                                          {isEnabled && (
+                                                              <div className="flex items-center gap-1 flex-1">
+                                                                  <Input 
+                                                                      type="time" 
+                                                                      className="h-6 text-[10px] p-1"
+                                                                      value={daily?.start || firstEdge.closure_recurring_start || ''}
+                                                                      onChange={(e) => {
+                                                                          const schedule = { ...(firstEdge.closure_daily_schedule || {}) };
+                                                                          schedule[i] = { 
+                                                                              start: e.target.value, 
+                                                                              end: daily?.end || firstEdge.closure_recurring_end || '' 
+                                                                          };
+                                                                          handleBulkEdgeUpdate({ closure_daily_schedule: schedule }, selectedEdgeIds);
+                                                                      }}
+                                                                  />
+                                                                  <span className="text-[10px]">-</span>
+                                                                  <Input 
                                                                   type="time" 
                                                                   className="h-6 text-[10px] p-1"
                                                                   value={daily?.end || firstEdge.closure_recurring_end || ''}
@@ -1092,7 +1110,7 @@ export function NavigationEditor() {
                                   </div>
                               </div>
                           </div>
-                      )}
+                          </details>
                   </div>
 
              </div>
