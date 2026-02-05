@@ -5,7 +5,7 @@ export function createClient() {
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !anonKey) {
-    return {} as any; 
+    return {} as ReturnType<typeof createBrowserClient>; 
   }
 
   return createBrowserClient(url, anonKey);

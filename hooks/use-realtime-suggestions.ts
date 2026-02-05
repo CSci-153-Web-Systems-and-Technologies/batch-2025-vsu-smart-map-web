@@ -36,7 +36,7 @@ export function useRealtimeSuggestions(initialSuggestions: Suggestion[]) {
               prev.map((s) => (s.id === updatedSuggestion.id ? updatedSuggestion : s))
             );
           } else if (payload.eventType === "DELETE") {
-            setSuggestions((prev) => prev.filter((s) => s.id !== (payload.old as any).id));
+            setSuggestions((prev) => prev.filter((s) => s.id !== (payload.old as { id: string }).id));
           }
 
           // Trigger a background refresh to keep server components in sync
