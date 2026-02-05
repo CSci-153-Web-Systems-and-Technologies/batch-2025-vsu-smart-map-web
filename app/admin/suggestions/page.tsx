@@ -4,6 +4,8 @@ import { getFacilitiesByIds } from "@/lib/supabase/queries/facilities";
 import { getSuggestions } from "@/lib/supabase/queries/suggestions";
 import { getSupabaseAdminClient } from "@/lib/supabase/server-client";
 
+export const dynamic = 'force-dynamic';
+
 export default async function SuggestionsPage() {
   const { client } = await getSupabaseAdminClient({ requireServiceRole: true }).catch(
     (error) => {

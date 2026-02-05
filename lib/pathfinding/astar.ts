@@ -11,60 +11,85 @@ const DEFAULT_ACCESS: Record<string, TransportMode[]> = {
   walkway: ['walking'],
 };
 
-function isEdgeClosed(edge: MapEdge): boolean {
-  if (!edge.is_closed) return false;
+export function isTimeInRange(now: Date, start: string, end: string): boolean {
+  const [startH, startM] = start.split(':').map(Number);
+  const [endH, endM] = end.split(':').map(Number);
   
+  const currentH = now.getHours();
+  const currentM = now.getMinutes();
+  const currentMinutes = currentH * 60 + currentM;
+  const startMinutes = startH * 60 + startM;
+  const endMinutes = endH * 60 + endM;
+
+  if (startMinutes <= endMinutes) {
+    return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
+  } else {
+    // Overnight range (e.g. 22:00 to 06:00)
+    // Open if after start OR before end
+    return currentMinutes >= startMinutes || currentMinutes <= endMinutes;
+  }
+}
+
+export function isEdgeClosed(edge: MapEdge): boolean {
   const now = new Date();
 
-  // 1. Check Date Range (if defined)
-  // If we are outside the date range, the closure (temporary or recurring) doesn't apply?
-  // User Requirement: "sometimes roads ... open on a certain time only"
-  // Interpretation: "is_closed" activates the logic.
-  // If dates are provided, it's only closed within those dates.
+  // 1. Force Close (Permanent Toggle)
+  if (edge.closed_until_toggled) return true;
+
+  // 2. Date Range (Temporary Closure)
+  // Logic: If a date range is specified, it is CLOSED within that range.
+  if (edge.closed_from || edge.closed_until) {
+    const from = edge.closed_from ? new Date(edge.closed_from) : null;
+    const until = edge.closed_until ? new Date(edge.closed_until) : null;
+
+    let isInsideRange = true;
+    if (from && now < from) isInsideRange = false;
+    if (until && now > until) isInsideRange = false;
+
+    if (isInsideRange) return true;
+  }
+
+  // 3. Recurring Schedule
+  // Logic: Defined times are interpreted as allowed (open) times.
+  // Everything else is considered closed.
   
-  if (edge.closed_from) {
-    if (now < new Date(edge.closed_from)) return false;
-  }
-  if (edge.closed_until) {
-    if (now > new Date(edge.closed_until)) return false;
-  }
+  const hasRecurringSchedule = 
+    (edge.closure_recurring_days && edge.closure_recurring_days.length > 0) ||
+    (edge.closure_daily_schedule && Object.keys(edge.closure_daily_schedule).length > 0) ||
+    (edge.closure_recurring_start && edge.closure_recurring_end);
 
-  // 2. Check Recurring Days (if defined)
-  if (edge.closure_recurring_days && edge.closure_recurring_days.length > 0) {
+  if (hasRecurringSchedule) {
     const day = now.getDay();
-    if (!edge.closure_recurring_days.includes(day)) return false;
-  }
+    
+    // Check if today is an allowed day.
+    // The field 'closure_recurring_days' is used to store the list of allowed days.
+    if (edge.closure_recurring_days && edge.closure_recurring_days.length > 0) {
+      if (!edge.closure_recurring_days.includes(day)) {
+        return true; // Not in allowed days -> Closed
+      }
+    }
 
-  // 3. Check Recurring Time (if defined)
-  if (edge.closure_recurring_start && edge.closure_recurring_end) {
-    const [startH, startM] = edge.closure_recurring_start.split(':').map(Number);
-    const [endH, endM] = edge.closure_recurring_end.split(':').map(Number);
+    // Today is allowed (or no specific days set). Check time restrictions.
     
-    const currentH = now.getHours();
-    const currentM = now.getMinutes();
-    
-    const currentMinutes = currentH * 60 + currentM;
-    const startMinutes = startH * 60 + startM;
-    const endMinutes = endH * 60 + endM;
-    
-    // Handle overnight range (e.g. 22:00 to 06:00)
-    if (startMinutes > endMinutes) {
-      // It's closed if current time is AFTER start OR BEFORE end
-      if (currentMinutes >= startMinutes || currentMinutes <= endMinutes) {
-        return true;
+    let start = edge.closure_recurring_start;
+    let end = edge.closure_recurring_end;
+
+    // Specific daily schedule overrides global recurring time
+    if (edge.closure_daily_schedule?.[day]) {
+      start = edge.closure_daily_schedule[day].start;
+      end = edge.closure_daily_schedule[day].end;
+    }
+
+    if (start && end) {
+      // If time range is defined, we must be INSIDE it to be Open.
+      if (!isTimeInRange(now, start, end)) {
+        return true; // Outside allowed hours -> Closed
       }
-      return false;
-    } else {
-      // Standard range (e.g. 08:00 to 17:00)
-      if (currentMinutes >= startMinutes && currentMinutes <= endMinutes) {
-        return true;
-      }
-      return false;
     }
   }
 
-  // If no specific time restrictions are met (or defined), and we passed date checks, it's closed.
-  return true;
+  // If no Force Close, no Date Range Closure active, and passed Schedule checks (or no schedule), it's Open.
+  return false;
 }
 
 function canTraverse(edge: MapEdge, mode: TransportMode): boolean {

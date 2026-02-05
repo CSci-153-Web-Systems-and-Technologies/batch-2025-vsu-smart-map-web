@@ -23,9 +23,35 @@ export const findLocationFlow = flow(
       description: f.description ? f.description.slice(0, 150) : undefined
     }));
 
-    const userQuery = input.query;
+    let userQuery = input.query;
     const contextData = input.context || {};
     const summary = contextData.summary || "None";
+
+    // Detect potential room codes (e.g., ICT303, CAS101)
+    const roomCodePattern = /([A-Za-z]+)(\d{2,3})/i;
+    const match = userQuery.match(roomCodePattern);
+
+    if (match) {
+        const prefix = match[1].toUpperCase();
+        
+        // Check if the specific room is NOT in the context
+        const specificRoomExists = (facilitiesContext || []).some(f => 
+            f.rooms?.some(r => r.roomCode?.toUpperCase() === userQuery.toUpperCase())
+        );
+
+        if (!specificRoomExists) {
+            // Try to find a building with a matching name or code prefix
+            const inferredBuilding = (facilitiesContext || []).find(f => 
+                f.name.toUpperCase().startsWith(prefix) || 
+                f.code?.toUpperCase() === prefix ||
+                (f.category === 'academic' && f.name.toUpperCase().includes(prefix))
+            );
+
+            if (inferredBuilding) {
+                userQuery = `${userQuery} (Note: I couldn't find this specific room in my data, but based on the naming pattern, it is likely located in the ${inferredBuilding.name}. I will assume it's there and explicitly mention this assumption to the user.)`;
+            }
+        }
+    }
 
     // Optimization: Limit history to last 6 messages and only include text response for Assistant
     const conversationHistory = contextData.conversationHistory?.length

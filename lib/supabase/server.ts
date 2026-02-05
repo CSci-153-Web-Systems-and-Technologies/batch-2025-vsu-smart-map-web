@@ -1,1 +1,1 @@
-export { createClient } from "./server-client";
+export { getSupabaseServerClient as createClient } from "./server-client";

@@ -153,7 +153,7 @@ export async function pruneHistory(params: {
     return;
   }
 
-  const idsToKeep = keepIds.map((row) => row.id);
+  const idsToKeep = (keepIds as unknown as Array<{ id: string }>).map((row) => row.id);
 
   const { data: allEntries } = await supabase
     .from("suggestions")
@@ -163,7 +163,7 @@ export async function pruneHistory(params: {
 
   if (!allEntries) return;
 
-  const idsToDelete = allEntries
+  const idsToDelete = (allEntries as unknown as Array<{ id: string }>)
     .map((row) => row.id)
     .filter((id) => !idsToKeep.includes(id));
 

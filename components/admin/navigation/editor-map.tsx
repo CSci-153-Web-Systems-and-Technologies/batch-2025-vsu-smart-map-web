@@ -15,13 +15,13 @@ const EditorMapContent = dynamic(
 interface EditorMapProps {
   nodes: MapNode[];
   edges: MapEdge[];
-  mode: 'select' | 'add_node' | 'add_edge';
-  selectedNodeId: string | null;
-  selectedEdgeId: string | null;
+  mode: 'select' | 'add_node' | 'add_edge' | 'mixed';
+  selectedNodeIds: Set<string>;
+  selectedEdgeIds: Set<string>;
   edgeStartNodeId: string | null;
   onNodeAdd: (lat: number, lng: number) => void;
-  onNodeSelect: (id: string) => void;
-  onEdgeSelect: (id: string) => void;
+  onNodeSelect: (id: string, multi: boolean) => void;
+  onEdgeSelect: (id: string, multi: boolean) => void;
   onNodeMove: (id: string, lat: number, lng: number) => void;
 }
 

@@ -43,24 +43,24 @@ export function RecentActivity({ submissions }: RecentSubmissionsProps) {
                     : "bg-blue-50/50 border-blue-100 dark:bg-blue-900/20 dark:border-blue-800"
                 )}
               >
-                <div className="flex flex-col gap-1">
+                 <div className="flex flex-col gap-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm">{submission.suggestedName}</span>
+                    <span className="font-medium text-sm truncate">{submission.suggestedName}</span>
                     <span
-                      className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium uppercase tracking-wider ${isAdmin ? "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200" : "bg-blue-100 text-blue-700 dark:bg-blue-800 dark:text-blue-200"
+                      className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium uppercase tracking-wider shrink-0 ${isAdmin ? "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200" : "bg-blue-100 text-blue-700 dark:bg-blue-800 dark:text-blue-200"
                         }`}
                     >
                       {isAdmin ? "System" : "User"}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <span className="capitalize">{typeLabel}</span>
-                    <span>•</span>
-                    <span>{formatDateShortPH(submission.createdAt)}</span>
+                    <span className="capitalize truncate">{typeLabel}</span>
+                    <span className="shrink-0">•</span>
+                    <span className="shrink-0">{formatDateShortPH(submission.createdAt)}</span>
                   </div>
                 </div>
                 <span
-                  className={`rounded-full px-2 py-1 text-xs font-medium ${STATUS_COLORS[submission.status] ?? "bg-muted text-foreground"}`}
+                  className={`rounded-full px-2 py-1 text-xs font-medium shrink-0 ml-2 ${STATUS_COLORS[submission.status] ?? "bg-muted text-foreground"}`}
                 >
                   {submission.status}
                 </span>

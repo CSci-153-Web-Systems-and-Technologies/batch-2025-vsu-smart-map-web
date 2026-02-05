@@ -225,9 +225,9 @@ export function RoomManagerDialog({ open, facility, onOpenChange }: RoomManagerD
                   <div className="text-sm text-muted-foreground">
                     Rooms linked to {facility.name}
                   </div>
-                  <Button size="sm" onClick={handleCreate} disabled={isPending}>
-                    Add room
-                  </Button>
+                   <Button size="sm" onClick={handleCreate} disabled={isPending} loading={isPending}>
+                     Add room
+                   </Button>
                 </div>
 
                 {formOpen && (

@@ -3,6 +3,8 @@ import { FacilitiesPageClient } from '@/components/admin/facilities-page-client'
 import { getFacilities } from '@/lib/supabase/queries/facilities';
 import { getSupabaseServerClient } from '@/lib/supabase/server-client';
 
+export const dynamic = 'force-dynamic';
+
 export default async function FacilitiesPage() {
   const client = await getSupabaseServerClient();
   const { data, error } = await getFacilities({ client });

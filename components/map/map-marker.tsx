@@ -96,7 +96,7 @@ export function MapMarker({ item, isSelected = false, onSelect, onDirections }: 
           {item.name}
         </Tooltip>
       )}
-      <Popup offset={[0, -20]} className="map-popup-card">
+      <Popup offset={[0, -20]} className="map-popup-card" autoPan={false}>
         <MapPopupCard
           facility={item as unknown as Facility}
           onViewDetails={handleViewDetails}

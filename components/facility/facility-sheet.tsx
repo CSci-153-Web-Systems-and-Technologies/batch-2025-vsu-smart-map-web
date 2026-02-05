@@ -70,7 +70,9 @@ export function FacilitySheet() {
           selectFacility(null);
         }}
       >
-        <DialogContent className="flex h-[100dvh] max-h-[100dvh] w-full max-w-full flex-col gap-0 p-0 sm:h-[90dvh] sm:max-h-[90dvh] sm:max-w-lg sm:rounded-lg">
+        <DialogContent
+          className="flex h-[85dvh] max-h-[85dvh] w-[90vw] max-w-lg flex-col gap-0 p-0 sm:h-[90dvh] sm:max-h-[90dvh]"
+        >
           <VisuallyHidden>
             <DialogTitle>{displayFacility?.name ?? "Facility Details"}</DialogTitle>
             <DialogDescription>Details for {displayFacility?.name ?? "selected facility"}</DialogDescription>

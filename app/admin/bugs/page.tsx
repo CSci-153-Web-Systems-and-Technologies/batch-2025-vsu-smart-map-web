@@ -1,6 +1,8 @@
 import { BugReportsTable } from "@/components/admin/bugs/bug-reports-table";
 import { AdminBreadcrumbs } from "@/components/admin/admin-breadcrumbs";
 
+export const dynamic = 'force-dynamic';
+
 export default function BugReportsPage() {
   return (
     <div className="space-y-6">

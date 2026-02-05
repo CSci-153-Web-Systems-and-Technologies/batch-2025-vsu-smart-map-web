@@ -12,6 +12,7 @@ import {
 } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import type { Facility, FacilityCategory } from "@/lib/types/facility";
+import type { TransportMode } from "@/lib/types/graph";
 import { FACILITY_CATEGORY_META } from "@/lib/constants/facilities";
 import { useMapStyle } from "@/lib/context/map-style-context";
 
@@ -24,6 +25,8 @@ interface AppState {
   selectedCategories: FacilityCategory[];
   activeTab: "map" | "directory" | "chat";
   mapStyle: "vector" | "satellite";
+  defaultTransportMode: TransportMode;
+  locationPromptOpen: boolean;
 }
 
 interface AppContextValue extends AppState {
@@ -38,6 +41,8 @@ interface AppContextValue extends AppState {
     options?: { clearSelection?: boolean; selectFacilityAfter?: Facility }
   ) => void;
   setMapStyle: (style: "vector" | "satellite") => void;
+  setDefaultTransportMode: (mode: TransportMode) => void;
+  setLocationPromptOpen: (open: boolean) => void;
   clearFilters: () => void;
 }
 
@@ -85,6 +90,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [debouncedQuery, setDebouncedQuery] = useState(initialSearch);
   const [activeTab, setActiveTabState] = useState<AppState["activeTab"]>("map");
+  const [defaultTransportMode, setDefaultTransportModeState] = useState<TransportMode>("walking");
+  const [locationPromptOpen, setLocationPromptOpen] = useState(false);
 
   // Hydrate from localStorage on client-side mount ONCE (not on every searchParams change)
   useEffect(() => {
@@ -103,8 +110,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
       }
     }
+
+    const savedMode = localStorage.getItem("default-transport-mode");
+    if (savedMode) {
+      setDefaultTransportModeState(savedMode as TransportMode);
+    }
+
     setIsHydrated(true);
   }, []); // Empty dependency - run only once on mount
+
+  const setDefaultTransportMode = useCallback((mode: TransportMode) => {
+    setDefaultTransportModeState(mode);
+    localStorage.setItem("default-transport-mode", mode);
+  }, []);
 
   // Persist to local storage (only after hydration to avoid overwriting)
   useEffect(() => {
@@ -307,12 +325,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     toggleCategory,
     activeTab,
     mapStyle,
+    defaultTransportMode,
+    locationPromptOpen,
     selectFacility,
     resolvePendingFacility,
     setFacilitySheetOpen,
     setSearchQuery,
     setActiveTab,
     setMapStyle,
+    setDefaultTransportMode,
+    setLocationPromptOpen,
     clearFilters,
   }), [
     selectedFacility,
@@ -323,13 +345,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     selectedCategories,
     activeTab,
     mapStyle,
+    defaultTransportMode,
+    locationPromptOpen,
     selectFacility,
     resolvePendingFacility,
     setFacilitySheetOpen,
+    setSearchQuery,
     setSelectedCategories,
     toggleCategory,
     setActiveTab,
     setMapStyle,
+    setDefaultTransportMode,
+    setLocationPromptOpen,
     clearFilters,
   ]);
 

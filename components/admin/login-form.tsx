@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" className="w-full" disabled={pending}>
+    <Button type="submit" className="w-full" loading={pending}>
       {pending ? 'Signing in...' : 'Sign In'}
     </Button>
   );

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
-import { Settings, Moon, Sun, Laptop, Bug, Info, Globe, Map } from "lucide-react";
+import { Settings, Moon, Sun, Laptop, Bug, Info, Globe, Map, Footprints, Bike, Car, Navigation } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -22,16 +22,21 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ReportBugDialog } from "@/components/bugs/report-bug-dialog";
 import { useApp } from "@/lib/context/app-context";
+import type { TransportMode } from "@/lib/types/graph";
 
 export function SettingsDropdown() {
   const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme();
-  const { mapStyle, setMapStyle } = useApp();
+  const { mapStyle, setMapStyle, defaultTransportMode, setDefaultTransportMode } = useApp();
   const [bugDialogOpen, setBugDialogOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const handleTransportModeChange = (val: string) => {
+    setDefaultTransportMode(val as TransportMode);
+  };
 
   if (!mounted) {
     return (
@@ -96,6 +101,31 @@ export function SettingsDropdown() {
                   <DropdownMenuRadioItem value="satellite">
                     <Globe className="mr-2 h-4 w-4" />
                     Satellite
+                  </DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuSubContent>
+            </DropdownMenuPortal>
+          </DropdownMenuSub>
+
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <Navigation className="mr-2 h-4 w-4" />
+              <span>Default Travel Mode</span>
+            </DropdownMenuSubTrigger>
+            <DropdownMenuPortal>
+              <DropdownMenuSubContent>
+                <DropdownMenuRadioGroup value={defaultTransportMode} onValueChange={handleTransportModeChange}>
+                  <DropdownMenuRadioItem value="walking">
+                    <Footprints className="mr-2 h-4 w-4" />
+                    Walking
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="cycling">
+                    <Bike className="mr-2 h-4 w-4" />
+                    Cycling
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="driving">
+                    <Car className="mr-2 h-4 w-4" />
+                    Driving
                   </DropdownMenuRadioItem>
                 </DropdownMenuRadioGroup>
               </DropdownMenuSubContent>

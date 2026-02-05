@@ -1,6 +1,8 @@
 import { AdminBreadcrumbs } from '@/components/admin/admin-breadcrumbs';
 import { NavigationEditor } from '@/components/admin/navigation/navigation-editor';
 
+export const dynamic = 'force-dynamic';
+
 export default function NavigationPage() {
   return (
     <div className="space-y-6 h-full flex flex-col">

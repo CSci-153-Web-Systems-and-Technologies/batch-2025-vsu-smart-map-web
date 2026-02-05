@@ -109,14 +109,21 @@ export async function getFacilitiesForChat(
     return { data: null, error: normalizeError(error) };
   }
 
-  const mapped = data.map((f) => ({
+  const mapped = (data as unknown as Array<{
+    id: string;
+    name: string;
+    code: string | null;
+    category: string;
+    description: string | null;
+    rooms: unknown;
+  }>).map((f) => ({
     id: f.id as string,
     name: f.name as string,
     code: (f.code ?? undefined) as string | undefined,
     category: f.category as FacilityCategory,
     description: (f.description ?? undefined) as string | undefined,
     rooms: Array.isArray(f.rooms) && f.rooms.length > 0
-      ? (f.rooms as Array<{ room_code: string; name: string | null }>).map((r) => ({
+      ? (f.rooms as unknown as Array<{ room_code: string; name: string | null }>).map((r) => ({
         roomCode: r.room_code,
         name: r.name ?? undefined,
       }))

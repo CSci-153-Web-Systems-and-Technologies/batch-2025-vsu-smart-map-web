@@ -18,23 +18,32 @@ export type AdminSubmission = {
 function extractSuggestionName(payload: Record<string, unknown> | null): string {
   if (!payload) return "Unnamed suggestion";
 
+  const isDeleted = payload.deleted === true;
+  let baseName = "Unnamed suggestion";
+
   const nameField = payload.name;
   if (nameField) {
     if (typeof nameField === "object" && nameField !== null && "to" in nameField) {
-      return String((nameField as { to: unknown }).to);
+      baseName = String((nameField as { to: unknown }).to);
+    } else {
+      baseName = String(nameField);
     }
-    return String(nameField);
+  } else {
+    const roomCodeField = payload.roomCode;
+    if (roomCodeField) {
+      if (typeof roomCodeField === "object" && roomCodeField !== null && "to" in roomCodeField) {
+        baseName = `Room ${String((roomCodeField as { to: unknown }).to)}`;
+      } else {
+        baseName = `Room ${String(roomCodeField)}`;
+      }
+    }
   }
 
-  const roomCodeField = payload.roomCode;
-  if (roomCodeField) {
-    if (typeof roomCodeField === "object" && roomCodeField !== null && "to" in roomCodeField) {
-      return `Room ${String((roomCodeField as { to: unknown }).to)}`;
-    }
-    return `Room ${String(roomCodeField)}`;
+  if (isDeleted) {
+    return `${baseName} (Deleted)`;
   }
 
-  return "Unnamed suggestion";
+  return baseName;
 }
 
 export async function getAdminStats(): Promise<AdminStats> {

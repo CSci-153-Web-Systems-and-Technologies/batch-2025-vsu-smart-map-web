@@ -6,14 +6,23 @@ import type { Facility } from "@/lib/types/facility";
 import { Info, Route } from "lucide-react";
 import Image from "next/image";
 
+import { useState } from "react";
+
 interface MapPopupCardProps {
   facility: Facility;
   onViewDetails: () => void;
-  onDirections?: () => void; // New prop
+  onDirections?: () => void; 
 }
 
 export function MapPopupCard({ facility, onViewDetails, onDirections }: MapPopupCardProps) {
   const meta = getCategoryMeta(facility.category);
+  const [loading, setLoading] = useState(false);
+
+  const handleDirections = () => {
+    setLoading(true);
+    onDirections?.();
+    setTimeout(() => setLoading(false), 500);
+  };
 
   return (
     <div className="flex flex-col gap-3 min-w-[200px] max-w-[240px] p-3">
@@ -55,7 +64,8 @@ export function MapPopupCard({ facility, onViewDetails, onDirections }: MapPopup
         <Button
           size="sm"
           className="flex-1 gap-2 h-8 text-xs bg-blue-600 hover:bg-blue-700 text-white"
-          onClick={onDirections}
+          onClick={handleDirections}
+          loading={loading}
         >
           <Route className="h-3 w-3" aria-hidden />
           Navigate

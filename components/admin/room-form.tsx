@@ -218,7 +218,7 @@ export function RoomForm({
           <Button type="button" variant="ghost" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit" disabled={submitting}>
+          <Button type="submit" loading={submitting}>
             {submitting ? 'Saving...' : 'Save room'}
           </Button>
         </div>

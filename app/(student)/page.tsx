@@ -230,19 +230,23 @@ function MapView({
   onClearSelection: () => void;
   graphData: { nodes: MapNode[], edges: MapEdge[] };
 }) {
-  const { selectedCategories, debouncedQuery } = useApp();
+  const { selectedCategories, debouncedQuery, defaultTransportMode, setLocationPromptOpen } = useApp();
   const hasResults = filtered.length > 0;
   const hasActiveFilters = selectedCategories.length > 0 || debouncedQuery.trim().length > 0;
   
   const geo = useGeolocation();
-  const { position } = geo;
+  const { position, startTracking } = geo;
   
   // Use persistent navigation state
   const { navStart, setNavStart, navEnd, setNavEnd, clearNavigation } = useNavigationPersistence();
   
-  const [navMode] = useState<TransportMode>('walking');
+  const [navMode, setNavMode] = useState<TransportMode>('walking');
   const [mapBounds, setMapBounds] = useState<LatLngBoundsExpression | null>(null);
   const [isNavigatingFromUser, setIsNavigatingFromUser] = useState(false);
+
+  useEffect(() => {
+    setNavMode(defaultTransportMode);
+  }, [defaultTransportMode]);
 
   useEffect(() => {
     // Only update if we are actively navigating from user AND position is available
@@ -264,13 +268,19 @@ function MapView({
               setNavStart({ lat: position.coords.latitude, lng: position.coords.longitude } as LatLng);
           } else {
               setNavStart(null);
+              const consent = localStorage.getItem("vsu-smartmap-location-consent") === "true";
+              if (!consent) {
+                  setLocationPromptOpen(true);
+              } else {
+                  startTracking();
+              }
           }
           setNavEnd({ lat: e.detail.coordinates.lat, lng: e.detail.coordinates.lng } as LatLng);
       };
       
       window.addEventListener('navigate-to-facility', handleNavRequest as EventListener);
       return () => window.removeEventListener('navigate-to-facility', handleNavRequest as EventListener);
-  }, [position, setNavStart, setNavEnd, setIsNavigatingFromUser]);
+  }, [position, setNavStart, setNavEnd, setIsNavigatingFromUser, setLocationPromptOpen, startTracking]);
 
   return (
     <div className="relative h-full w-full">
@@ -286,6 +296,12 @@ function MapView({
                    setNavStart({ lat: position.coords.latitude, lng: position.coords.longitude } as LatLng);
                } else {
                    setNavStart(null);
+                   const consent = localStorage.getItem("vsu-smartmap-location-consent") === "true";
+                   if (!consent) {
+                       setLocationPromptOpen(true);
+                   } else {
+                       startTracking();
+                   }
                }
                setNavEnd({ lat: item.coordinates.lat, lng: item.coordinates.lng } as LatLng);
             }}
