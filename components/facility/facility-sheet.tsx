@@ -59,7 +59,6 @@ export function FacilitySheet() {
     <>
       <Dialog
         open={open}
-        modal={false}
         onOpenChange={(isOpen) => {
           if (isOpen) return;
 
@@ -72,8 +71,6 @@ export function FacilitySheet() {
         }}
       >
         <DialogContent
-          overlayClassName="hidden"
-          onInteractOutside={(e) => e.preventDefault()}
           className="flex flex-col gap-0 p-0 transition-transform duration-300 max-sm:fixed max-sm:bottom-0 max-sm:top-auto max-sm:h-auto max-sm:max-h-[85vh] max-sm:w-full max-sm:max-w-full max-sm:rounded-t-xl max-sm:rounded-b-none max-sm:data-[state=closed]:translate-y-full max-sm:data-[state=open]:translate-y-0 sm:h-[90dvh] sm:max-h-[90dvh] sm:max-w-lg"
         >
           <VisuallyHidden>

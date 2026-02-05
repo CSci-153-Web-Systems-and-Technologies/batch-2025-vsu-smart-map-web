@@ -39,7 +39,7 @@ export function MapSelectionLayer({
   });
 
   useEffect(() => {
-    if (selectedId) {
+    if (selectedId && selectedId !== prevSelectedId.current) {
       const selected = items.find((m) => m.id === selectedId);
       if (selected) {
         map.flyTo([selected.coordinates.lat, selected.coordinates.lng], Math.max(map.getZoom(), flyZoom), {
@@ -47,7 +47,7 @@ export function MapSelectionLayer({
         });
       }
       prevSelectedId.current = selectedId;
-    } else if (prevSelectedId.current !== null) {
+    } else if (!selectedId && prevSelectedId.current !== null) {
       map.flyTo(map.getCenter(), 17, {
         duration: 0.5,
       });
