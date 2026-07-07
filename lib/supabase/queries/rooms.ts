@@ -25,7 +25,11 @@ export type RoomRowWithFacility = RoomRow & {
   facility: FacilitySummary | null;
 };
 
-type BaseResult<T> = { data: T | null; error: PostgrestError | null };
+type QueryError = Pick<PostgrestError, "message" | "details" | "hint" | "code"> & {
+  name?: string;
+};
+
+type BaseResult<T> = { data: T | null; error: QueryError | null };
 type MaybeClient = SupabaseClient | Promise<SupabaseClient>;
 
 const selectBase = () =>
@@ -33,7 +37,7 @@ const selectBase = () =>
 const selectWithFacility = () =>
   `${selectBase()}, facility:facilities(id, name, slug)`;
 
-const toPostgrestError = (message: string): PostgrestError => ({
+const toPostgrestError = (message: string): QueryError => ({
   name: "PostgrestError",
   message,
   details: "",
@@ -41,7 +45,7 @@ const toPostgrestError = (message: string): PostgrestError => ({
   code: "PGRST_INVALID_INPUT",
 });
 
-const normalizeError = (error: PostgrestError | null) =>
+const normalizeError = (error: PostgrestError | null): QueryError | null =>
   error ? { ...error, message: "Unable to complete room request" } : null;
 
 const resolveClient = async (client?: MaybeClient) =>

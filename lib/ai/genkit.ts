@@ -1,11 +1,11 @@
 import { genkit } from 'genkit';
-import { googleAI, gemini25FlashLite } from '@genkit-ai/googleai';
+import { googleAI } from '@genkit-ai/google-genai';
 import { apiKeyManager } from './api-key-manager';
 
 const createGenkit = (apiKey: string) => {
   return genkit({
     plugins: [googleAI({ apiKey })],
-    model: gemini25FlashLite,
+    model: googleAI.model(process.env.GEMINI_MODEL || 'gemini-flash-lite-latest'),
   });
 };
 

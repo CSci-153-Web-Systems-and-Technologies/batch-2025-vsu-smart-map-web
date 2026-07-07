@@ -12,13 +12,17 @@ import type {
 import { FACILITY_CATEGORIES } from "@/lib/types/facility";
 import { getSupabaseBrowserClient } from "../browser-client";
 
-type BaseResult<T> = { data: T | null; error: PostgrestError | null };
+export type QueryError = Pick<PostgrestError, "message" | "details" | "hint" | "code"> & {
+  name?: string;
+};
+
+type BaseResult<T> = { data: T | null; error: QueryError | null };
 type MaybeClient = SupabaseClient | Promise<SupabaseClient>;
 
 const selectBase = () =>
   "id, code, name, slug, description, category, has_rooms, latitude, longitude, image_url, image_credit, website, facebook, phone, created_at, updated_at";
 
-export const normalizeError = (error: PostgrestError | null) =>
+export const normalizeError = (error: PostgrestError | null): QueryError | null =>
   error ? { ...error, message: `Unable to request: ${error.message}` } : null;
 
 const resolveClient = async (client?: MaybeClient) =>
