@@ -8,13 +8,18 @@ import type {
 } from "@/lib/types/suggestion";
 import { getSupabaseBrowserClient } from "../browser-client";
 
-type BaseResult<T> = { data: T | null; error: PostgrestError | null };
+type QueryError = Pick<PostgrestError, "message" | "details" | "hint" | "code"> & {
+  name?: string;
+};
+
+type BaseResult<T> = { data: T | null; error: QueryError | null };
 type MaybeClient = SupabaseClient | Promise<SupabaseClient>;
 
 const selectBase =
   "id, type, status, target_id, payload, admin_note, created_at, updated_at";
 
-const normalizeError = (error: PostgrestError | null) => (error ? { ...error } : null);
+const normalizeError = (error: PostgrestError | null): QueryError | null =>
+  error ? { ...error } : null;
 
 const resolveClient = async (client?: MaybeClient) =>
   Promise.resolve(client ?? getSupabaseBrowserClient());
