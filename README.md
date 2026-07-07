@@ -116,6 +116,9 @@ GEMINI_MODEL=gemini-flash-lite-latest  # Gemini model name
 - Turbopack root is pinned in `next.config.ts` to avoid multi-lockfile resolution issues
 - Use `npm run build && npm run start` for production runs
 
+## License
+This project is distributed under the MIT License. See [LICENSE](LICENSE) for details.
+
 ## Troubleshooting
 - Turbopack root warnings: already pinned via `turbopack.root` in `next.config.ts`
 - Stale browser baseline warning: update `baseline-browser-mapping` (dev dep) if tooling requests
