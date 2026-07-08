@@ -21,7 +21,7 @@
 
 @layer base {
   :root {
-    /* VSU Light Theme - Converted from hex codes in tailwind.config.ts */
+/* Campus light theme - Converted from hex codes in tailwind.config.ts */
     --background: 84 20% 96%;
     /* #F5F7F2 */
     --foreground: 129 30% 8%;

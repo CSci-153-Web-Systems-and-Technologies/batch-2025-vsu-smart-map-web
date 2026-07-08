@@ -97,7 +97,7 @@ export function UserLocationControl({ className }: UserLocationControlProps) {
       <ConfirmDialog
         open={showPermissionDialog}
         title="Enable Location Access?"
-        description="VSU SmartMap would like to access your location to show where you are on campus. Your location data stays on your device and is not stored or shared."
+        description="Campus SmartMap would like to access your location to show where you are on campus. Your location data stays on your device and is not stored or shared."
         confirmLabel="Enable Location"
         cancelLabel="Not Now"
         confirmVariant="default"

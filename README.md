@@ -1,8 +1,8 @@
-# VSU SmartMap
+# Campus SmartMap for VSU
 
-Smart, offline-friendly campus navigation for Visayas State University. Browse facilities, search rooms, chat with an AI assistant, and manage data through a secure admin console.
+Unofficial, offline-friendly campus navigation for Visayas State University. Browse facilities, search rooms, chat with an AI assistant, and manage data through a secure admin console.
 
-![VSU SmartMap Banner](public/vsu-banner-21x9.png)
+![Campus SmartMap Banner](public/vsu-banner-21x9.png)
 
 ## Quick Links
 - Map: `/`

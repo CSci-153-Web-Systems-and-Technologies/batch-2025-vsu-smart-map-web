@@ -1,4 +1,4 @@
--- VSU SmartMap Seed Data
+-- Campus SmartMap Seed Data
 -- Generated from .mentor-guide/locations.md
 
 -- =============================================

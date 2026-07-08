@@ -120,7 +120,7 @@ export function ChatView() {
               <DialogTitle>AI Assistant Disclaimer</DialogTitle>
             </div>
             <DialogDescription className="pt-2">
-              This AI assistant uses advanced language models to help you navigate VSU.
+              This AI assistant uses language models to help with campus navigation.
               <br /><br />
               <strong>Please note:</strong> While we strive for accuracy, the AI may occasionally produce incorrect information. Always verify critical details like building locations or office hours with official university sources.
             </DialogDescription>
