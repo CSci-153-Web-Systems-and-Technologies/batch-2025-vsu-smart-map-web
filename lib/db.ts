@@ -16,14 +16,14 @@ export interface OfflineAction {
   timestamp: number;
 }
 
-export class VSUDatabase extends Dexie {
+export class CampusMapDatabase extends Dexie {
   rooms!: Table<RoomRowWithFacility, string>;
   facilities!: Table<Facility, string>;
   offline_queue!: Table<OfflineAction, number>;
   cache_meta!: Table<CacheMetaEntry, CacheMetaKey>;
 
   constructor() {
-    super("VSUSmartMapDB");
+    super("CampusSmartMapDB");
     this.version(1).stores({
       rooms: "++id, id, name, room_code, facility_id",
       facilities: "++id, id, name",
@@ -45,5 +45,7 @@ export class VSUDatabase extends Dexie {
   }
 }
 
-export const db: VSUDatabase =
-  typeof window === "undefined" ? (null as unknown as VSUDatabase) : new VSUDatabase();
+export const db: CampusMapDatabase =
+  typeof window === "undefined"
+    ? (null as unknown as CampusMapDatabase)
+    : new CampusMapDatabase();

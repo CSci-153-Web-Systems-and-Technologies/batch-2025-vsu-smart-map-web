@@ -4,8 +4,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Mail, Github } from "lucide-react";
 
 export const metadata = {
-  title: "Information | VSU SmartMap",
-  description: "About VSU SmartMap, FAQ, Terms, and Privacy Policy.",
+  title: "Information | Campus SmartMap for VSU",
+  description: "About Campus SmartMap for VSU, FAQ, Terms, and Privacy Policy.",
 };
 
 export default function InfoPage() {
@@ -14,7 +14,7 @@ export default function InfoPage() {
       <div className="space-y-4 text-center">
         <h1 className="text-3xl font-bold tracking-tighter md:text-4xl">Information Hub</h1>
         <p className="mx-auto max-w-[700px] text-muted-foreground">
-          Learn more about the VSU SmartMap project, our mission, and legal policies.
+          Learn more about this unofficial campus map project, its purpose, and legal policies.
         </p>
       </div>
 
@@ -33,16 +33,16 @@ export default function InfoPage() {
         <TabsContent value="about">
           <Card>
             <CardHeader>
-              <CardTitle>About VSU SmartMap</CardTitle>
+              <CardTitle>About Campus SmartMap</CardTitle>
               <CardDescription>
                 Navigating Visayas State University made easy.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 text-sm leading-relaxed text-muted-foreground">
               <p>
-                VSU SmartMap is a dedicated campus navigation and facility management system designed
-                specifically for the Visayas State University community. Our goal is to make finding
-                classrooms, offices, and amenities as simple as possible for students, faculty, and visitors.
+                Campus SmartMap for VSU is an unofficial student-led campus navigation and facility
+                management system built for the Visayas State University community. It is not an
+                official Visayas State University platform, website, or service.
               </p>
               <h3 className="text-foreground font-semibold">Key Features</h3>
               <ul className="list-disc pl-5 space-y-1">
@@ -80,7 +80,7 @@ export default function InfoPage() {
                 <div className="space-y-2">
                   <h3 className="font-semibold text-foreground">Can I use the map offline?</h3>
                   <p className="text-sm text-muted-foreground">
-                    Yes! VSU SmartMap is a Progressive Web App (PWA). Once you visit the site, map tiles and
+                    Yes! Campus SmartMap is a Progressive Web App (PWA). Once you visit the site, map tiles and
                     facility data for recent areas are cached for offline use.
                   </p>
                 </div>
@@ -96,8 +96,9 @@ export default function InfoPage() {
                 <div className="space-y-2">
                   <h3 className="font-semibold text-foreground">Is this official?</h3>
                   <p className="text-sm text-muted-foreground">
-                    This is a student-led initiative to improve campus navigation. While we aim for accuracy,
-                    please verify critical information with university officials.
+                    No. This is a student-led initiative to improve campus navigation. It is not operated by,
+                    endorsed by, or officially affiliated with Visayas State University. Please verify critical
+                    information with university officials.
                   </p>
                 </div>
               </div>
@@ -115,7 +116,7 @@ export default function InfoPage() {
             <CardContent className="space-y-4 text-sm text-muted-foreground h-[400px]">
               <ScrollArea className="h-full pr-4">
                 <p className="mb-4">
-                  Welcome to VSU SmartMap. By accessing or using our website, you agree to be bound by these terms.
+                  Welcome to Campus SmartMap for VSU. By accessing or using our website, you agree to be bound by these terms.
                 </p>
                 <h3 className="text-foreground font-semibold mb-2">1. Acceptable Use</h3>
                 <p className="mb-4">
@@ -130,7 +131,7 @@ export default function InfoPage() {
                 <h3 className="text-foreground font-semibold mb-2">3. Disclaimer</h3>
                 <p className="mb-4">
                   The map data is provided &quot;as is&quot;. We do not guarantee the absolute accuracy of locations or facility details.
-                  Always exercise personal judgment when navigating.
+                  Always exercise personal judgment when navigating. Campus SmartMap for VSU is not an official Visayas State University service.
                 </p>
                 <h3 className="text-foreground font-semibold mb-2">4. Changes to Terms</h3>
                 <p className="mb-4">

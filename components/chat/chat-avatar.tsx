@@ -20,7 +20,7 @@ export function ChatAvatar({ role }: ChatAvatarProps) {
       {isAssistant ? (
         <Image
           src="/icons/icon-192x192.png"
-          alt="VSU SmartMap assistant"
+          alt="Campus SmartMap for VSU assistant"
           width={20}
           height={20}
           className="h-5 w-5"

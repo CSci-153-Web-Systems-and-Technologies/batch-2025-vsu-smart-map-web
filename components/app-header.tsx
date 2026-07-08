@@ -21,18 +21,18 @@ export function AppHeader({ tabsSlot }: AppHeaderProps) {
         <Link
           href="/"
           className="flex items-center gap-2 transition hover:opacity-80 shrink-0"
-          aria-label="VSU SmartMap home"
+          aria-label="Campus SmartMap for VSU home"
         >
           <Image
             src="/icons/icon-192x192.png"
-            alt="VSU SmartMap"
+            alt="Campus SmartMap for VSU"
             width={32}
             height={32}
             className="rounded-lg"
             priority
           />
           <div className="flex flex-col leading-none hidden sm:flex">
-            <span className="text-xs font-bold text-primary tracking-wide">VSU</span>
+            <span className="text-xs font-bold text-primary tracking-wide">Campus</span>
             <span className="text-sm font-extrabold text-foreground tracking-tight">SmartMap</span>
           </div>
         </Link>

@@ -1,7 +1,7 @@
 {
-  "name": "VSU SmartMap",
-  "short_name": "SmartMap",
-  "description": "Interactive campus map for Visayas State University. Find buildings, facilities, and get directions with AI-powered assistance.",
+  "name": "Campus SmartMap for VSU",
+  "short_name": "Campus Map",
+  "description": "Unofficial student-led campus map for Visayas State University, with building search, facility details, and campus navigation help.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

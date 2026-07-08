@@ -19,7 +19,7 @@ export function ChatWelcome({
       </div>
 
       <div className="space-y-2">
-        <h2 className="text-xl font-semibold">Welcome to VSU SmartMap</h2>
+        <h2 className="text-xl font-semibold">Welcome to Campus SmartMap</h2>
         <p className="text-muted-foreground">
           Ask me about any location on campus. I can help you find buildings,
           offices, and facilities.

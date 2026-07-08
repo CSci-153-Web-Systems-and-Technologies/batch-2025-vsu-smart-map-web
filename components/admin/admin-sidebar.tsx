@@ -33,7 +33,7 @@ function SidebarContent({ pathname, onClose }: { pathname: string; onClose: () =
         <div className="flex items-center gap-3">
           <Image
             src="/icons/icon-192x192.png"
-            alt="VSU SmartMap"
+            alt="Campus SmartMap for VSU"
             width={40}
             height={40}
             className="rounded-lg"
